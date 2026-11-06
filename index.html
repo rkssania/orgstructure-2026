@@ -208,7 +208,7 @@ html,body{margin:0}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script src="config.js?v=1793959529"></script>
-<script src="export.js?v=1793981867"></script>
+<script src="export.js?v=1793982289"></script>
 
 <script>
 (function(){
@@ -376,31 +376,28 @@ function changesView(){
 }
 
 // ---------------- СОГЛАСОВАНИЕ ГЕНЕРАЛЬНОГО ДИРЕКТОРА ----------------
-let AG={}, agC=null, agCV='', agF={u:'all',s:'all',only:false};
+let AG={}, agC=null, agCV='', agF={u:'ЦА',s:'all',only:false};
 const AGST={ok:'Согласовано',no:'Не согласовано',re:'На доработку'};
 const nmById=id=>{const r=BASE.find(x=>x.id===id);return r?r.n:'—'};
 function agItems(){
-  const t=DATA.units.reduce((a,U)=>a+DATA.shrsrc.filter(x=>x.u===U.id).reduce((b,x)=>b+x.cnt,0),0), t0=BD.shrsrc.reduce((a,x)=>a+x.cnt,0);
-  const S=[
-    {t:'1. Оргструктура',items:[
-      {id:'a1',text:`Утвердить новую оргструктуру: АУП (центральный аппарат), филиал г. Караганда, филиал г. Усть-Каменогорск, медицинское подразделение г. Астана, Лаборатория.`,sub:`Численность по действующему ШР — ${fmt(t0)} ед., по новой схеме с учётом правок — ${fmt(t)} ед.`},
-      {id:'a2',text:'Заведующие отделениями переименовываются в старших ординаторов.'},
-      {id:'a3',text:'Отдел реанимации переименовывается в Отдел интенсивной терапии и трансфузиологии.'},
-      {id:'a4',text:`Отдел науки упраздняется; ${nmById('rc0db186f3782')} — руководитель отдела клинических исследований.`},
-      {id:'a5',text:'Полные наименования руководителей в филиалах:',sub:'руководитель административно-хозяйственной службы; руководитель сестринской службы и инфекционного контроля; руководитель амбулаторно-диспансерного (консультативного) блока; руководитель отдела интенсивной терапии и трансфузиологии; руководитель сектора организации лабораторной логистики; заведующий лабораторией молекулярной генетики.'}]},
-    {t:'2. Служба поддержки пациентов и внутренней экспертизы',items:[
-      {id:'b1',text:`${nmById('rb55856994431')} — остаётся провизором аптеки (Караганда); совмещение: Специалист по управлению качеством фармации, Отдел качества медицинских услуг (ЦА).`,cnt:true,sub:'Укажите ставку совмещения.'}]},
-    {t:'3. Кадровые решения',items:[
-      {id:'c1',text:`${nmById('r83c0d5f5ef3c')} — заместитель директора по амбулаторной и стационарозамещающей помощи → руководитель амбулаторно-диспансерного (консультативного) блока (Усть-Каменогорск).`,sub:`${nmById('r3fe002efe140')} — заведующая АДБ → старший ординатор АДБ (Усть-Каменогорск).`}]},
+  const t=DATA.shrsrc.reduce((a,x)=>a+x.cnt,0), t0=BD.shrsrc.reduce((a,x)=>a+x.cnt,0);
+  const I=[
+    {id:'a1',u:'ЦА',sec:'Общие решения',text:`Утвердить новую оргструктуру: АУП (центральный аппарат), филиал г. Караганда, филиал г. Усть-Каменогорск, медицинское подразделение г. Астана, Лаборатория.`,sub:`Численность по действующему ШР — ${fmt(t0)} ед., по новой схеме с учётом правок — ${fmt(t)} ед.`},
+    {id:'a2',u:'ЦА',sec:'Общие решения',text:'Заведующие отделениями переименовываются в старших ординаторов (во всех филиалах).'},
+    {id:'a3',u:'ЦА',sec:'Общие решения',text:'Отдел реанимации переименовывается в Отдел интенсивной терапии и трансфузиологии (во всех филиалах).'},
+    {id:'a5',u:'ЦА',sec:'Общие решения',text:'Полные наименования руководителей в филиалах:',sub:'руководитель административно-хозяйственной службы; руководитель сестринской службы и инфекционного контроля; руководитель амбулаторно-диспансерного (консультативного) блока; руководитель отдела интенсивной терапии и трансфузиологии; руководитель сектора организации лабораторной логистики; заведующий лабораторией молекулярной генетики.'},
+    {id:'a4',u:'ЦА',sec:'Кадровые решения',text:`Отдел науки упраздняется; ${nmById('rc0db186f3782')} — руководитель отдела клинических исследований.`},
+    {id:'b1',u:'ЦА',sec:'Кадровые решения',text:`${nmById('rb55856994431')} — остаётся провизором аптеки (Караганда); совмещение: Специалист по управлению качеством фармации, Отдел качества медицинских услуг (ЦА).`,cnt:true,sub:'Укажите ставку совмещения.'},
+    {id:'c1',u:'УК',sec:'Кадровые решения',text:`${nmById('r83c0d5f5ef3c')} — заместитель директора по амбулаторной и стационарозамещающей помощи → руководитель амбулаторно-диспансерного (консультативного) блока.`,sub:`${nmById('r3fe002efe140')} — заведующая АДБ → старший ординатор АДБ.`},
   ];
-  const n4=[];
   DATA.units.forEach(U=>U.groups.forEach(g=>g.depts.forEach(d=>d.pos.forEach(p=>{ if(sh(U.id,g.name,d.name,p)) return;
     const pp=ppl(U.id,g.name,d.name,p).filter(r=>r.n);
-    n4.push({id:'s'+nkey(K(U.id,g.name,d.name,p)),text:`${UN[U.id]}: ${d.name==='Руководство'?g.name:dname(d.name)} — ${disp(p)}`,sub:pp.length?'Занято: '+pp.map(r=>`${r.n} (${fmt(r.r)})`).join(', '):'Сейчас никто не занимает',cnt:true});
+    I.push({id:'s'+nkey(K(U.id,g.name,d.name,p)),u:U.id,sec:'Ставки на новые должности',text:`${d.name==='Руководство'?g.name:dname(d.name)} — ${disp(p)}`,sub:pp.length?'Занято: '+pp.map(r=>`${r.n} (${fmt(r.r)})`).join(', '):'Сейчас никто не занимает',cnt:true});
   }))));
-  S.push({t:'4. Ставки на новые должности (в действующем ШР ставки нет)',hint:'Укажите, сколько ставок ввести, и отметьте решение. 0 — не вводить.',items:n4});
-  return S;
+  return I;
 }
+const AGU=['ЦА','КРГ','УК','Астана','Лаборатория'], AGUN={'ЦА':'Общее и ЦА','КРГ':'Караганда','УК':'Усть-Каменогорск','Астана':'Астана','Лаборатория':'Лаборатория'};
+const AGSEC=['Общие решения','Кадровые решения','Ставки на новые должности'];
 function agTable(){
   const out=[];
   DATA.units.forEach(U=>{
@@ -426,22 +423,28 @@ function agCtl(id,cnt){const a=AG[id]||{};
   return h;
 }
 function agreeView(){
-  const S=agItems(), T=agTable(), all=[...S.flatMap(x=>x.items.map(i=>i.id)),...T.map(x=>x.id)];
-  const c=v=>all.filter(id=>AG[id]&&AG[id].st===v).length, none=all.length-c('ok')-c('no')-c('re');
-  let h=`<div class="ag-head"><div><h2 style="margin:0">Согласование с генеральным директором</h2><p class="hint" style="margin:4px 0 0">Отметьте решение по каждому пункту. Отметки сохраняются сразу и видны всем.</p></div><button class="btn primary" type="button" id="dl-agree">Скачать лист согласования</button></div>
-  <div class="ag-sum"><span>Всего пунктов: <b>${all.length}</b></span><span>Согласовано: <b>${c('ok')}</b></span><span>Не согласовано: <b>${c('no')}</b></span><span>На доработку: <b>${c('re')}</b></span><span>Без решения: <b>${none}</b></span></div>`;
-  S.forEach(sec=>{h+=`<h3 class="stage">${esc(sec.t)}</h3>${sec.hint?`<p class="hint">${esc(sec.hint)}</p>`:''}<div class="ag-list">`;
-    sec.items.forEach(i=>{const a=AG[i.id]||{};h+=`<div class="ag ${a.st||''}"><div class="ag-t">${esc(i.text)}${i.sub?`<small>${esc(i.sub)}</small>`:''}</div>${agCtl(i.id,i.cnt)}</div>`});
+  const I=agItems(), T=agTable(), U=AGU.includes(agF.u)?agF.u:'ЦА';
+  const ids=u=>[...I.filter(x=>x.u===u).map(x=>x.id),...T.filter(x=>x.u===u).map(x=>x.id)];
+  const cnt=(arr,v)=>arr.filter(id=>AG[id]&&AG[id].st===v).length;
+  const all=AGU.flatMap(ids), mine=ids(U);
+  let h=`<div class="ag-head"><div><h2 style="margin:0">Согласование с генеральным директором</h2><p class="hint" style="margin:4px 0 0">Выберите раздел, отметьте решение по каждому пункту. Отметки сохраняются сразу и видны всем.</p></div><button class="btn primary" type="button" id="dl-agree">Скачать лист согласования</button></div>
+  <div class="filters">${AGU.map(u=>{const a=ids(u),ok=cnt(a,'ok');return `<button class="chip" type="button" data-agu="${u}" aria-pressed="${U===u}">${AGUN[u]} · ${ok}/${a.length}</button>`}).join('')}</div>
+  <div class="ag-sum"><span>${esc(AGUN[U])}: пунктов <b>${mine.length}</b></span><span>Согласовано: <b>${cnt(mine,'ok')}</b></span><span>Не согласовано: <b>${cnt(mine,'no')}</b></span><span>На доработку: <b>${cnt(mine,'re')}</b></span><span>Без решения: <b>${mine.length-cnt(mine,'ok')-cnt(mine,'no')-cnt(mine,'re')}</b></span><span class="muted">всего по всем разделам: ${cnt(all,'ok')} из ${all.length} согласовано</span></div>`;
+  let n=0;
+  AGSEC.forEach(sec=>{const L=I.filter(x=>x.u===U&&x.sec===sec); if(!L.length) return; n++;
+    h+=`<h3 class="stage"><span>${n}</span>${esc(sec)}</h3>${sec==='Ставки на новые должности'?'<p class="hint">Должности есть на новой схеме, но в действующем ШР ставки нет. Укажите, сколько ставок ввести (0 — не вводить), и отметьте решение.</p>':''}<div class="ag-list">`;
+    L.forEach(i=>{const a=AG[i.id]||{};h+=`<div class="ag ${a.st||''}"><div class="ag-t">${esc(i.text)}${i.sub?`<small>${esc(i.sub)}</small>`:''}</div>${agCtl(i.id,i.cnt)}</div>`});
     h+='</div>';});
-  const sts=['all','Переименование','Новая должность','Перенос','Изменена численность','Вне новой схемы','Исключена'];
-  const F=T.filter(x=>(agF.u==='all'||x.u===agF.u)&&(agF.s==='all'||x.st.includes(agF.s))&&(!agF.only||!(AG[x.id]&&AG[x.id].st)));
-  h+=`<h3 class="stage">5. Таблица изменений должностей (было по ШР → стало)</h3>
-  <div class="filters">${['all','ЦА','КРГ','УК','Астана','Лаборатория'].map(x=>`<button class="chip" type="button" data-agu="${x}" aria-pressed="${agF.u===x}">${x==='all'?'Все подразделения':UN[x]}</button>`).join('')}</div>
-  <div class="filters">${sts.map(x=>`<button class="chip" type="button" data-ags="${x}" aria-pressed="${agF.s===x}">${x==='all'?'Все изменения':x} · ${T.filter(t=>(agF.u==='all'||t.u===agF.u)&&(x==='all'||t.st.includes(x))).length}</button>`).join('')}<button class="chip" type="button" data-ago="1" aria-pressed="${agF.only}">Только без решения</button></div>
-  <div class="fbtns" style="margin:6px 0">${F.length?`<button class="btn" type="button" data-agall="ok">Согласовать все показанные (${F.length})</button>`:''}</div>
-  <div class="tbl"><table class="agt"><thead><tr><th>Подразделение</th><th>Отдел</th><th>Было по ШР</th><th>Стало</th><th>Изменение</th><th>Ед.: было → стало</th><th>Сотрудники</th><th>Решение</th></tr></thead><tbody>`;
+  const TU=T.filter(x=>x.u===U), sts=['all','Переименование','Новая должность','Перенос','Изменена численность','Вне новой схемы','Исключена'];
+  const F=TU.filter(x=>(agF.s==='all'||x.st.includes(agF.s))&&(!agF.only||!(AG[x.id]&&AG[x.id].st)));
+  n++;
+  h+=`<h3 class="stage"><span>${n}</span>Изменения должностей: было по ШР → стало</h3>
+  <div class="filters">${sts.filter(x=>x==='all'||TU.some(t=>t.st.includes(x))).map(x=>`<button class="chip" type="button" data-ags="${x}" aria-pressed="${agF.s===x}">${x==='all'?'Все изменения':x} · ${TU.filter(t=>x==='all'||t.st.includes(x)).length}</button>`).join('')}<button class="chip" type="button" data-ago="1" aria-pressed="${agF.only}">Только без решения</button></div>
+  <div class="fbtns" style="margin:6px 0">${F.length?`<button class="btn" type="button" data-agall="ok">Согласовать все показанные без решения</button>`:''}</div>
+  <div class="tbl"><table class="agt"><thead><tr><th>Отдел</th><th>Было по ШР</th><th>Стало</th><th>Изменение</th><th>Ед.: было → стало</th><th>Сотрудники</th><th>Решение</th></tr></thead><tbody>`;
   F.forEach(x=>{const a=AG[x.id]||{};
-    h+=`<tr class="ag-${a.st||''}"><td>${UN[x.u]}</td><td>${esc(x.d)}</td><td><span class="was-old">${esc(x.old)}</span></td><td><b>${esc(x.nw)}</b></td><td>${x.st.map(z=>`<span class="st ${z==='Новая должность'?'new':z==='Вне новой схемы'||z==='Исключена'?'dec':'ren'}">${z}</span>`).join(' ')}</td><td class="num">${fmt(x.was)} → ${fmt(x.now)}</td><td>${x.pp.length?esc(x.pp.map(r=>r.n+' ('+fmt(r.r)+')').join(', ')):'<span class="muted">—</span>'}</td><td>${agCtl(x.id,false)}</td></tr>`});
+    h+=`<tr class="ag-${a.st||''}"><td>${esc(x.d)}</td><td><span class="was-old">${esc(x.old)}</span></td><td><b>${esc(x.nw)}</b></td><td>${x.st.map(z=>`<span class="st ${z==='Новая должность'?'new':z==='Вне новой схемы'||z==='Исключена'?'dec':'ren'}">${z}</span>`).join(' ')}</td><td class="num">${fmt(x.was)} → ${fmt(x.now)}</td><td>${x.pp.length?esc(x.pp.map(r=>r.n+' ('+fmt(r.r)+')').join(', ')):'<span class="muted">—</span>'}</td><td>${agCtl(x.id,false)}</td></tr>`});
+  if(!F.length) h+=`<tr><td colspan="7" class="muted">Нет строк по выбранному фильтру</td></tr>`;
   h+=`</tbody></table></div>`;
   return h;
 }
@@ -474,10 +477,10 @@ document.addEventListener('click',e=>{
     if(ag.dataset.ag){const id=ag.dataset.ag,v=ag.dataset.v,cur=AG[id]&&AG[id].st; agSet(id,{st:cur===v?'':v}); return}
     if(ag.dataset.agc){agC=ag.dataset.agc;agCV=(AG[agC]&&AG[agC].c)||'';return rer()}
     if(ag.dataset.agcs){const id=ag.dataset.agcs;agSet(id,{c:$('ag-text').value.trim()});agC=null;return rer()}
-    if(ag.dataset.agu){agF.u=ag.dataset.agu;return rer()}
+    if(ag.dataset.agu){agF.u=ag.dataset.agu;agF.s='all';return rer()}
     if(ag.dataset.ags){agF.s=ag.dataset.ags;return rer()}
     if(ag.dataset.ago){agF.only=!agF.only;return rer()}
-    if(ag.dataset.agall){const T=agTable().filter(x=>(agF.u==='all'||x.u===agF.u)&&(agF.s==='all'||x.st.includes(agF.s))&&(!agF.only||!(AG[x.id]&&AG[x.id].st))).filter(x=>!(AG[x.id]&&AG[x.id].st));
+    if(ag.dataset.agall){const T=agTable().filter(x=>x.u===agF.u&&(agF.s==='all'||x.st.includes(agF.s))&&(!agF.only||!(AG[x.id]&&AG[x.id].st))).filter(x=>!(AG[x.id]&&AG[x.id].st));
       if(!T.length){toast('Все показанные уже с решением');return}
       if(!confirm(`Отметить «Согласовано» ${T.length} строк без решения?`))return;
       (async()=>{for(const x of T) await agSet(x.id,{st:'ok'}); await addLog(`Согласование ГД: согласовано пакетом ${T.length} строк таблицы изменений`); toast('Готово');})(); return}

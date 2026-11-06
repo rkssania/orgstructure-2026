@@ -288,13 +288,18 @@
     put(ws, 2, 1, 'Сформировано ' + new Date().toLocaleString('ru-RU'), { size: 9, border: false });
     ['№', 'Вопрос на согласование', 'Ставок', 'Решение', 'Комментарий', 'Отметил(а)'].forEach((h, i) => put(ws, 4, i + 1, h, { bold: true, center: true, fill: G }));
     let r = 5;
-    S.forEach((sec, si) => {
-      ws.mergeCells(r, 1, r, 6); put(ws, r, 1, sec.t, { bold: true, fill: G }); r++;
-      sec.items.forEach((it, ii) => {
-        const a = AG[it.id] || {};
-        [`${si + 1}.${ii + 1}`, it.text + (it.sub ? '\n' + it.sub : ''), a.cnt != null && a.cnt !== '' ? a.cnt : '', ST[a.st] || '', a.c || '', a.st || a.c ? H.who(a.by) + ', ' + H.when(a.at) : '']
-          .forEach((v, i) => put(ws, r, i + 1, v, { size: 10, center: i === 0 || i === 2, fill: FL[a.st] }));
-        ws.getRow(r).height = it.sub ? 42 : 28; r++;
+    const UO = [['ЦА', 'Общее и центральный аппарат'], ['КРГ', 'Филиал г. Караганда'], ['УК', 'Филиал г. Усть-Каменогорск'], ['Астана', 'Медицинское подразделение г. Астана'], ['Лаборатория', 'Лаборатория']];
+    const SECS = ['Общие решения', 'Кадровые решения', 'Ставки на новые должности'];
+    UO.forEach(([u, title], ui) => {
+      const L = S.filter(x => x.u === u); if (!L.length) return;
+      ws.mergeCells(r, 1, r, 6); put(ws, r, 1, `${ui + 1}. ${title}`, { bold: true, size: 12, fill: G }); r++;
+      let k = 0;
+      SECS.forEach(sec => { const LL = L.filter(x => x.sec === sec); if (!LL.length) return;
+        ws.mergeCells(r, 1, r, 6); put(ws, r, 1, sec, { bold: true, italic: true }); r++;
+        LL.forEach(it => { k++; const a = AG[it.id] || {};
+          [`${ui + 1}.${k}`, it.text + (it.sub ? '\n' + it.sub : ''), a.cnt != null && a.cnt !== '' ? a.cnt : '', ST[a.st] || '', a.c || '', a.st || a.c ? H.who(a.by) + ', ' + H.when(a.at) : '']
+            .forEach((v, i) => put(ws, r, i + 1, v, { size: 10, center: i === 0 || i === 2, fill: FL[a.st] }));
+          ws.getRow(r).height = it.sub ? 42 : 28; r++; });
       });
     });
     r += 2;
@@ -306,7 +311,8 @@
     cols.forEach(([h, w], i) => { ws.getColumn(i + 1).width = w; put(ws, 1, i + 1, h, { bold: true, center: true, fill: G }); });
     ws.views = [{ state: 'frozen', ySplit: 1 }];
     r = 2;
-    T.forEach(x => { const a = AG[x.id] || {};
+    const ORD = ['ЦА', 'КРГ', 'УК', 'Астана', 'Лаборатория'];
+    T.slice().sort((a, b) => ORD.indexOf(a.u) - ORD.indexOf(b.u)).forEach(x => { const a = AG[x.id] || {};
       [H.UN[x.u], x.d, x.old, x.nw, x.st.join('; '), r2(x.was), r2(x.now), x.pp.map(p => p.n + ' (' + H.fmt(p.r) + ')').join(', '), ST[a.st] || '', a.c || '']
         .forEach((v, i) => put(ws, r, i + 1, v, { size: 10, center: i === 5 || i === 6, fill: FL[a.st] })); r++; });
     return wb.xlsx.writeBuffer();
