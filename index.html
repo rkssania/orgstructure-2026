@@ -88,6 +88,14 @@ button{font:inherit;cursor:pointer;color:inherit}
 .dotm{color:var(--terra);font-size:10px}
 .names li.note{font-size:12px}
 .link{background:none;border:0;color:var(--terra);font-size:12px;padding:0;text-decoration:underline;text-underline-offset:2px}
+.btn.warn{border-color:var(--terra);color:var(--terra)}
+.acts{display:flex;flex-wrap:wrap;gap:4px 12px}
+.plist .form{list-style:none;display:flex;flex-direction:column;gap:6px;background:var(--bg);border-radius:6px;padding:8px;margin:4px 0}
+.plist .form label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
+.plist .form select,.plist .form input{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:5px;padding:4px 6px;max-width:100%}
+.addpos{list-style:none;padding:4px 2px}
+.mgr .link,.hbox .link{color:var(--navy-ink);opacity:.85;font-size:11.5px;display:inline-block;margin-top:4px}
+.leadl{background:var(--card);border-radius:6px;padding:4px 6px;margin-top:6px;text-align:left;color:var(--ink)}
 .logp{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:12px;max-height:280px;overflow:auto;font-size:13px}
 .logp ul{margin:6px 0 0;padding-left:18px}.logp .lt{color:var(--muted);font-variant-numeric:tabular-nums}
 .plan-head{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between;align-items:flex-end;margin-bottom:8px}
@@ -200,7 +208,44 @@ function namesOf(list){return list.filter(r=>r.n).map(r=>r.n.split(' ').slice(0,
 
 let PLAN={}, openT=new Set(), BASE=[], MOVES={}, NOTES={}, LOG=[], db=null, usr=null, canW=null, editId=null, editVal={}, noteKey=null, noteVal='', showLog=false, PROF={};
 const nkey=k=>'n'+Array.from(k).reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7).toString(36)+k.length;
-function applyMoves(){DATA.rows=BASE.map(r=>MOVES[r.id]?Object.assign({},r,{g:MOVES[r.id].g,d:MOVES[r.id].d,p:MOVES[r.id].p,r:MOVES[r.id].r,mv:MOVES[r.id]}):r)}
+let BD=null, POSX={}, PEOPLE={}, POSID={}, addKey=null, apVal={}, peKey=null, peVal={}, paKey=null, paVal={};
+const K=(...a)=>a.join('|');
+const rid=()=>'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+// effective data = исходные данные + все правки коллег (переносы людей, новые сотрудники, изменения должностей)
+function applyMoves(){
+  if(!BD)return;
+  const units=JSON.parse(JSON.stringify(BD.units)); let src=BD.shrsrc.map(x=>Object.assign({},x));
+  const dept=(u,g,d)=>{const U=units.find(x=>x.id===u),G=U&&U.groups.find(x=>x.name===g);return G&&G.depts.find(x=>x.name===d)};
+  const alias={}; POSID={};
+  Object.entries(POSX).sort((a,b)=>(a[1].at||0)-(b[1].at||0)).forEach(([id,x])=>{
+    const f=x.from, t=x.del?null:x.to, fk=f&&K(...f), tk=t&&K(...t);
+    const fd=f&&dept(f[0],f[1],f[2]), td=t&&dept(t[0],t[1],t[2]);
+    let idx=-1; if(fd){idx=fd.pos.indexOf(f[3]); if(idx>=0) fd.pos.splice(idx,1);}
+    if(td&&!td.pos.includes(t[3])){ if(fd===td&&idx>=0) td.pos.splice(idx,0,t[3]); else td.pos.push(t[3]); }
+    const es=f?src.filter(s=>K(s.u,s.g,s.d,s.p)===fk):[];
+    if(!t) es.forEach(s=>s._del=true);
+    else { es.forEach(s=>{s.u=t[0];s.g=t[1];s.d=t[2];s.p=t[3]});
+      if(x.cnt!=null){ if(es.length) es.forEach((s,i)=>s.cnt=i?0:x.cnt); else src.push({u:t[0],g:t[1],d:t[2],p:t[3],old:t[3],cat:'',cnt:x.cnt,f:'new',code:'',c:''}); } }
+    [fk,...(x.hist||[])].filter(Boolean).forEach(k=>{if(k!==tk)alias[k]=tk||null});
+    if(tk) POSID[tk]=id;
+  });
+  src=src.filter(s=>!s._del);
+  const struct=new Set(); units.forEach(U=>U.groups.forEach(G=>G.depts.forEach(D=>D.pos.forEach(p=>struct.add(K(U.id,G.name,D.name,p))))));
+  const res=k=>(k in alias)?alias[k]:k;
+  const place=(r,k)=>{ if(k&&struct.has(k)){const [u,g,d,p]=k.split('|');return Object.assign({},r,{u,g,d,p})}
+    const o=Object.assign({},r,{g:DEC,d:DEC}); if(k){const s=k.split('|');o.u=s[0];o.p=s[3]} return o; };
+  const rows=[];
+  BASE.forEach(r=>{const m=MOVES[r.id];
+    if(m){ if(m.del) return; rows.push(place(Object.assign({},r,{r:m.r,n:m.n!=null?m.n:r.n,mv:m}),res(K(m.u||r.u,m.g,m.d,m.p)))); }
+    else rows.push(place(r,res(K(r.u,r.g,r.d,r.p))));
+  });
+  Object.entries(PEOPLE).forEach(([id,x])=>rows.push(place({id:'x'+id,u:x.u,g:x.g,d:x.d,p:x.p,n:x.n,r:x.r,o:'',f:'add',c:'',note:'',mv:x,added:true},res(K(x.u,x.g,x.d,x.p)))));
+  SHR={}; src.forEach(s=>{const k=K(s.u,s.g,s.d,s.p);SHR[k]=Math.round(((SHR[k]||0)+s.cnt)*100)/100});
+  DATA=Object.assign({},BD,{units,shrsrc:src,rows});
+}
+function deptOptions(u,cur){const U=DATA.units.find(x=>x.id===u);let o='';
+  U.groups.forEach(g=>g.depts.forEach(d=>{const v=K(g.name,d.name);o+=`<option value="${esc(v)}"${v===cur?' selected':''}>${esc(d.name==='Руководство'?g.name+' — руководство':dname(d.name))}</option>`}));return o}
+const unitOptions=cur=>Object.keys(UN).map(x=>`<option value="${esc(x)}"${x===cur?' selected':''}>${esc(UN[x])}</option>`).join('');
 function who(id){const p=PROF[id];return (p&&p.name)||(id&&String(id).includes('@')?String(id).split('@')[0]:'коллега')}
 function when(t){try{return new Date(t).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}catch(_){return ''}}
 const editable=()=>db&&canW!==false;
@@ -210,11 +255,11 @@ function posOptions(u,cur){
   return o;
 }
 function personLi(r,g){
-  const info=`${r.o&&norm(r.o)!==norm(r.p)&&g!==DEC?`<span class="was">было: ${esc(r.o)}</span>`:''}${r.f==='q'?`<span class="q">уточнить: ${esc(r.c||'')}</span>`:''}${r.f==='dec'&&r.c?`<span class="was">${esc(r.c)}</span>`:''}${r.note&&r.note!=='вакансия'?`<span class="was">${esc(r.note)}</span>`:''}${r.mv?`<span class="mvd">изменено: ${esc(who(r.mv.by))}, ${when(r.mv.at)}</span>`:''}`;
+  const info=`${r.o&&norm(r.o)!==norm(r.p)&&g!==DEC?`<span class="was">было: ${esc(r.o)}</span>`:''}${r.f==='q'?`<span class="q">уточнить: ${esc(r.c||'')}</span>`:''}${r.f==='dec'&&r.c?`<span class="was">${esc(r.c)}</span>`:''}${r.note&&r.note!=='вакансия'?`<span class="was">${esc(r.note)}</span>`:''}${r.mv?`<span class="mvd">${r.added?'добавлен':'изменено'}: ${esc(who(r.mv.by))}, ${when(r.mv.at)}</span>`:''}`;
   let h=`<li><span class="nm">${r.n?esc(r.n):'<span class="vac">замещение / см. примечание</span>'}${info}</span><span class="rt">${fmt(r.r)}${editable()&&editId!==r.id?` <button class="ed" type="button" data-ed="${r.id}" aria-label="Изменить">✎</button>`:''}</span></li>`;
   if(editId===r.id){
-    const cur=editVal.pos||[r.g,r.d,r.p].join('|');
-    h+=`<li class="form"><label>Должность<select id="ed-pos">${posOptions(r.u,cur)}</select></label><label>Ставка<input id="ed-rate" type="number" step="0.25" min="0" max="2" value="${esc(editVal.rate!=null?editVal.rate:r.r)}"></label><div class="fbtns"><button class="btn primary" type="button" data-save="${r.id}">Сохранить</button><button class="btn" type="button" data-cancel="1">Отмена</button>${MOVES[r.id]?`<button class="btn" type="button" data-revert="${r.id}">Вернуть как было</button>`:''}</div></li>`;
+    const eu=editVal.u||r.u, cur=editVal.pos||(eu===r.u&&r.g!==DEC?K(r.g,r.d,r.p):'');
+    h+=`<li class="form"><label>ФИО<input id="ed-n" value="${esc(editVal.n!=null?editVal.n:(r.n||''))}" placeholder="пусто — вакансия"></label><label>Подразделение<select id="ed-u">${unitOptions(eu)}</select></label><label>Должность<select id="ed-pos">${cur?'':'<option value="">— выберите должность —</option>'}${posOptions(eu,cur)}</select></label><label>Ставка<input id="ed-rate" type="number" step="0.25" min="0" max="2" value="${esc(editVal.rate!=null?editVal.rate:r.r)}"></label><div class="fbtns"><button class="btn primary" type="button" data-save="${r.id}">Сохранить</button><button class="btn" type="button" data-cancel="1">Отмена</button>${MOVES[r.id]?`<button class="btn" type="button" data-revert="${r.id}">Вернуть как было</button>`:''}<button class="btn warn" type="button" data-pdel="${r.id}">Убрать из расстановки</button></div></li>`;
   }
   return h;
 }
@@ -227,11 +272,17 @@ function posItem(u,g,d,p){
       (vac?`<li><span class="vac">Вакансия</span><span class="rt">${fmt(s-occ)}</span></li>`:'')+
       (isNew?`<li><span class="vac">Новая должность: ставки в ШР нет</span></li>`:'')+
       (note&&note.text&&noteKey!==nk?`<li class="note"><span>💬 ${esc(note.text)}<span class="was">${esc(who(note.by))}, ${when(note.at)}</span></span></li>`:'')+
-      (noteKey===nk?`<li class="form"><label>Заметка к должности<textarea id="note-text" rows="2">${esc(noteVal)}</textarea></label><div class="fbtns"><button class="btn primary" type="button" data-nsave="${esc(key)}">Сохранить</button><button class="btn" type="button" data-cancel="1">Отмена</button></div></li>`
-        :(editable()?`<li><button class="link" type="button" data-note="${esc(key)}">${note&&note.text?'изменить заметку':'добавить заметку'}</button></li>`:''))+'</ul>';
+      (noteKey===nk?`<li class="form"><label>Заметка к должности<textarea id="note-text" rows="2">${esc(noteVal)}</textarea></label><div class="fbtns"><button class="btn primary" type="button" data-nsave="${esc(key)}">Сохранить</button><button class="btn" type="button" data-cancel="1">Отмена</button></div></li>`:'')+
+      (addKey===key?`<li class="form"><label>ФИО нового сотрудника<input id="ap-n" value="${esc(apVal.n||'')}"></label><label>Ставка<input id="ap-r" type="number" step="0.25" min="0" max="2" value="${esc(apVal.r!=null?apVal.r:1)}"></label><div class="fbtns"><button class="btn primary" type="button" data-apsave="${esc(key)}">Добавить</button><button class="btn" type="button" data-cancel="1">Отмена</button></div></li>`:'')+
+      (peKey===key&&g!==DEC?posForm(key):'')+
+      (editable()&&noteKey!==nk&&addKey!==key&&peKey!==key?`<li class="acts">${g!==DEC?`<button class="link" type="button" data-addp="${esc(key)}">+ сотрудник</button><button class="link" type="button" data-pe="${esc(key)}">изменить должность / ставки</button>`:''}<button class="link" type="button" data-note="${esc(key)}">${note&&note.text?'изменить заметку':'заметка'}</button></li>`:'')+'</ul>';
   }
   const cnt=g===DEC?`${fmt(occ)} ед.`:`${fmt(occ)} / ${fmt(s)}`;
   return `<li><button class="pbtn${vac?' vac':''}${isNew?' new':''}" type="button" data-o="${esc('p|'+key)}" aria-expanded="${isOpen}"><span>${esc(disp(p))}${note&&note.text?' 💬':''}${pr.some(r=>r.mv)?' <span class="dotm" title="изменено">●</span>':''}</span><span class="pc">${cnt}</span></button>${names}</li>`;
+}
+function posForm(key){
+  const [u,g,d,p]=key.split('|'), eu=peVal.u||u, gd=peVal.gd||(eu===u?K(g,d):'');
+  return `<li class="form"><label>Название должности<input id="pe-n" value="${esc(peVal.n!=null?peVal.n:p)}"></label><label>Подразделение<select id="pe-u">${unitOptions(eu)}</select></label><label>Отдел<select id="pe-d">${gd?'':'<option value="">— выберите отдел —</option>'}${deptOptions(eu,gd)}</select></label><label>Штатных единиц по ШР<input id="pe-c" type="number" step="0.25" min="0" value="${esc(peVal.c!=null?peVal.c:sh(u,g,d,p))}"></label><p class="hint" style="margin:0">Сотрудники на этой должности переедут вместе с ней.</p><div class="fbtns"><button class="btn primary" type="button" data-pesave="${esc(key)}">Сохранить</button><button class="btn" type="button" data-cancel="1">Отмена</button>${POSID[key]&&POSX[POSID[key]].from?`<button class="btn" type="button" data-perev="${esc(key)}">Вернуть как было</button>`:''}<button class="btn warn" type="button" data-pedel="${esc(key)}">Удалить должность</button></div></li>`;
 }
 const FN=['Отдел госпитальной фармации','Отдел службы поддержки пациентов филиала','Лаборатория филиала','Специалисты ЦА в филиале'];
 const closed=new Set();
@@ -241,7 +292,9 @@ function deptCard(u,g,d,dec,defOpen,flat){
   const pr=DATA.rows.filter(r=>r.u===u&&r.g===g&&r.d===d.name);
   const s=d.pos.reduce((a,p)=>a+sh(u,g,d.name,p),0), occ=pr.reduce((a,r)=>a+r.r,0);
   const cnt=dec?fmt(occ)+' ед.':fmt(occ)+' / '+fmt(s);
-  const list=`<ul class="plist">${d.pos.map(p=>posItem(u,g,d.name,p)).join('')}</ul>`;
+  const dk=K(u,g,d.name);
+  const add=dec||!editable()?'':(paKey===dk?`<li class="form"><label>Новая должность<input id="pa-n" value="${esc(paVal.n||'')}"></label><label>Штатных единиц<input id="pa-c" type="number" step="0.25" min="0" value="${esc(paVal.c!=null?paVal.c:1)}"></label><div class="fbtns"><button class="btn primary" type="button" data-pasave="${esc(dk)}">Добавить</button><button class="btn" type="button" data-cancel="1">Отмена</button></div></li>`:`<li class="addpos"><button class="link" type="button" data-pa="${esc(dk)}">+ добавить должность</button></li>`);
+  const list=`<ul class="plist">${d.pos.map(p=>posItem(u,g,d.name,p)).join('')}${add}</ul>`;
   if(d.name===g||flat) return `<div class="dept open flat"><div class="dsum">${cnt}</div>${list}</div>`;
   const label=d.name.startsWith(g+' · ')?d.name.slice(g.length+3):dname(d.name);
   return `<div class="dept${isOpen?' open':''}${d.name.startsWith(g+' · ')?' sub':''}"><button class="dbtn" type="button" data-o="${esc(key)}" data-def="${defOpen?1:0}" aria-expanded="${isOpen}"><span class="dn">${esc(label)}</span><span class="dm">${cnt}</span></button>${isOpen?list:''}</div>`;
@@ -252,19 +305,21 @@ function unitView(uid){
   const tot=Object.entries(SHR).filter(([k])=>k.startsWith(uid+'|')).reduce((a,[,v])=>a+v,0);
   const occ=rs.reduce((a,r)=>a+r.r,0), people=new Set(rs.filter(r=>r.n).map(r=>r.n)).size, dec=rs.filter(r=>r.d===DEC).length;
   let h=`<div class="stats"><div class="stat"><b>${fmt(tot)}</b>штатных единиц</div><div class="stat"><b>${fmt(occ)}</b>занято</div><div class="stat"><b>${people}</b>сотрудников</div>${dec?`<div class="stat"><b style="color:var(--terra)">${dec}</b>вне новой схемы</div>`:''}<span class="sp"></span>${db?`<button class="btn" type="button" data-log="1">История изменений · ${LOG.length}</button>`:''}<button class="btn" type="button" data-all="1">Развернуть все отделы</button><button class="btn" type="button" data-all="0">Свернуть</button></div>
-  <p class="hint">Нажмите на должность, чтобы увидеть, кто её занимает. Цифры: занято / штатных единиц.${editable()?' Чтобы перенести человека или поменять ставку, нажмите ✎ рядом с ним.':''}</p>`;
+  <p class="hint">Нажмите на должность, чтобы увидеть, кто её занимает. Цифры: занято / штатных единиц.${editable()?' Нажмите ✎ рядом с человеком, чтобы перенести его (в т.ч. в другой филиал), поменять ставку или ФИО. В раскрытой должности: «+ сотрудник», «изменить должность / ставки»; внизу отдела — «+ добавить должность».':''}</p>`;
   if(showLog) h+=`<div class="logp"><b>История изменений</b>${LOG.length?'<ul>'+LOG.map(l=>`<li><span class="lt">${when(l.at)}</span> ${esc(who(l.by))}: ${esc(l.text)}</li>`).join('')+'</ul>':'<p class="hint">Пока изменений нет.</p>'}</div>`;
   const head=u.groups[0];
   const headPos=head.depts[0].pos[0];
   const headPpl=ppl(uid,head.name,head.depts[0].name,headPos);
   const extra=head.depts[0].pos.filter(p=>p!==headPos).map(p=>({d:head.depts[0].name,p}));
   const headCols=head.depts.slice(1);
-  h+=`<div class="chart-scroll"><div class="chart"><div class="head"><div class="hbox"><div class="t">${esc(headPos)}</div><div class="n">${esc(namesOf(headPpl))||'вакансия'}</div></div>${extra.map(e=>{const pp=ppl(uid,head.name,e.d,e.p);return `<div class="side"><div class="dept"><ul class="plist">${posItem(uid,head.name,e.d,e.p)}</ul></div></div>`}).join('')}</div><div class="vline"></div><div class="cols">`;
+  const lk=K('lead',uid,head.name), lo=open.has(lk);
+  h+=`<div class="chart-scroll"><div class="chart"><div class="head"><div class="hbox"><div class="t">${esc(headPos)}</div><div class="n">${esc(namesOf(headPpl))||'вакансия'}</div>${editable()?`<button class="link" type="button" data-o="${esc(lk)}">${lo?'скрыть':'изменить'}</button>`:''}${lo?`<div class="leadl"><ul class="plist">${posItem(uid,head.name,head.depts[0].name,headPos)}</ul></div>`:''}</div>${extra.map(e=>{const pp=ppl(uid,head.name,e.d,e.p);return `<div class="side"><div class="dept"><ul class="plist">${posItem(uid,head.name,e.d,e.p)}</ul></div></div>`}).join('')}</div><div class="vline"></div><div class="cols">`;
   headCols.forEach(d=>{h+=`<div class="col svc"><div class="mgr plain"><span class="t">${esc(d.name)}</span></div>${deptCard(uid,head.name,d,false,true,true)}</div>`});
   u.groups.slice(1).forEach(g=>{
     const lead=g.depts.find(d=>d.name==='Руководство');
     let mgr;
-    if(lead){const pp=lead.pos.flatMap(p=>ppl(uid,g.name,'Руководство',p));mgr=`<div class="mgr"><span class="t">${esc(lead.pos.join(' / '))}</span><span class="n">${esc(namesOf(pp))||'вакансия'}</span></div>`}
+    if(lead){const pp=lead.pos.flatMap(p=>ppl(uid,g.name,'Руководство',p)), lk=K('lead',uid,g.name), lo=open.has(lk);
+      mgr=`<div class="mgr"><span class="t">${esc(lead.pos.join(' / '))}</span><span class="n">${esc(namesOf(pp))||'вакансия'}</span>${editable()?`<button class="link" type="button" data-o="${esc(lk)}">${lo?'скрыть':'изменить'}</button>`:''}${lo?`<div class="leadl"><ul class="plist">${lead.pos.map(p=>posItem(uid,g.name,'Руководство',p)).join('')}</ul></div>`:''}</div>`}
     else mgr=`<div class="mgr plain${FN.includes(g.name)?' fn':''}"><span class="t">${esc(g.name)}</span>${FN.includes(g.name)?'<span class="n">функционально — ЦА</span>':''}</div>`;
     const svc=!lead;
     h+=`<div class="col${svc?' svc':''}">${mgr}${g.depts.filter(d=>d.name!=='Руководство').map(d=>deptCard(uid,g.name,d,false,true)).join('')}</div>`;
@@ -316,11 +371,21 @@ function render(){
 }
 document.addEventListener('click',e=>{
   const ti=e.target.closest('[data-ti]'); if(ti){const k=ti.dataset.ti; openT.has(k)?openT.delete(k):openT.add(k); return rer();}
-  const t=e.target.closest('[data-o],[data-all],[data-fu],[data-fs],[data-ch],[data-ed],[data-save],[data-cancel],[data-revert],[data-note],[data-nsave],[data-log]'); if(!t)return;
-  if(t.dataset.ed){editId=t.dataset.ed;editVal={};noteKey=null;return rer()}
-  if(t.dataset.cancel){editId=null;noteKey=null;return rer()}
+  const t=e.target.closest('[data-o],[data-all],[data-fu],[data-fs],[data-ch],[data-ed],[data-save],[data-cancel],[data-revert],[data-note],[data-nsave],[data-log],[data-pdel],[data-addp],[data-apsave],[data-pe],[data-pesave],[data-perev],[data-pedel],[data-pa],[data-pasave]'); if(!t)return;
+  const reset=()=>{editId=null;noteKey=null;addKey=null;peKey=null;paKey=null;editVal={};apVal={};peVal={};paVal={}};
+  if(t.dataset.ed){reset();editId=t.dataset.ed;return rer()}
+  if(t.dataset.cancel){reset();return rer()}
+  if(t.dataset.addp){reset();addKey=t.dataset.addp;return rer()}
+  if(t.dataset.pe){reset();peKey=t.dataset.pe;return rer()}
+  if(t.dataset.pa){reset();paKey=t.dataset.pa;return rer()}
+  if(t.dataset.pdel){return delPerson(t.dataset.pdel)}
+  if(t.dataset.apsave){return addPerson(t.dataset.apsave)}
+  if(t.dataset.pesave){return savePos(t.dataset.pesave)}
+  if(t.dataset.perev){return revertPos(t.dataset.perev)}
+  if(t.dataset.pedel){return delPos(t.dataset.pedel)}
+  if(t.dataset.pasave){return addPos(t.dataset.pasave)}
   if(t.dataset.log){showLog=!showLog;return rer()}
-  if(t.dataset.note){const k=t.dataset.note;noteKey=nkey(k);noteVal=(NOTES[noteKey]&&NOTES[noteKey].text)||'';editId=null;return rer()}
+  if(t.dataset.note){const k=t.dataset.note;reset();noteKey=nkey(k);noteVal=(NOTES[noteKey]&&NOTES[noteKey].text)||'';return rer()}
   if(t.dataset.save){return saveMove(t.dataset.save)}
   if(t.dataset.revert){return revertMove(t.dataset.revert)}
   if(t.dataset.nsave){return saveNote(t.dataset.nsave)}
@@ -332,8 +397,14 @@ document.addEventListener('click',e=>{
   rer();
 });
 function rer(){const y=window.scrollY; render(); window.scrollTo(0,y);}
-document.addEventListener('input',e=>{if(e.target.id==='ed-pos')editVal.pos=e.target.value;if(e.target.id==='ed-rate')editVal.rate=e.target.value;if(e.target.id==='note-text')noteVal=e.target.value;});
-document.addEventListener('change',e=>{if(e.target.id==='ed-pos')editVal.pos=e.target.value; const c=e.target.closest('[data-task]'); if(c) saveTask(c.dataset.task,c.checked);});
+document.addEventListener('input',e=>{const id=e.target.id,v=e.target.value;
+  if(id==='ed-pos')editVal.pos=v;if(id==='ed-rate')editVal.rate=v;if(id==='ed-n')editVal.n=v;if(id==='note-text')noteVal=v;
+  if(id==='ap-n')apVal.n=v;if(id==='ap-r')apVal.r=v;if(id==='pe-n')peVal.n=v;if(id==='pe-c')peVal.c=v;if(id==='pe-d')peVal.gd=v;if(id==='pa-n')paVal.n=v;if(id==='pa-c')paVal.c=v;});
+document.addEventListener('change',e=>{const id=e.target.id,v=e.target.value;
+  if(id==='ed-pos')editVal.pos=v; if(id==='pe-d')peVal.gd=v;
+  if(id==='ed-u'){editVal.u=v;editVal.pos=null;return rer()}
+  if(id==='pe-u'){peVal.u=v;peVal.gd=null;return rer()}
+  const c=e.target.closest('[data-task]'); if(c) saveTask(c.dataset.task,c.checked);});
 window.addEventListener('hashchange',render);
 
 // downloads: build Excel in the center's forms from current data (edits included)
@@ -349,16 +420,54 @@ async function dl(key){
 async function profiles(ids){if(!usr||!ids.length)return;try{const ps=await usr.profiles([...new Set(ids)]);Object.assign(PROF,ps)}catch(_){}}
 function denied(err){const c=err&&err.code;if(c==='not_granted'){setSync('prompt','Сохранение не разрешено: нажмите «Включить» и подтвердите.');toast('Не сохранилось: нужно разрешение — нажмите «Включить» вверху');}else if(c==='capability_disabled'||c==='revoked'){canW=false;setSync('view','Только просмотр: попросите владельца дать доступ на редактирование.');toast('Не сохранилось: у вас доступ только для просмотра');}else toast('Не сохранилось: '+((err&&(err.code||err.message))||'ошибка'));editId=null;noteKey=null;rer()}
 async function addLog(text){try{const me=await usr.id();await db.collection('log').add({at:Date.now(),by:me||'',text})}catch(_){}}
+const num=v=>parseFloat(String(v==null?'':v).replace(',','.'));
+const done=msg=>{editId=null;addKey=null;peKey=null;paKey=null;editVal={};apVal={};peVal={};paVal={};toast(msg);rer()};
 async function saveMove(id){
-  const r=BASE.find(x=>x.id===id), sel=$('ed-pos').value.split('|'), rate=parseFloat(String($('ed-rate').value).replace(',','.'));
+  const cur=DATA.rows.find(x=>x.id===id), u=$('ed-u').value, v=$('ed-pos').value, rate=num($('ed-rate').value), n=$('ed-n').value.trim();
+  if(!v){toast('Выберите должность');return}
   if(!(rate>=0)){toast('Укажите ставку числом, например 0,5');return}
-  const cur=DATA.rows.find(x=>x.id===id);
-  try{const me=await usr.id();
-    await db.collection('moves').doc(id).set({g:sel[0],d:sel[1],p:sel[2],r:rate,by:me||'',at:Date.now()});
-    await addLog(`${r.n||'вакансия'} (${UN[r.u]}): ${disp(cur.p)} ${fmt(cur.r)} → ${disp(sel[2])} ${fmt(rate)}`);
-    editId=null;toast('Сохранено, коллеги увидят изменение');rer();
+  const sel=v.split('|'), rec={u,g:sel[0],d:sel[1],p:sel[2],r:rate,n};
+  try{
+    if(cur.added) await db.collection('people').doc(id.slice(1)).set(rec); else await db.collection('moves').doc(id).set(rec);
+    await addLog(`${n||cur.n||'вакансия'}: ${UN[cur.u]}, ${disp(cur.p)} ${fmt(cur.r)} → ${UN[u]}, ${disp(sel[2])} ${fmt(rate)}`);
+    done('Сохранено, коллеги увидят изменение');
   }catch(err){denied(err)}
 }
+async function delPerson(id){const cur=DATA.rows.find(x=>x.id===id);
+  if(!confirm(`Убрать «${cur.n||'вакансия'}» из расстановки?`))return;
+  try{ if(cur.added) await db.collection('people').doc(id.slice(1)).delete();
+    else await db.collection('moves').doc(id).set({u:cur.u,g:cur.g,d:cur.d,p:cur.p,r:cur.r,n:cur.n||'',del:true});
+    await addLog(`${cur.n||'вакансия'} (${UN[cur.u]}, ${disp(cur.p)}): убран(а) из расстановки`); done('Убрано');
+  }catch(err){denied(err)}}
+async function addPerson(key){const [u,g,d,p]=key.split('|'), n=$('ap-n').value.trim(), r=num($('ap-r').value);
+  if(!n){toast('Впишите ФИО');return} if(!(r>=0)){toast('Укажите ставку числом');return}
+  try{await db.collection('people').doc(rid()).set({u,g,d,p,n,r}); await addLog(`${n}: добавлен(а) — ${UN[u]}, ${disp(p)} ${fmt(r)}`); done('Сотрудник добавлен');}catch(err){denied(err)}}
+const hasPos=(u,g,d,p)=>{const U=DATA.units.find(x=>x.id===u),G=U&&U.groups.find(x=>x.name===g),D=G&&G.depts.find(x=>x.name===d);return !!(D&&D.pos.includes(p))};
+async function savePos(key){
+  const [u0,g0,d0,p0]=key.split('|'), n=$('pe-n').value.trim(), u=$('pe-u').value, gdv=$('pe-d').value, c=num($('pe-c').value);
+  if(!n){toast('Впишите название должности');return} if(!gdv){toast('Выберите отдел');return} if(!(c>=0)){toast('Укажите штатные единицы числом');return}
+  const gd=gdv.split('|'), to=[u,gd[0],gd[1],n], tk=K(...to);
+  if(tk===key&&c===sh(u0,g0,d0,p0)){done('Изменений нет');return}
+  if(tk!==key&&hasPos(...to)){toast('Такая должность уже есть в этом отделе');return}
+  const id=POSID[key], prev=id&&POSX[id];
+  const doc=prev?{from:prev.from||null,to,cnt:c,del:false,hist:[...new Set([...(prev.hist||[]),key])]}:{from:[u0,g0,d0,p0],to,cnt:c,del:false,hist:[]};
+  try{await db.collection('posx').doc(id||rid()).set(doc);
+    const parts=[]; if(n!==p0)parts.push(`переименована в «${n}»`); if(u!==u0||gd[0]!==g0||gd[1]!==d0)parts.push(`перенесена: ${UN[u]}, ${dname(gd[1]==='Руководство'?gd[0]:gd[1])}`); if(c!==sh(u0,g0,d0,p0))parts.push(`штатных единиц ${fmt(sh(u0,g0,d0,p0))} → ${fmt(c)}`);
+    await addLog(`должность «${disp(p0)}» (${UN[u0]}): ${parts.join('; ')}`); done('Должность сохранена');
+  }catch(err){denied(err)}}
+async function revertPos(key){const id=POSID[key];if(!id)return;
+  try{await db.collection('posx').doc(id).delete(); await addLog(`должность «${disp(key.split('|')[3])}»: возвращена как было`); done('Возвращено');}catch(err){denied(err)}}
+async function delPos(key){const [u,g,d,p]=key.split('|'), pp=ppl(u,g,d,p).filter(r=>r.n);
+  if(!confirm(`Удалить должность «${disp(p)}»?${pp.length?` Сотрудники (${pp.length}) попадут в «Вне новой схемы».`:''}`))return;
+  const id=POSID[key], prev=id&&POSX[id];
+  try{ if(prev&&!prev.from) await db.collection('posx').doc(id).delete();
+    else await db.collection('posx').doc(id||rid()).set({from:prev?prev.from:[u,g,d,p],to:null,cnt:0,del:true,hist:prev?[...new Set([...(prev.hist||[]),key])]:[]});
+    await addLog(`должность «${disp(p)}» (${UN[u]}): удалена`); done('Должность удалена');
+  }catch(err){denied(err)}}
+async function addPos(dk){const [u,g,d]=dk.split('|'), n=$('pa-n').value.trim(), c=num($('pa-c').value);
+  if(!n){toast('Впишите название должности');return} if(!(c>=0)){toast('Укажите штатные единицы числом');return}
+  if(hasPos(u,g,d,n)){toast('Такая должность уже есть в этом отделе');return}
+  try{await db.collection('posx').doc(rid()).set({from:null,to:[u,g,d,n],cnt:c,del:false,hist:[]}); await addLog(`новая должность «${n}» (${UN[u]}, ${dname(d==='Руководство'?g:d)}): ${fmt(c)} шт. ед.`); done('Должность добавлена');}catch(err){denied(err)}}
 async function revertMove(id){const r=BASE.find(x=>x.id===id);try{await db.collection('moves').doc(id).delete();await addLog(`${r.n||'вакансия'} (${UN[r.u]}): возвращено как было — ${disp(r.p)} ${fmt(r.r)}`);editId=null;toast('Возвращено');rer()}catch(err){denied(err)}}
 async function saveNote(key){const nk=nkey(key), txt=$('note-text').value.trim();
   try{const me=await usr.id(); if(txt) await db.collection('notes').doc(nk).set({key,text:txt,by:me||'',at:Date.now()}); else await db.collection('notes').doc(nk).delete();
@@ -376,7 +485,7 @@ function mkDb(){
     return data.map(x=>({id:x.id,data:()=>Object.assign({},x.data,{by:x.by_email,at:Date.parse(x.at)})}));
   }
   async function fire(name){try{const docs=await load(name);(subs[name]||[]).forEach(f=>f({docs}))}catch(e){(subs[name+'!']||[]).forEach(f=>f(e))}}
-  SB.channel('rt').on('postgres_changes',{event:'*',schema:'public',table:'items'},p=>{const c=(p.new&&p.new.coll)||(p.old&&p.old.coll);if(c)fire(c);else ['moves','notes','plan'].forEach(fire)})
+  SB.channel('rt').on('postgres_changes',{event:'*',schema:'public',table:'items'},p=>{const c=(p.new&&p.new.coll)||(p.old&&p.old.coll);if(c)fire(c);else ['moves','people','posx','notes','plan'].forEach(fire)})
     .on('postgres_changes',{event:'*',schema:'public',table:'log'},()=>fire('log'))
     .on('postgres_changes',{event:'*',schema:'public',table:'dataset'},()=>{toast('Исходные данные обновлены — перезагружаю');setTimeout(()=>location.reload(),1500)})
     .subscribe(st=>{if(st==='SUBSCRIBED')setSync('on','Совместная работа включена: правки сразу видят все.');else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT')setSync('err','Нет связи для обновлений в реальном времени. Обновите страницу.')});
@@ -393,7 +502,7 @@ async function initShared(){
   db=mkDb();
   usr={id:async()=>ME,can:async()=>true,profiles:async ids=>Object.fromEntries(ids.map(i=>[i,{name:i}]))};
   canW=true;
-  ['moves','notes','plan'].forEach(c=>db.collection(c).onSnapshot(sn=>{const m={};sn.docs.forEach(d=>m[d.id]=d.data());if(c==='moves'){MOVES=m;applyMoves()}else if(c==='notes')NOTES=m;else PLAN=m;rer()},e=>setSync('err','Ошибка чтения: '+(e.message||e))));
+  ['moves','people','posx','notes','plan'].forEach(c=>db.collection(c).onSnapshot(sn=>{const m={};sn.docs.forEach(d=>m[d.id]=d.data());if(c==='moves'){MOVES=m;applyMoves()}else if(c==='people'){PEOPLE=m;applyMoves()}else if(c==='posx'){POSX=m;applyMoves()}else if(c==='notes')NOTES=m;else PLAN=m;rer()},e=>setSync('err','Ошибка чтения: '+(e.message||e))));
   db.collection('log').onSnapshot(sn=>{LOG=sn.docs.map(d=>d.data());rer()});
   rer();
 }
@@ -403,7 +512,7 @@ async function loadData(){
   const {data,error}=await SB.from('dataset').select('data').eq('id','main').maybeSingle();
   if(error){$('main').innerHTML='<div class="loading">Ошибка загрузки: '+esc(error.message)+'</div>';return}
   if(!data){$('main').innerHTML='<div class="loading">Данных пока нет. Нажмите внизу «загрузить исходные данные» и выберите файл orgstructure-data.json.</div>';initShared();return}
-  const d=data.data; DATA=d; BASE=d.rows; SHR={}; d.shr.forEach(([u,g,dd,p,v])=>SHR[[u,g,dd,p].join('|')]=v); applyMoves(); render(); initShared();
+  const d=data.data; BD=d; DATA=d; BASE=d.rows; applyMoves(); render(); initShared();
 }
 $('upl').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;
   try{const d=JSON.parse(await f.text()); if(!d.units||!d.rows||!d.shrsrc) throw new Error('это не файл orgstructure-data.json');
