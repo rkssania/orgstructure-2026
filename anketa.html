@@ -1,0 +1,364 @@
+<!doctype html><html lang="ru"><head><title>Анкеты функционала</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Sans+Narrow:wght@700&display=swap">
+<style>
+/* Анкеты функционала: список должностей по отделам → анкета должности (шапка как в бланке, ФИО, операции, чужие обязанности, пожелания) */
+:root{
+  --bg:#f3f5f9; --card:#ffffff; --ink:#14223d; --muted:#5b6782; --line:#c3cbdb;
+  --navy:#1b2f57; --navy-ink:#ffffff; --navy-soft:#e7ecf6;
+  --terra:#b8562f; --terra-soft:#f8e6dd; --amber:#9a6a00; --amber-soft:#fbf0d4; --ok:#2f6b45; --ok-soft:#e1efe6;
+  --f-body:"PT Sans",system-ui,sans-serif; --f-head:"PT Sans Narrow","PT Sans",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1626; --card:#16213a; --ink:#e6ebf5; --muted:#9aa6c0; --line:#34466b;
+  --navy:#2c4a86; --navy-ink:#ffffff; --navy-soft:#1d2c4c;
+  --terra:#e08462; --terra-soft:#3a2420; --amber:#e3b54d; --amber-soft:#3a3017; --ok:#7fc79a; --ok-soft:#173022; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1626; --card:#16213a; --ink:#e6ebf5; --muted:#9aa6c0; --line:#34466b;
+  --navy:#2c4a86; --navy-ink:#ffffff; --navy-soft:#1d2c4c;
+  --terra:#e08462; --terra-soft:#3a2420; --amber:#e3b54d; --amber-soft:#3a3017; --ok:#7fc79a; --ok-soft:#173022; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--terra);outline-offset:2px}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding-block:10px}
+h1{font-family:var(--f-head);font-size:21px;margin:0;flex:1 1 auto}
+.who{font-size:12.5px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.sync{width:100%;display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.sync .dot{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.sync.on{color:var(--ok)} .sync.on .dot{background:var(--ok)} .sync.err{color:var(--terra)} .sync.err .dot{background:var(--terra)}
+main{padding-block:14px 110px}
+.btn{border:1px solid var(--navy);background:var(--card);border-radius:7px;padding:7px 12px;font-size:14px}
+.btn.primary{background:var(--navy);color:var(--navy-ink)}
+.btn.warn{border-color:var(--terra);color:var(--terra)}
+.btn.small{padding:4px 9px;font-size:13px}
+.link{background:none;border:0;color:var(--terra);padding:0;text-decoration:underline;text-underline-offset:2px;font-size:13.5px}
+.hint{font-size:13px;color:var(--muted);margin:0 0 10px}
+.tabs{display:flex;gap:4px;overflow-x:auto;margin-bottom:12px}
+.tab{flex:none;border:1px solid var(--line);background:var(--card);border-radius:99px;padding:6px 13px;font-size:14px}
+.tab[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:var(--navy-ink)}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:7px;padding:6px 10px;font-size:12.5px;color:var(--muted)}
+.stat b{color:var(--ink);font-size:16px;margin-right:4px;font-variant-numeric:tabular-nums}
+.dept{background:var(--card);border:1px solid var(--line);border-radius:9px;margin-bottom:8px;overflow:hidden}
+.dept>button{width:100%;border:0;background:none;text-align:left;padding:11px 14px;display:flex;justify-content:space-between;gap:10px;font-weight:700}
+.dept>button .m{flex:none;font-weight:400;font-size:12.5px;color:var(--muted)}
+.dept.open>button{border-bottom:1px solid var(--line)}
+.plist{list-style:none;margin:0;padding:4px}
+.plist a{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:9px 10px;border-radius:7px;color:inherit;text-decoration:none}
+.plist a:hover{background:var(--bg)}
+.plist .t{min-width:0}
+.plist .s{display:block;font-size:12.5px;color:var(--muted)}
+.badge{flex:none;font-size:11.5px;border-radius:5px;padding:2px 7px;white-space:nowrap}
+.b-draft{background:var(--amber-soft);color:var(--amber);border:1px solid var(--amber)}
+.b-mx{background:var(--navy-soft);color:var(--ink)}
+.b-done{background:var(--ok-soft);color:var(--ok);font-weight:700}
+.back{display:inline-block;margin-bottom:10px;color:var(--terra);text-decoration:none;font-size:14px}
+.head{background:var(--navy);color:var(--navy-ink);border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.head h2{font-family:var(--f-head);font-size:22px;margin:0 0 4px;text-wrap:balance}
+.head .d{opacity:.9;font-size:13.5px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:12px}
+.box>h3{font-family:var(--f-head);font-size:17px;margin:0;padding:11px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.box>h3 .c{font-family:var(--f-body);font-size:12.5px;color:var(--muted);font-weight:400}
+.bin{padding:12px 14px}
+.kv{display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr);gap:6px 12px;font-size:14px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;overflow-wrap:anywhere}
+@media (max-width:520px){.kv{grid-template-columns:minmax(0,1fr)} .kv dd{margin-bottom:6px}}
+.ppl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.ppl li{display:flex;gap:8px;justify-content:space-between;align-items:center;font-size:14px}
+.ppl .u{flex:none;font-size:12px;color:var(--muted)}
+.op{border-top:1px solid var(--line);padding:11px 14px}
+.op:first-child{border-top:0}
+.op .row1{display:flex;gap:8px;align-items:flex-start}
+.op .n{flex:none;font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;min-width:22px;padding-top:1px}
+.op .pr{font-weight:700;flex:1;min-width:0;overflow-wrap:anywhere}
+.op .sc{flex:none;font-size:12px;border:1px solid var(--line);border-radius:4px;padding:1px 6px;color:var(--muted)}
+.op .ds{margin:4px 0 0 30px;white-space:pre-line;font-size:14px;overflow-wrap:anywhere}
+.flow{margin:8px 0 0 30px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px 12px;font-size:13px}
+@media (max-width:560px){.flow{grid-template-columns:minmax(0,1fr)}}
+.flow div{background:var(--bg);border-radius:6px;padding:6px 8px;overflow-wrap:anywhere;white-space:pre-line}
+.flow b{display:block;font-size:11.5px;color:var(--muted);font-weight:400;margin-bottom:1px}
+.op .ft{margin:6px 0 0 30px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+.chip{border:1px solid var(--line);border-radius:99px;padding:1px 8px;font-size:12px}
+.chip.off{text-decoration:line-through;opacity:.6}
+.chip.dr{border-color:var(--amber);color:var(--amber)}
+.who-ed{color:var(--terra)}
+form.ed{display:grid;gap:8px;background:var(--bg);border-radius:8px;padding:12px;margin-top:8px}
+form.ed label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--muted)}
+form.ed input,form.ed select,form.ed textarea{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:7px 9px;width:100%;color:var(--ink)}
+form.ed textarea{min-height:64px;resize:vertical}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+@media (max-width:560px){.two{grid-template-columns:minmax(0,1fr)}}
+.checks{display:flex;flex-wrap:wrap;gap:10px;font-size:14px;color:var(--ink)}
+.checks label{flex-direction:row!important;align-items:center;gap:5px!important;color:var(--ink)!important;font-size:14px!important}
+.fb{display:flex;flex-wrap:wrap;gap:8px}
+.sec-h{padding:9px 14px;background:var(--navy-soft);font-size:12.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.add{padding:10px 14px;border-top:1px solid var(--line)}
+.done-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.log{font-size:13px;margin:0;padding-left:18px}
+.log .t{color:var(--muted)}
+.foot{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px))}
+.foot .wrap{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:7px;font-size:13.5px;z-index:20;max-width:calc(100% - 32px)}
+.loading{padding:40px 0;text-align:center;color:var(--muted)}
+.login{position:fixed;inset:0;z-index:50;background:var(--bg);display:grid;place-items:center;padding:16px}
+.login form{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:22px;width:min(360px,100%);display:flex;flex-direction:column;gap:10px}
+.login h2{margin:0;font-family:var(--f-head)}
+.login input{border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--bg);color:var(--ink)}
+.login .err{color:var(--terra);font-size:13px;min-height:1em}
+.empty{padding:14px;color:var(--muted);font-size:14px}
+</style></head><body>
+<div class="top"><div class="wrap">
+  <h1>Анкеты функционала</h1>
+  <div class="who"><span id="me"></span><a class="link" href="./">Оргструктура</a><button class="link" id="logout" type="button" hidden>Выйти</button></div>
+  <div class="sync" id="sync"><span class="dot"></span><span>Подключаю…</span></div>
+</div></div>
+<main class="wrap" id="main"><div class="loading">Загружаю…</div></main>
+<div class="foot" id="foot" hidden><div class="wrap">
+  <button class="btn primary" id="dl-one" type="button" hidden>Скачать эту анкету (Excel)</button>
+  <button class="btn" id="dl-all" type="button">Скачать все анкеты</button>
+</div></div>
+<div class="toast" id="toast" hidden></div>
+<div class="login" id="login" hidden><form id="lf"><h2>Вход</h2><p class="hint" style="margin:0">Анкеты функционала ТОО «Центр гематологии». Войдите с тем же email, что и в оргструктуре.</p>
+<input id="lf-email" type="email" placeholder="Email" autocomplete="username" required><input id="lf-pass" type="password" placeholder="Пароль" autocomplete="current-password" required>
+<button class="btn primary" type="submit" id="lf-go">Войти</button><button class="link" type="button" id="lf-mode">Нет аккаунта? Зарегистрироваться</button><div class="err" id="lf-err"></div></form></div>
+<input type="file" id="seed" accept=".json,application/json" hidden>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="config.js?v=2"></script>
+<script>
+(function(){
+const COLL='anketa', BRS=['КРГ','УК','Астана'], SCOPES=['ЦА','Лаборатория','Филиалы'];
+const SCN={'ЦА':'Центральный аппарат','Лаборатория':'Лаборатория и ООЛЛ','Филиалы':'Филиалы (КРГ, УК, Астана)'};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const when=t=>{try{return new Date(t).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}catch(_){return''}};
+const dname=d=>String(d).replace(' · ',' — ');
+function toast(t){const el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3000)}
+function setSync(st,msg){const el=$('sync');el.className='sync '+st;el.innerHTML=`<span class="dot"></span><span>${esc(msg)}</span>`}
+let SB=null, ME='', CARDS={}, LOG=[], scope='ЦА', openD=new Set(), edit=null, LOADED=false;
+
+/* ---------- data ---------- */
+async function loadAll(){
+  const out={}; let from=0;
+  for(;;){const {data,error}=await SB.from('items').select('id,data,by_email,at').eq('coll',COLL).range(from,from+199); if(error)throw error;
+    data.forEach(x=>out[x.id]=Object.assign({},x.data,{_by:x.by_email,_at:Date.parse(x.at)})); if(data.length<200)break; from+=200;}
+  CARDS=out; LOADED=true;
+}
+async function loadLog(){const {data}=await SB.from('log').select('*').like('text','Анкеты:%').order('at',{ascending:false}).limit(40);LOG=data||[]}
+async function reloadOne(id){const {data,error}=await SB.from('items').select('id,data,by_email,at').eq('coll',COLL).eq('id',id).maybeSingle(); if(error)throw error; if(data)CARDS[id]=Object.assign({},data.data,{_by:data.by_email,_at:Date.parse(data.at)}); return CARDS[id]}
+async function mutate(id,fn,logText){
+  try{
+    const cur=await reloadOne(id); const d=JSON.parse(JSON.stringify(cur)); delete d._by; delete d._at;
+    fn(d); d.upd=Date.now();
+    const {error}=await SB.from('items').upsert({coll:COLL,id,data:d,by_email:ME,at:new Date().toISOString()}); if(error)throw error;
+    CARDS[id]=Object.assign({},d,{_by:ME,_at:Date.now()});
+    if(logText) SB.from('log').insert({by_email:ME,text:'Анкеты: «'+d.title+'» ('+dname(d.dept)+') — '+logText}).then(()=>{});
+    return true;
+  }catch(e){toast(/permission|policy|denied|rls/i.test(e.message||'')?'Нет прав на правку. Попросите администратора открыть доступ.':'Не сохранилось: '+(e.message||e));return false}
+}
+const nid=()=>'o'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+
+/* ---------- list ---------- */
+function stat(c){if(c.done)return['Заполнено','b-done'];if(c.status==='draft')return['Черновик','b-draft'];return['Из матрицы','b-mx']}
+function renderList(){
+  $('dl-one').hidden=true;
+  const all=Object.entries(CARDS);
+  if(!all.length){$('main').innerHTML=`<div class="box"><div class="bin"><p>Анкет ещё нет в базе.</p><p class="hint">Загрузите файл <b>anketa-seed.json</b> — его прислали вместе с сайтом. Это делается один раз.</p><button class="btn primary" id="seed-btn" type="button">Загрузить анкеты</button></div></div>`;$('seed-btn').onclick=()=>$('seed').click();return}
+  const list=all.filter(([,c])=>c.scope===scope).sort((a,b)=>a[1].order-b[1].order);
+  const done=all.filter(([,c])=>c.done).length;
+  const depts=[]; const by={};
+  list.forEach(([id,c])=>{if(!by[c.dept]){by[c.dept]=[];depts.push(c.dept)}by[c.dept].push([id,c])});
+  let h=`<p class="hint">Выберите свой отдел и должность. Проверьте ФИО сотрудников и функции, исправьте что не так и отметьте анкету заполненной.</p>
+  <div class="stats"><span class="stat"><b>${all.length}</b>анкет</span><span class="stat"><b>${done}</b>заполнено</span><span class="stat"><b>${all.filter(([,c])=>c.status==='draft'&&!c.done).length}</b>черновиков</span></div>
+  <div class="tabs" role="group" aria-label="Подразделение">${SCOPES.map(s=>`<button class="tab" type="button" data-scope="${s}" aria-pressed="${s===scope}">${SCN[s]}</button>`).join('')}</div>`;
+  depts.forEach(d=>{const ps=by[d],op=openD.has(d), nd=ps.filter(([,c])=>c.done).length;
+    h+=`<div class="dept${op?' open':''}"><button type="button" data-dept="${esc(d)}" aria-expanded="${op}"><span>${esc(dname(d))}</span><span class="m">${nd}/${ps.length} ${op?'▴':'▾'}</span></button>`;
+    if(op) h+=`<ul class="plist">${ps.map(([id,c])=>{const [t,cl]=stat(c);return `<li><a href="#/${id}"><span class="t">${esc(c.title)}<span class="s">${(c.people||[]).length} сотр. · ${(c.ops||[]).length} операций</span></span><span class="badge ${cl}">${t}</span></a></li>`}).join('')}</ul>`;
+    h+='</div>'});
+  if(LOG.length) h+=`<div class="box" style="margin-top:16px"><h3>Последние правки</h3><div class="bin"><ul class="log">${LOG.slice(0,15).map(l=>`<li><span class="t">${when(l.at)} · ${esc(l.by_email)}</span><br>${esc(l.text.replace(/^Анкеты: /,''))}</li>`).join('')}</ul></div></div>`;
+  $('main').innerHTML=h;
+}
+
+/* ---------- card ---------- */
+function brChips(o,c){if(c.scope!=='Филиалы')return'';return BRS.map(b=>`<span class="chip${(o.br||[]).includes(b)?'':' off'}">${b}</span>`).join('')}
+function opView(o,i,c){
+  if(edit&&edit.t==='op'&&edit.id===o.id) return `<div class="op">${opForm(o,c)}</div>`;
+  const fl=(o.inp||o.frm||o.outp||o.to)?`<div class="flow"><div><b>Получает</b>${esc(o.inp||'—')}${o.frm?`<br><b style="margin-top:4px">от кого</b>${esc(o.frm)}`:''}</div><div><b>Передаёт</b>${esc(o.outp||'—')}${o.to?`<br><b style="margin-top:4px">кому</b>${esc(o.to)}`:''}</div></div>`:'';
+  return `<div class="op"><div class="row1"><span class="n">${i}.</span><span class="pr">${esc(o.proc||'(без названия)')}</span>${o.score?`<span class="sc">${o.score===20?'М':o.score===15?'О':'Д'} · ${o.score}</span>`:''}</div>
+  ${o.desc?`<div class="ds">${esc(o.desc)}</div>`:''}${fl}
+  <div class="ft">${brChips(o,c)}${o.src==='черновик'?'<span class="chip dr">черновик</span>':''}${o.ed?`<span class="who-ed">изменено: ${esc(o.ed.by)}, ${when(o.ed.at)}</span>`:''}<span style="flex:1"></span><button class="btn small" type="button" data-edop="${o.id}">Изменить</button></div></div>`;
+}
+function opForm(o,c){
+  const v=k=>esc(o[k]||'');
+  return `<form class="ed" data-opform="${o.id||''}">
+  <label>Наименование операции / процесса<input name="proc" value="${v('proc')}" required></label>
+  <label>Описание операции<textarea name="desc" rows="4">${v('desc')}</textarea></label>
+  <div class="two"><label>Входящая информация и документы<textarea name="inp">${v('inp')}</textarea></label><label>От кого получает<textarea name="frm">${v('frm')}</textarea></label>
+  <label>Исходящая информация и документы<textarea name="outp">${v('outp')}</textarea></label><label>Кому передаёт<textarea name="to">${v('to')}</textarea></label></div>
+  <div class="two"><label>Балл<select name="score"><option value="">—</option>${[[20,'М · 20 — главная'],[15,'О · 15 — основная'],[5,'Д · 5 — дополнительная']].map(([s,t])=>`<option value="${s}"${o.score===s?' selected':''}>${t}</option>`).join('')}</select></label>
+  <label>Раздел<select name="sec"><option value="main"${o.sec!=='side'?' selected':''}>Основные обязанности</option><option value="side"${o.sec==='side'?' selected':''}>Сопутствующие обязанности</option></select></label></div>
+  ${c.scope==='Филиалы'?`<div class="checks"><span style="color:var(--muted);font-size:12.5px">Выполняется в филиалах:</span>${BRS.map(b=>`<label><input type="checkbox" name="br" value="${b}"${!o.id||(o.br||[]).includes(b)?' checked':''}>${b}</label>`).join('')}</div>`:''}
+  <div class="fb"><button class="btn primary" type="submit">Сохранить</button><button class="btn" type="button" data-cancel="1">Отмена</button>${o.id?`<button class="btn warn" type="button" data-delop="${o.id}">Удалить операцию</button>`:''}</div></form>`;
+}
+function renderCard(id){
+  const c=CARDS[id]; if(!c){location.hash='';return}
+  $('dl-one').hidden=false;
+  const ppl=c.people||[], ops=c.ops||[];
+  let h=`<a class="back" href="#">← Все должности</a>
+  <div class="head"><h2>${esc(c.title)}</h2><div class="d">${esc(SCN[c.scope])} · ${esc(dname(c.dept))}${c.scope==='Филиалы'?' · '+esc((c.units||[]).join(', ')):''}</div></div>`;
+  // шапка анкеты
+  h+=`<div class="box"><h3>Шапка анкеты <button class="btn small" type="button" data-edhead="1">Изменить</button></h3><div class="bin">`;
+  if(edit&&edit.t==='head') h+=`<form class="ed" id="headform"><label>Владелец бизнес-процесса<input name="owner" value="${esc(c.owner||'')}"></label><label>Подчинённость и контроль / ФИО<input name="sub" value="${esc(c.sub||'')}"></label><label>Проектный менеджер<input name="pm" value="${esc(c.pm||'')}"></label><div class="fb"><button class="btn primary" type="submit">Сохранить</button><button class="btn" type="button" data-cancel="1">Отмена</button></div></form>`;
+  else h+=`<dl class="kv"><dt>Структурное подразделение</dt><dd>${esc(dname(c.dept))}</dd><dt>Владелец бизнес-процесса</dt><dd>${esc(c.owner||'—')}</dd><dt>Подчинённость и контроль</dt><dd>${esc(c.sub||'—')}</dd><dt>Проектный менеджер</dt><dd>${esc(c.pm||'—')}</dd></dl>`;
+  h+=`</div></div>`;
+  // ФИО
+  h+=`<div class="box"><h3>Сотрудники на должности <span class="c">${ppl.length}</span></h3><div class="bin">`;
+  const groups=c.scope==='Филиалы'?(c.units||BRS).map(u=>[u,ppl.filter(p=>p.u===u)]).concat(ppl.some(p=>!BRS.includes(p.u))?[['Без филиала',ppl.filter(p=>!BRS.includes(p.u))]]:[]):[['',ppl]];
+  groups.forEach(([u,list])=>{
+    if(u) h+=`<div style="font-weight:700;margin:${u===groups[0][0]?0:12}px 0 6px">${esc(u)} <span class="hint">· ${list.length}</span></div>`;
+    if(edit&&edit.t==='ppl'&&edit.u===u) h+=`<form class="ed" id="pplform" data-u="${esc(u)}"><label>По одному сотруднику в строке: ФИО; ставка<textarea name="list" rows="${Math.min(14,list.length+3)}">${esc(list.map(p=>[p.n,p.r].filter(x=>x!=null&&x!=='').join('; ')).join('\n'))}</textarea></label><p class="hint" style="margin:0">Например: Иванова Анна Сергеевна; 1</p><div class="fb"><button class="btn primary" type="submit">Сохранить</button><button class="btn" type="button" data-cancel="1">Отмена</button></div></form>`;
+    else h+=(list.length?`<ul class="ppl">${list.map(p=>`<li><span>${esc(p.n)}</span><span class="u">${p.r!=null&&p.r!==''?esc(String(p.r).replace('.',','))+' ст.':''}</span></li>`).join('')}</ul>`:'<p class="hint" style="margin:0">Сотрудников нет — вакансия.</p>')+`<div style="margin-top:8px"><button class="btn small" type="button" data-edppl="${esc(u)||'*'}">Исправить ФИО${u?' — '+esc(u):''}</button></div>`;
+  });
+  h+=`</div></div>`;
+  // операции
+  [['main','Основные обязанности'],['side','Сопутствующие обязанности']].forEach(([sec,name])=>{
+    const list=ops.filter(o=>(o.sec||'main')===sec); if(sec==='side'&&!list.length&&!(edit&&edit.t==='op'&&edit.id===''&&edit.sec==='side'))return;
+    h+=`<div class="box"><h3>${name} <span class="c">${list.length}</span></h3>`;
+    h+=list.length?list.map((o,i)=>opView(o,i+1,c)).join(''):'<div class="empty">Пока пусто.</div>';
+    h+=`<div class="add">${edit&&edit.t==='op'&&edit.id===''&&edit.sec===sec?opForm({sec},c):`<button class="btn small" type="button" data-addop="${sec}">+ Добавить операцию</button>`}</div></div>`;
+  });
+  // чужие обязанности
+  const fr=c.foreign||[];
+  h+=`<div class="box"><h3>Обязанности другого отдела, которые выполняет сотрудник <span class="c">${fr.length}</span></h3><div class="bin">`;
+  if(edit&&edit.t==='foreign') h+=`<form class="ed" id="frform"><label>По одной в строке: что делаете и какой отдел должен это делать</label><textarea name="list" rows="5">${esc(fr.join('\n'))}</textarea><div class="fb"><button class="btn primary" type="submit">Сохранить</button><button class="btn" type="button" data-cancel="1">Отмена</button></div></form>`;
+  else h+=(fr.length?`<ol style="margin:0 0 10px;padding-left:20px">${fr.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`:'<p class="hint">Нет.</p>')+`<button class="btn small" type="button" data-edfr="1">Изменить</button>`;
+  h+=`</div></div>`;
+  // эффективность и пожелания
+  const ef=c.eff||{};
+  h+=`<div class="box"><h3>Перераспределение и пожелания</h3><div class="bin">`;
+  if(edit&&edit.t==='wish') h+=`<form class="ed" id="wform"><p class="hint" style="margin:0">При перераспределении обязанностей эффективность моей работы:</p><div class="two"><label>вырастет на, %<input name="up" type="number" min="0" max="100" value="${esc(ef.up||'')}"></label><label>уменьшится на, %<input name="down" type="number" min="0" max="100" value="${esc(ef.down||'')}"></label></div><div class="checks"><label><input type="checkbox" name="same"${ef.same?' checked':''}>не изменится</label></div><label>Пожелания к улучшению<textarea name="wish" rows="4">${esc(c.wish||'')}</textarea></label><div class="fb"><button class="btn primary" type="submit">Сохранить</button><button class="btn" type="button" data-cancel="1">Отмена</button></div></form>`;
+  else h+=`<dl class="kv"><dt>Эффективность</dt><dd>${ef.same?'не изменится':[ef.up?'вырастет на '+esc(ef.up)+'%':'',ef.down?'уменьшится на '+esc(ef.down)+'%':''].filter(Boolean).join(', ')||'—'}</dd><dt>Пожелания</dt><dd style="white-space:pre-line">${esc(c.wish||'—')}</dd></dl><div style="margin-top:10px"><button class="btn small" type="button" data-edw="1">Изменить</button></div>`;
+  h+=`</div></div>`;
+  h+=`<div class="box"><div class="bin done-row">${c.done?`<span class="badge b-done">Анкета заполнена${c.doneBy?' · '+esc(c.doneBy)+', '+when(c.doneAt):''}</span><button class="link" type="button" data-done="0">Снять отметку</button>`:`<button class="btn primary" type="button" data-done="1">Анкета заполнена</button><span class="hint" style="margin:0">Нажмите, когда проверили ФИО и все функции.</span>`}</div></div>`;
+  if(c._by) h+=`<p class="hint">Последнее сохранение: ${esc(c._by)}, ${when(c._at)}</p>`;
+  $('main').innerHTML=h;
+}
+function render(){const id=location.hash.replace(/^#\/?/,''); if(id&&CARDS[id])renderCard(id); else renderList()}
+window.addEventListener('hashchange',()=>{edit=null;render();window.scrollTo(0,0)});
+
+/* ---------- events ---------- */
+const cur=()=>location.hash.replace(/^#\/?/,'');
+const txt=(f,k)=>(f.elements[k]?f.elements[k].value:'').trim();
+$('main').addEventListener('click',async e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  if(b.dataset.scope){scope=b.dataset.scope;render();return}
+  if(b.dataset.dept!=null){const d=b.dataset.dept;openD.has(d)?openD.delete(d):openD.add(d);render();return}
+  if(b.dataset.cancel){edit=null;render();return}
+  if(b.dataset.edop){edit={t:'op',id:b.dataset.edop};render();return}
+  if(b.dataset.addop){edit={t:'op',id:'',sec:b.dataset.addop};render();return}
+  if(b.dataset.edhead){edit={t:'head'};render();return}
+  if(b.dataset.edppl){const u=b.dataset.edppl;edit={t:'ppl',u:u==='*'?'':u};render();return}
+  if(b.dataset.edfr){edit={t:'foreign'};render();return}
+  if(b.dataset.edw){edit={t:'wish'};render();return}
+  if(b.dataset.delop){const oid=b.dataset.delop, o=(CARDS[cur()].ops||[]).find(x=>x.id===oid); if(!confirm('Удалить операцию «'+(o&&o.proc||'')+'»?'))return;
+    if(await mutate(cur(),d=>{d.ops=d.ops.filter(x=>x.id!==oid)},'удалена операция «'+(o&&o.proc||'')+'»')){edit=null;toast('Удалено');render()}return}
+  if(b.dataset.done){const v=b.dataset.done==='1';
+    if(await mutate(cur(),d=>{d.done=v;d.doneBy=v?ME:'';d.doneAt=v?Date.now():0},v?'анкета отмечена заполненной':'снята отметка «заполнено»')){toast(v?'Отмечено':'Отметка снята');render()}return}
+});
+$('main').addEventListener('submit',async e=>{
+  e.preventDefault(); const f=e.target, id=cur();
+  if(f.dataset.opform!=null){
+    const oid=f.dataset.opform, sc=txt(f,'score');
+    const v={proc:txt(f,'proc'),desc:txt(f,'desc'),inp:txt(f,'inp'),frm:txt(f,'frm'),outp:txt(f,'outp'),to:txt(f,'to'),score:sc?Number(sc):null,sec:txt(f,'sec')||'main'};
+    if(CARDS[id].scope==='Филиалы') v.br=[...f.querySelectorAll('input[name=br]:checked')].map(x=>x.value);
+    v.ed={by:ME,at:Date.now()};
+    const ok=await mutate(id,d=>{d.ops=d.ops||[]; if(oid){const o=d.ops.find(x=>x.id===oid); if(o){Object.assign(o,v); if(o.src==='черновик')o.src='исправлено';}} else d.ops.push(Object.assign({id:nid(),src:'добавлено'},v))}, (oid?'изменена':'добавлена')+' операция «'+v.proc+'»');
+    if(ok){edit=null;toast('Сохранено');render()} return;
+  }
+  if(f.id==='headform'){const v={owner:txt(f,'owner'),sub:txt(f,'sub'),pm:txt(f,'pm')};if(await mutate(id,d=>Object.assign(d,v),'изменена шапка анкеты')){edit=null;toast('Сохранено');render()}return}
+  if(f.id==='pplform'){
+    const u=f.dataset.u||'', isBr=CARDS[id].scope==='Филиалы', inU=p=>!u||(u==='Без филиала'?!BRS.includes(p.u):p.u===u);
+    const list=txt(f,'list').split('\n').map(s=>s.trim()).filter(Boolean).map(line=>{const p=line.split(';').map(x=>x.trim());const o={n:p[0],r:(p[1]||'').replace(',','.')};if(isBr)o.u=u==='Без филиала'?'':u;return o});
+    const before=(CARDS[id].people||[]).filter(inU).map(p=>p.n), after=list.map(p=>p.n);
+    const add=after.filter(n=>!before.includes(n)), del=before.filter(n=>!after.includes(n));
+    const msg='ФИО'+(u?' ('+u+')':'')+': '+([add.length?'добавлены '+add.join(', '):'',del.length?'убраны '+del.join(', '):''].filter(Boolean).join('; ')||'уточнены ставки');
+    if(await mutate(id,d=>{const keep=(d.people||[]).filter(p=>!inU(p));d.people=keep.concat(list)},msg)){edit=null;toast('Сохранено');render()}return}
+  if(f.id==='frform'){const list=f.elements.list.value.split('\n').map(s=>s.trim()).filter(Boolean);if(await mutate(id,d=>{d.foreign=list},'обновлены чужие обязанности')){edit=null;toast('Сохранено');render()}return}
+  if(f.id==='wform'){const v={up:txt(f,'up'),down:txt(f,'down'),same:f.elements.same.checked};const w=txt(f,'wish');if(await mutate(id,d=>{d.eff=v;d.wish=w},'обновлены пожелания')){edit=null;toast('Сохранено');render()}return}
+});
+
+/* ---------- seed ---------- */
+$('seed').addEventListener('change',async e=>{const file=e.target.files[0]; e.target.value=''; if(!file)return;
+  try{const arr=JSON.parse(await file.text()); if(!Array.isArray(arr)||!arr[0]||!arr[0].ops) throw new Error('это не файл anketa-seed.json');
+    if(Object.keys(CARDS).length&&!confirm('Анкеты уже есть. Перезаписать все? Правки руководителей пропадут.'))return;
+    toast('Загружаю…'); const now=new Date().toISOString();
+    for(let i=0;i<arr.length;i+=20){const rows=arr.slice(i,i+20).map(c=>{const d=Object.assign({},c);delete d.id;return{coll:COLL,id:c.id,data:d,by_email:ME,at:now}});
+      const {error}=await SB.from('items').upsert(rows); if(error)throw error;}
+    await SB.from('log').insert({by_email:ME,text:'Анкеты: загружены исходные анкеты ('+arr.length+')'});
+    toast('Готово'); await loadAll(); await loadLog(); render();
+  }catch(err){toast('Не загрузилось: '+(err.message||err))}});
+
+/* ---------- Excel в форме бланка ---------- */
+const sheetName=(c,used)=>{let b=(c.title+' '+(c.scope==='Филиалы'?'Ф':c.scope==='Лаборатория'?'Лаб':'ЦА')).replace(/[\\\/\?\*\[\]:]/g,' ').replace(/\s+/g,' ').slice(0,28).trim(),n=b,i=2;while(used.has(n.toLowerCase()))n=b.slice(0,25)+' '+(i++);used.add(n.toLowerCase());return n};
+function writeSheet(wb,c,name){
+  const ws=wb.addWorksheet(name,{pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0}});
+  ws.columns=[{width:2},{width:6},{width:32},{width:48},{width:7},{width:22},{width:28},{width:22},{width:28},{width:22},{width:14}];
+  const thin={style:'thin',color:{argb:'FF8A94A8'}}, bd={top:thin,left:thin,bottom:thin,right:thin};
+  const H=[['Владелец бизнес-процесса:',c.owner||''],['Структурное подразделение:',dname(c.dept)+(c.scope==='Филиалы'?' ('+(c.units||[]).join(', ')+')':'')],['Подчиненность и контроль / ФИО:',c.sub||''],['Наименование должности / ФИО:',c.title+((c.people||[]).length?' — '+c.people.map(p=>p.n).join(', '):'')],['Проектный менеджер:',c.pm||''],['Версия документа:','2.0']];
+  H.forEach((r,i)=>{const row=ws.getRow(i+2);row.getCell(4).value=r[0];row.getCell(4).font={bold:true};ws.mergeCells(i+2,6,i+2,10);row.getCell(6).value=r[1];row.getCell(6).alignment={wrapText:true,vertical:'top'}});
+  const hdr=['№','Наименование операции / процесса','Описание операции','Балл','Ответственный за выполнение операции','Входящая информация и документы, необходимые для выполнения операции','От кого получает входящую информацию и документы','Исходящая информация и документы создаваемые при выполнении операции','Кому передает исходящую информацию документы'];
+  if(c.scope==='Филиалы')hdr.push('Филиалы');
+  const hr=ws.getRow(9); hdr.forEach((t,j)=>{const cl=hr.getCell(j+2);cl.value=t;cl.font={bold:true,color:{argb:'FFFFFFFF'}};cl.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1B2F57'}};cl.alignment={wrapText:true,vertical:'middle',horizontal:'center'};cl.border=bd}); hr.height=60;
+  let r=10, n=0;
+  const sec=t=>{ws.mergeCells(r,2,r,1+hdr.length);const cl=ws.getRow(r).getCell(2);cl.value=t;cl.font={bold:true};cl.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE7ECF6'}};cl.border=bd;r++};
+  [['main','ОСНОВНЫЕ ОБЯЗАННОСТИ'],['side','СОПУТСТВУЮЩИЕ ОБЯЗАННОСТИ']].forEach(([s,t])=>{sec(t);(c.ops||[]).filter(o=>(o.sec||'main')===s).forEach(o=>{n++;
+    const vals=[n,o.proc,o.desc,o.score||'',c.title,o.inp,o.frm,o.outp,o.to]; if(c.scope==='Филиалы')vals.push((o.br||[]).join(', '));
+    const row=ws.getRow(r++); vals.forEach((v,j)=>{const cl=row.getCell(j+2);cl.value=v==null?'':v;cl.alignment={wrapText:true,vertical:'top'};cl.border=bd})})});
+  r++; sec('ОБЯЗАННОСТИ, КОТОРЫЕ ДОЛЖНЫ ВЫПОЛНЯТЬ СОТРУДНИКИ ДРУГОГО ОТДЕЛА, но выполняю я, и это мешает моей результативности');
+  const fr=(c.foreign&&c.foreign.length)?c.foreign:['','']; fr.forEach((t,i)=>{const row=ws.getRow(r);row.getCell(2).value=i+1;ws.mergeCells(r,3,r,10);row.getCell(3).value=t;row.getCell(3).alignment={wrapText:true};r++});
+  r++; const ef=c.eff||{}; ws.getRow(r).getCell(2).value='При перераспределении обязанностей эффективность моей работы'; ws.getRow(r).getCell(2).font={bold:true}; r++;
+  const er=ws.getRow(r); er.getCell(2).value='вырастет на, %: '+(ef.up||''); er.getCell(6).value='уменьшится на, %: '+(ef.down||''); er.getCell(9).value='не изменится: '+(ef.same?'да':''); r+=2;
+  sec('ПОЖЕЛАНИЯ К УЛУЧШЕНИЮ'); ws.mergeCells(r,2,r+2,10); const wc=ws.getRow(r).getCell(2); wc.value=c.wish||''; wc.alignment={wrapText:true,vertical:'top'};
+  ws.views=[{state:'frozen',ySplit:9}];
+}
+async function dl(ids,fname){
+  if(!window.ExcelJS){toast('Excel-модуль не загрузился, обновите страницу');return}
+  toast('Готовлю файл…'); const wb=new ExcelJS.Workbook(); const used=new Set();
+  ids.forEach(id=>{const c=CARDS[id]; writeSheet(wb,c,sheetName(c,used))});
+  const buf=await wb.xlsx.writeBuffer(); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})); a.download=fname; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+}
+const order=()=>Object.keys(CARDS).sort((a,b)=>SCOPES.indexOf(CARDS[a].scope)-SCOPES.indexOf(CARDS[b].scope)||CARDS[a].order-CARDS[b].order);
+$('dl-one').onclick=()=>{const c=CARDS[cur()]; if(c) dl([cur()],'Анкета — '+c.title.replace(/[\\\/:*?"<>|]/g,' ')+'.xlsx')};
+$('dl-all').onclick=()=>dl(order(),'Анкеты функционала — все должности.xlsx');
+
+/* ---------- auth / start ---------- */
+$('logout').addEventListener('click',async()=>{await SB.auth.signOut();location.reload()});
+let SIGNUP=false;
+$('lf-mode').addEventListener('click',()=>{SIGNUP=!SIGNUP;$('lf-go').textContent=SIGNUP?'Зарегистрироваться':'Войти';$('lf-mode').textContent=SIGNUP?'Уже есть аккаунт? Войти':'Нет аккаунта? Зарегистрироваться';$('lf-pass').autocomplete=SIGNUP?'new-password':'current-password';$('lf-err').textContent=''});
+$('lf').addEventListener('submit',async e=>{e.preventDefault();$('lf-err').textContent='';const email=$('lf-email').value.trim(),password=$('lf-pass').value;
+  if(SIGNUP){if(password.length<6){$('lf-err').textContent='Пароль — не короче 6 символов';return}const {data,error}=await SB.auth.signUp({email,password});if(error){$('lf-err').textContent='Не получилось: '+error.message;return}if(!data.session){$('lf-err').textContent='Почти готово: подтвердите email по ссылке из письма, затем войдите.';return}location.reload();return}
+  const {error}=await SB.auth.signInWithPassword({email,password});if(error){$('lf-err').textContent=/confirm/i.test(error.message)?'Сначала подтвердите email по ссылке из письма':'Неверный email или пароль';return}location.reload()});
+(async()=>{
+  if(!window.SUPABASE_URL||!window.SUPABASE_ANON_KEY){$('main').innerHTML='<div class="loading">Сайт не подключён к базе: заполните config.js.</div>';return}
+  SB=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+  const {data:{session}}=await SB.auth.getSession();
+  if(!session){$('login').hidden=false;$('main').innerHTML='';setSync('','Войдите, чтобы открыть анкеты.');return}
+  ME=session.user.email; $('me').textContent=ME; $('logout').hidden=false;
+  try{const {data:ok,error}=await SB.rpc('is_allowed'); if(!error&&ok===false){$('main').innerHTML='<div class="loading">Вы вошли как '+esc(ME)+', но доступ ещё не выдан.<br>Попросите администратора добавить ваш email в список доступа.</div>';setSync('err','Доступ не выдан');return}}catch(_){}
+  try{await loadAll(); await loadLog()}catch(e){$('main').innerHTML='<div class="loading">Ошибка загрузки: '+esc(e.message||e)+'</div>';return}
+  $('foot').hidden=false; render();
+  SB.channel('anketa').on('postgres_changes',{event:'*',schema:'public',table:'items',filter:'coll=eq.'+COLL},p=>{
+      const id=(p.new&&p.new.id)||(p.old&&p.old.id); if(!id)return;
+      if(p.eventType==='DELETE')delete CARDS[id]; else if(p.new.by_email!==ME||!CARDS[id]) CARDS[id]=Object.assign({},p.new.data,{_by:p.new.by_email,_at:Date.parse(p.new.at)}); else return;
+      if(!edit) render(); else if(id===cur()) toast('Эту анкету только что изменил '+(p.new&&p.new.by_email||'коллега'));
+    }).on('postgres_changes',{event:'INSERT',schema:'public',table:'log'},async()=>{await loadLog(); if(!edit&&!cur())render()})
+    .subscribe(st=>{if(st==='SUBSCRIBED')setSync('on','Совместная работа: правки сразу видят все.');else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT')setSync('err','Нет связи для обновлений. Обновите страницу.')});
+})();
+})();
+</script>
+</body></html>
