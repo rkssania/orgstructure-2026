@@ -105,6 +105,8 @@ button{font:inherit;cursor:pointer;color:inherit}
 .ag-cnt{width:70px;font:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:var(--card);color:var(--ink)}
 table.agt td{vertical-align:top} table.agt .agb{padding:2px 8px;font-size:12px}
 tr.ag-ok td:first-child{box-shadow:inset 4px 0 var(--ok)} tr.ag-no td:first-child{box-shadow:inset 4px 0 var(--terra)} tr.ag-re td:first-child{box-shadow:inset 4px 0 var(--amber)}
+#nav a.nav-ag{background:#c62828;color:#fff;border-radius:6px 6px 0 0}
+#nav a.nav-ag[aria-current="page"]{background:#a31515;color:#fff;border-bottom-color:#5e0b0b}
 .btn.warn{border-color:var(--terra);color:var(--terra)}
 .acts{display:flex;flex-wrap:wrap;gap:4px 12px}
 .plist .form{list-style:none;display:flex;flex-direction:column;gap:6px;background:var(--bg);border-radius:6px;padding:8px;margin:4px 0}
@@ -178,12 +180,12 @@ html,body{margin:0}
   <h1>Оргструктура и штатная расстановка 2026</h1>
   <div class="sync load" id="sync" role="status"><span class="dot"></span><span>Подключаю совместную работу…</span></div>
   <nav id="nav" aria-label="Разделы">
+    <a href="#agree" class="nav-ag">Согласование ГД</a>
     <a href="#ca">Оргструктура АУП</a>
     <a href="#krg">Филиал Караганда</a>
     <a href="#uk">Филиал Усть-Каменогорск</a>
     <a href="#ast">Филиал Астана</a>
     <a href="#lab">Лаборатория</a>
-    <a href="#agree">Согласование ГД</a>
     <a href="#plan">План работ</a>
   </nav>
 </div></div>
@@ -206,7 +208,7 @@ html,body{margin:0}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script src="config.js?v=1793959529"></script>
-<script src="export.js?v=1793981656"></script>
+<script src="export.js?v=1793981867"></script>
 
 <script>
 (function(){
