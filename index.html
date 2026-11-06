@@ -88,6 +88,23 @@ button{font:inherit;cursor:pointer;color:inherit}
 .dotm{color:var(--terra);font-size:10px}
 .names li.note{font-size:12px}
 .link{background:none;border:0;color:var(--terra);font-size:12px;padding:0;text-decoration:underline;text-underline-offset:2px}
+.ag-head{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin:8px 0 6px}
+.ag-sum{display:flex;flex-wrap:wrap;gap:6px;font-size:12.5px}
+.ag-sum span{border-radius:12px;padding:2px 9px;background:var(--card);border:1px solid var(--line)}
+.ag{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.ag.ok{border-left-color:var(--ok)} .ag.no{border-left-color:var(--terra)} .ag.re{border-left-color:var(--amber)}
+.ag-t{font-size:14px;line-height:1.45} .ag-t small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.ag-list{display:flex;flex-direction:column;gap:8px}
+.ag-b{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.agb{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:3px 10px;cursor:pointer}
+.agb[data-v="ok"][aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:var(--card)}
+.agb[data-v="no"][aria-pressed="true"]{background:var(--terra);border-color:var(--terra);color:#fff}
+.agb[data-v="re"][aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:#fff}
+.ag-m{font-size:12px;color:var(--muted)} .ag-m b{color:var(--ink);font-weight:600}
+.ag-f{display:flex;flex-wrap:wrap;gap:6px;align-items:center} .ag-f textarea{flex:1 1 260px;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;padding:5px 7px;background:var(--card);color:var(--ink)}
+.ag-cnt{width:70px;font:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:var(--card);color:var(--ink)}
+table.agt td{vertical-align:top} table.agt .agb{padding:2px 8px;font-size:12px}
+tr.ag-ok td:first-child{box-shadow:inset 4px 0 var(--ok)} tr.ag-no td:first-child{box-shadow:inset 4px 0 var(--terra)} tr.ag-re td:first-child{box-shadow:inset 4px 0 var(--amber)}
 .btn.warn{border-color:var(--terra);color:var(--terra)}
 .acts{display:flex;flex-wrap:wrap;gap:4px 12px}
 .plist .form{list-style:none;display:flex;flex-direction:column;gap:6px;background:var(--bg);border-radius:6px;padding:8px;margin:4px 0}
@@ -166,6 +183,7 @@ html,body{margin:0}
     <a href="#uk">Филиал Усть-Каменогорск</a>
     <a href="#ast">Филиал Астана</a>
     <a href="#lab">Лаборатория</a>
+    <a href="#agree">Согласование ГД</a>
     <a href="#plan">План работ</a>
   </nav>
 </div></div>
@@ -188,7 +206,7 @@ html,body{margin:0}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script src="config.js?v=1793959529"></script>
-<script src="export.js?v=1793959529"></script>
+<script src="export.js?v=1793981656"></script>
 
 <script>
 (function(){
@@ -354,6 +372,82 @@ function changesView(){
     L.rows.map(([b,cells])=>`<tr><td><b>${b}</b></td>${cells.map((x,i)=>{if(!x)return '<td>?</td>';const s=same(x[0],L.cols[i][1]);return `<td class="${s===false?'diff':''}">${x[0]?`<span class="t${s===false?' bad':''}">${esc(x[0])}</span><br>`:''}<b>${esc(x[1])}</b></td>`}).join('')}</tr>`).join('')+'</tbody></table></div>';
   return h;
 }
+
+// ---------------- СОГЛАСОВАНИЕ ГЕНЕРАЛЬНОГО ДИРЕКТОРА ----------------
+let AG={}, agC=null, agCV='', agF={u:'all',s:'all',only:false};
+const AGST={ok:'Согласовано',no:'Не согласовано',re:'На доработку'};
+const nmById=id=>{const r=BASE.find(x=>x.id===id);return r?r.n:'—'};
+function agItems(){
+  const t=DATA.units.reduce((a,U)=>a+DATA.shrsrc.filter(x=>x.u===U.id).reduce((b,x)=>b+x.cnt,0),0), t0=BD.shrsrc.reduce((a,x)=>a+x.cnt,0);
+  const S=[
+    {t:'1. Оргструктура',items:[
+      {id:'a1',text:`Утвердить новую оргструктуру: АУП (центральный аппарат), филиал г. Караганда, филиал г. Усть-Каменогорск, медицинское подразделение г. Астана, Лаборатория.`,sub:`Численность по действующему ШР — ${fmt(t0)} ед., по новой схеме с учётом правок — ${fmt(t)} ед.`},
+      {id:'a2',text:'Заведующие отделениями переименовываются в старших ординаторов.'},
+      {id:'a3',text:'Отдел реанимации переименовывается в Отдел интенсивной терапии и трансфузиологии.'},
+      {id:'a4',text:`Отдел науки упраздняется; ${nmById('rc0db186f3782')} — руководитель отдела клинических исследований.`},
+      {id:'a5',text:'Полные наименования руководителей в филиалах:',sub:'руководитель административно-хозяйственной службы; руководитель сестринской службы и инфекционного контроля; руководитель амбулаторно-диспансерного (консультативного) блока; руководитель отдела интенсивной терапии и трансфузиологии; руководитель сектора организации лабораторной логистики; заведующий лабораторией молекулярной генетики.'}]},
+    {t:'2. Служба поддержки пациентов и внутренней экспертизы',items:[
+      {id:'b1',text:`${nmById('rb55856994431')} — остаётся провизором аптеки (Караганда); совмещение: Специалист по управлению качеством фармации, Отдел качества медицинских услуг (ЦА).`,cnt:true,sub:'Укажите ставку совмещения.'}]},
+    {t:'3. Кадровые решения',items:[
+      {id:'c1',text:`${nmById('r83c0d5f5ef3c')} — заместитель директора по амбулаторной и стационарозамещающей помощи → руководитель амбулаторно-диспансерного (консультативного) блока (Усть-Каменогорск).`,sub:`${nmById('r3fe002efe140')} — заведующая АДБ → старший ординатор АДБ (Усть-Каменогорск).`}]},
+  ];
+  const n4=[];
+  DATA.units.forEach(U=>U.groups.forEach(g=>g.depts.forEach(d=>d.pos.forEach(p=>{ if(sh(U.id,g.name,d.name,p)) return;
+    const pp=ppl(U.id,g.name,d.name,p).filter(r=>r.n);
+    n4.push({id:'s'+nkey(K(U.id,g.name,d.name,p)),text:`${UN[U.id]}: ${d.name==='Руководство'?g.name:dname(d.name)} — ${disp(p)}`,sub:pp.length?'Занято: '+pp.map(r=>`${r.n} (${fmt(r.r)})`).join(', '):'Сейчас никто не занимает',cnt:true});
+  }))));
+  S.push({t:'4. Ставки на новые должности (в действующем ШР ставки нет)',hint:'Укажите, сколько ставок ввести, и отметьте решение. 0 — не вводить.',items:n4});
+  return S;
+}
+function agTable(){
+  const out=[];
+  DATA.units.forEach(U=>{
+    U.groups.forEach(g=>g.depts.forEach(d=>d.pos.forEach(p=>{
+      const k=K(U.id,g.name,d.name,p), es=DATA.shrsrc.filter(x=>K(x.u,x.g,x.d,x.p)===k);
+      const was=es.reduce((a,x)=>a+(x.cnt0||0),0), now=es.reduce((a,x)=>a+x.cnt,0), olds=[...new Set(es.filter(x=>x.cnt0).map(x=>x.old))];
+      const st=[]; if(!was&&!olds.length) st.push('Новая должность'); else { if(olds.some(o=>o.toLowerCase().replace(/\s+/g,' ').trim()!==p.toLowerCase())) st.push('Переименование'); if(es.some(x=>x.k0&&x.k0!==k)) st.push('Перенос'); }
+      if(was&&Math.abs(now-was)>0.001) st.push('Изменена численность');
+      if(!st.length) return;
+      out.push({id:'t'+nkey(k),u:U.id,d:d.name==='Руководство'?g.name:dname(d.name),old:olds.join('; ')||'—',nw:disp(p),st,was,now,pp:ppl(U.id,g.name,d.name,p).filter(r=>r.n)});
+    })));
+    DATA.shrsrc.filter(x=>x.u===U.id&&x.d===DEC).forEach(x=>out.push({id:'t'+nkey(K(x.u,'dec',x.old)),u:U.id,d:'—',old:x.old,nw:'—',st:['Вне новой схемы'],was:x.cnt0||0,now:x.cnt,pp:DATA.rows.filter(r=>r.u===U.id&&r.d===DEC&&r.o===x.old&&r.n)}));
+    (DATA.removedSrc||[]).filter(x=>x.u===U.id).forEach(x=>out.push({id:'t'+nkey(K(x.u,'rm',x.old,x.p)),u:U.id,d:'—',old:x.old,nw:'—',st:['Исключена'],was:x.cnt0||0,now:0,pp:[]}));
+  });
+  return out;
+}
+function agCtl(id,cnt){const a=AG[id]||{};
+  let h=`<div class="ag-b">${['ok','no','re'].map(v=>`<button class="agb" type="button" data-ag="${id}" data-v="${v}" aria-pressed="${a.st===v}">${AGST[v]}</button>`).join('')}`;
+  if(cnt) h+=`<label class="ag-m">ставок: <input class="ag-cnt" type="number" step="0.25" min="0" data-agn="${id}" value="${a.cnt!=null?esc(a.cnt):''}" placeholder="—"></label>`;
+  h+=`<button class="link" type="button" data-agc="${id}">${a.c?'изменить комментарий':'комментарий'}</button></div>`;
+  if(agC===id) h+=`<div class="ag-f"><textarea id="ag-text" rows="2" placeholder="Комментарий генерального директора">${esc(agCV)}</textarea><button class="btn primary" type="button" data-agcs="${id}">Сохранить</button><button class="btn" type="button" data-cancel="1">Отмена</button></div>`;
+  if(a.st||a.c) h+=`<div class="ag-m">${a.st?`<b>${AGST[a.st]}</b>${a.cnt!=null&&a.cnt!==''?` · ставок: ${esc(fmt(a.cnt))}`:''} · `:''}${esc(who(a.by))}, ${when(a.at)}${a.c?` · «${esc(a.c)}»`:''}</div>`;
+  return h;
+}
+function agreeView(){
+  const S=agItems(), T=agTable(), all=[...S.flatMap(x=>x.items.map(i=>i.id)),...T.map(x=>x.id)];
+  const c=v=>all.filter(id=>AG[id]&&AG[id].st===v).length, none=all.length-c('ok')-c('no')-c('re');
+  let h=`<div class="ag-head"><div><h2 style="margin:0">Согласование с генеральным директором</h2><p class="hint" style="margin:4px 0 0">Отметьте решение по каждому пункту. Отметки сохраняются сразу и видны всем.</p></div><button class="btn primary" type="button" id="dl-agree">Скачать лист согласования</button></div>
+  <div class="ag-sum"><span>Всего пунктов: <b>${all.length}</b></span><span>Согласовано: <b>${c('ok')}</b></span><span>Не согласовано: <b>${c('no')}</b></span><span>На доработку: <b>${c('re')}</b></span><span>Без решения: <b>${none}</b></span></div>`;
+  S.forEach(sec=>{h+=`<h3 class="stage">${esc(sec.t)}</h3>${sec.hint?`<p class="hint">${esc(sec.hint)}</p>`:''}<div class="ag-list">`;
+    sec.items.forEach(i=>{const a=AG[i.id]||{};h+=`<div class="ag ${a.st||''}"><div class="ag-t">${esc(i.text)}${i.sub?`<small>${esc(i.sub)}</small>`:''}</div>${agCtl(i.id,i.cnt)}</div>`});
+    h+='</div>';});
+  const sts=['all','Переименование','Новая должность','Перенос','Изменена численность','Вне новой схемы','Исключена'];
+  const F=T.filter(x=>(agF.u==='all'||x.u===agF.u)&&(agF.s==='all'||x.st.includes(agF.s))&&(!agF.only||!(AG[x.id]&&AG[x.id].st)));
+  h+=`<h3 class="stage">5. Таблица изменений должностей (было по ШР → стало)</h3>
+  <div class="filters">${['all','ЦА','КРГ','УК','Астана','Лаборатория'].map(x=>`<button class="chip" type="button" data-agu="${x}" aria-pressed="${agF.u===x}">${x==='all'?'Все подразделения':UN[x]}</button>`).join('')}</div>
+  <div class="filters">${sts.map(x=>`<button class="chip" type="button" data-ags="${x}" aria-pressed="${agF.s===x}">${x==='all'?'Все изменения':x} · ${T.filter(t=>(agF.u==='all'||t.u===agF.u)&&(x==='all'||t.st.includes(x))).length}</button>`).join('')}<button class="chip" type="button" data-ago="1" aria-pressed="${agF.only}">Только без решения</button></div>
+  <div class="fbtns" style="margin:6px 0">${F.length?`<button class="btn" type="button" data-agall="ok">Согласовать все показанные (${F.length})</button>`:''}</div>
+  <div class="tbl"><table class="agt"><thead><tr><th>Подразделение</th><th>Отдел</th><th>Было по ШР</th><th>Стало</th><th>Изменение</th><th>Ед.: было → стало</th><th>Сотрудники</th><th>Решение</th></tr></thead><tbody>`;
+  F.forEach(x=>{const a=AG[x.id]||{};
+    h+=`<tr class="ag-${a.st||''}"><td>${UN[x.u]}</td><td>${esc(x.d)}</td><td><span class="was-old">${esc(x.old)}</span></td><td><b>${esc(x.nw)}</b></td><td>${x.st.map(z=>`<span class="st ${z==='Новая должность'?'new':z==='Вне новой схемы'||z==='Исключена'?'dec':'ren'}">${z}</span>`).join(' ')}</td><td class="num">${fmt(x.was)} → ${fmt(x.now)}</td><td>${x.pp.length?esc(x.pp.map(r=>r.n+' ('+fmt(r.r)+')').join(', ')):'<span class="muted">—</span>'}</td><td>${agCtl(x.id,false)}</td></tr>`});
+  h+=`</tbody></table></div>`;
+  return h;
+}
+async function agSet(id,patch){
+  const cur=Object.assign({},AG[id]||{}); delete cur.by; delete cur.at;
+  const v=Object.assign(cur,patch);
+  try{await db.collection('agree').doc(id).set(v);}catch(err){denied(err)}
+}
 function planView(){
   const P=DATA.plan||[], done=P.filter(t=>PLAN[t.id]&&PLAN[t.id].done).length;
   let h=`<div class="plan-head"><div><h2 style="margin:0">План работ кадровой службы</h2><p class="hint" style="margin:4px 0 0">Д — дата введения новой оргструктуры. Отметки видны всем, кто открыл приложение.</p></div><div class="prog"><div class="bar"><i style="width:${P.length?Math.round(done/P.length*100):0}%"></i></div><b>${done} из ${P.length}</b> выполнено</div></div>`;
@@ -369,14 +463,28 @@ function route(){return (location.hash||'#ca').slice(1)}
 function render(){
   if(!DATA)return; const r=route();
   document.querySelectorAll('#nav a').forEach(a=>a.setAttribute('aria-current',a.getAttribute('href')==='#'+r?'page':'false'));
-  $('main').innerHTML=r==='plan'?planView():unitView(ROUTES[r]||'ЦА');
+  $('main').innerHTML=r==='plan'?planView():r==='agree'?agreeView():unitView(ROUTES[r]||'ЦА');
 }
 document.addEventListener('click',e=>{
+  const ag=e.target.closest('[data-ag],[data-agc],[data-agcs],[data-agu],[data-ags],[data-ago],[data-agall],#dl-agree');
+  if(ag){
+    if(ag.id==='dl-agree') return dlAgree();
+    if(ag.dataset.ag){const id=ag.dataset.ag,v=ag.dataset.v,cur=AG[id]&&AG[id].st; agSet(id,{st:cur===v?'':v}); return}
+    if(ag.dataset.agc){agC=ag.dataset.agc;agCV=(AG[agC]&&AG[agC].c)||'';return rer()}
+    if(ag.dataset.agcs){const id=ag.dataset.agcs;agSet(id,{c:$('ag-text').value.trim()});agC=null;return rer()}
+    if(ag.dataset.agu){agF.u=ag.dataset.agu;return rer()}
+    if(ag.dataset.ags){agF.s=ag.dataset.ags;return rer()}
+    if(ag.dataset.ago){agF.only=!agF.only;return rer()}
+    if(ag.dataset.agall){const T=agTable().filter(x=>(agF.u==='all'||x.u===agF.u)&&(agF.s==='all'||x.st.includes(agF.s))&&(!agF.only||!(AG[x.id]&&AG[x.id].st))).filter(x=>!(AG[x.id]&&AG[x.id].st));
+      if(!T.length){toast('Все показанные уже с решением');return}
+      if(!confirm(`Отметить «Согласовано» ${T.length} строк без решения?`))return;
+      (async()=>{for(const x of T) await agSet(x.id,{st:'ok'}); await addLog(`Согласование ГД: согласовано пакетом ${T.length} строк таблицы изменений`); toast('Готово');})(); return}
+  }
   const ti=e.target.closest('[data-ti]'); if(ti){const k=ti.dataset.ti; openT.has(k)?openT.delete(k):openT.add(k); return rer();}
   const t=e.target.closest('[data-o],[data-all],[data-fu],[data-fs],[data-ch],[data-ed],[data-save],[data-cancel],[data-revert],[data-note],[data-nsave],[data-log],[data-pdel],[data-addp],[data-apsave],[data-pe],[data-pesave],[data-perev],[data-pedel],[data-pa],[data-pasave]'); if(!t)return;
   const reset=()=>{editId=null;noteKey=null;addKey=null;peKey=null;paKey=null;editVal={};apVal={};peVal={};paVal={}};
   if(t.dataset.ed){reset();editId=t.dataset.ed;return rer()}
-  if(t.dataset.cancel){reset();return rer()}
+  if(t.dataset.cancel){reset();agC=null;return rer()}
   if(t.dataset.addp){reset();addKey=t.dataset.addp;return rer()}
   if(t.dataset.pe){reset();peKey=t.dataset.pe;return rer()}
   if(t.dataset.pa){reset();paKey=t.dataset.pa;return rer()}
@@ -401,9 +509,10 @@ document.addEventListener('click',e=>{
 function rer(){const y=window.scrollY; render(); window.scrollTo(0,y);}
 document.addEventListener('input',e=>{const id=e.target.id,v=e.target.value;
   if(id==='ed-pos')editVal.pos=v;if(id==='ed-rate')editVal.rate=v;if(id==='ed-n')editVal.n=v;if(id==='note-text')noteVal=v;
-  if(id==='ap-n')apVal.n=v;if(id==='ap-r')apVal.r=v;if(id==='pe-n')peVal.n=v;if(id==='pe-c')peVal.c=v;if(id==='pe-d')peVal.gd=v;if(id==='pa-n')paVal.n=v;if(id==='pa-c')paVal.c=v;});
+  if(id==='ag-text')agCV=v;if(id==='ap-n')apVal.n=v;if(id==='ap-r')apVal.r=v;if(id==='pe-n')peVal.n=v;if(id==='pe-c')peVal.c=v;if(id==='pe-d')peVal.gd=v;if(id==='pa-n')paVal.n=v;if(id==='pa-c')paVal.c=v;});
 document.addEventListener('change',e=>{const id=e.target.id,v=e.target.value;
   if(id==='ed-pos')editVal.pos=v; if(id==='pe-d')peVal.gd=v;
+  if(e.target.dataset.agn){const n=e.target.value===''?null:num(e.target.value); agSet(e.target.dataset.agn,{cnt:n}); return}
   if(id==='ed-u'){editVal.u=v;editVal.pos=null;return rer()}
   if(id==='pe-u'){peVal.u=v;peVal.gd=null;return rer()}
   const c=e.target.closest('[data-task]'); if(c) saveTask(c.dataset.task,c.checked);});
@@ -488,7 +597,7 @@ function mkDb(){
     return data.map(x=>({id:x.id,data:()=>Object.assign({},x.data,{by:x.by_email,at:Date.parse(x.at)})}));
   }
   async function fire(name){try{const docs=await load(name);(subs[name]||[]).forEach(f=>f({docs}))}catch(e){(subs[name+'!']||[]).forEach(f=>f(e))}}
-  SB.channel('rt').on('postgres_changes',{event:'*',schema:'public',table:'items'},p=>{const c=(p.new&&p.new.coll)||(p.old&&p.old.coll);if(c)fire(c);else ['moves','people','posx','notes','plan'].forEach(fire)})
+  SB.channel('rt').on('postgres_changes',{event:'*',schema:'public',table:'items'},p=>{const c=(p.new&&p.new.coll)||(p.old&&p.old.coll);if(c)fire(c);else ['moves','people','posx','notes','plan','agree'].forEach(fire)})
     .on('postgres_changes',{event:'*',schema:'public',table:'log'},()=>fire('log'))
     .on('postgres_changes',{event:'*',schema:'public',table:'dataset'},()=>{toast('Исходные данные обновлены — перезагружаю');setTimeout(()=>location.reload(),1500)})
     .subscribe(st=>{if(st==='SUBSCRIBED')setSync('on','Совместная работа включена: правки сразу видят все.');else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT')setSync('err','Нет связи для обновлений в реальном времени. Обновите страницу.')});
@@ -505,11 +614,18 @@ async function initShared(){
   db=mkDb();
   usr={id:async()=>ME,can:async()=>true,profiles:async ids=>Object.fromEntries(ids.map(i=>[i,{name:i}]))};
   canW=true;
-  ['moves','people','posx','notes','plan'].forEach(c=>db.collection(c).onSnapshot(sn=>{const m={};sn.docs.forEach(d=>m[d.id]=d.data());if(c==='moves'){MOVES=m;applyMoves()}else if(c==='people'){PEOPLE=m;applyMoves()}else if(c==='posx'){POSX=m;applyMoves()}else if(c==='notes')NOTES=m;else PLAN=m;rer()},e=>setSync('err','Ошибка чтения: '+(e.message||e))));
+  ['moves','people','posx','notes','plan','agree'].forEach(c=>db.collection(c).onSnapshot(sn=>{const m={};sn.docs.forEach(d=>m[d.id]=d.data());if(c==='agree'){AG=m}else if(c==='moves'){MOVES=m;applyMoves()}else if(c==='people'){PEOPLE=m;applyMoves()}else if(c==='posx'){POSX=m;applyMoves()}else if(c==='notes')NOTES=m;else PLAN=m;rer()},e=>setSync('err','Ошибка чтения: '+(e.message||e))));
   db.collection('log').onSnapshot(sn=>{LOG=sn.docs.map(d=>d.data());rer()});
   rer();
 }
 $('dl-shr').onclick=()=>dl('shr'); $('dl-ras').onclick=()=>dl('ras'); $('dl-cmp').onclick=()=>dl('cmp');
+async function dlAgree(){
+  if(typeof window.buildAgree!=='function'){toast('Обновите страницу: Ctrl+F5');return}
+  try{toast('Формирую лист согласования…');
+    const buf=await buildAgree(agItems(),agTable(),AG,{UN,fmt,who,when});
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download='Лист согласования ГД — оргструктура 2026.xlsx';document.body.appendChild(a);a.click();a.remove();toast('Файл сформирован');
+  }catch(err){toast('Не получилось: '+(err.message||err))}
+}
 
 async function loadData(){
   const {data,error}=await SB.from('dataset').select('data').eq('id','main').maybeSingle();

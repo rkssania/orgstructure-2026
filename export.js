@@ -277,4 +277,38 @@
     put(ws, r, 1, `Всего сотрудников: ${out.length}; с изменениями: ${ch}`, { bold: true, border: false });
     return wb.xlsx.writeBuffer();
   };
+  // ---------------- ЛИСТ СОГЛАСОВАНИЯ ГД ----------------
+  window.buildAgree = async function (S, T, AG, H) {
+    const wb = new ExcelJS.Workbook();
+    const ST = { ok: 'Согласовано', no: 'Не согласовано', re: 'На доработку' };
+    const FL = { ok: FILL('FFE2EFDA'), no: R, re: Y };
+    let ws = wb.addWorksheet('Пункты', { pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+    [['№', 6], ['Вопрос на согласование', 70], ['Ставок', 9], ['Решение', 16], ['Комментарий', 40], ['Отметил(а)', 22]].forEach(([h, w], i) => { ws.getColumn(i + 1).width = w; });
+    ws.mergeCells(1, 1, 1, 6); put(ws, 1, 1, 'Лист согласования новой оргструктуры и штатного расписания 2026', { bold: true, size: 13, border: false });
+    put(ws, 2, 1, 'Сформировано ' + new Date().toLocaleString('ru-RU'), { size: 9, border: false });
+    ['№', 'Вопрос на согласование', 'Ставок', 'Решение', 'Комментарий', 'Отметил(а)'].forEach((h, i) => put(ws, 4, i + 1, h, { bold: true, center: true, fill: G }));
+    let r = 5;
+    S.forEach((sec, si) => {
+      ws.mergeCells(r, 1, r, 6); put(ws, r, 1, sec.t, { bold: true, fill: G }); r++;
+      sec.items.forEach((it, ii) => {
+        const a = AG[it.id] || {};
+        [`${si + 1}.${ii + 1}`, it.text + (it.sub ? '\n' + it.sub : ''), a.cnt != null && a.cnt !== '' ? a.cnt : '', ST[a.st] || '', a.c || '', a.st || a.c ? H.who(a.by) + ', ' + H.when(a.at) : '']
+          .forEach((v, i) => put(ws, r, i + 1, v, { size: 10, center: i === 0 || i === 2, fill: FL[a.st] }));
+        ws.getRow(r).height = it.sub ? 42 : 28; r++;
+      });
+    });
+    r += 2;
+    put(ws, r, 2, 'Генеральный директор  ____________________  /  ____________________', { bold: true, border: false }); r += 2;
+    put(ws, r, 2, 'Дата  «____» ______________ 2026 г.', { border: false });
+
+    ws = wb.addWorksheet('Таблица изменений', { pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+    const cols = [['Подразделение', 16], ['Отдел', 30], ['Было по ШР', 40], ['Стало', 34], ['Изменение', 24], ['Ед. было', 9], ['Ед. стало', 9], ['Сотрудники', 40], ['Решение', 15], ['Комментарий', 30]];
+    cols.forEach(([h, w], i) => { ws.getColumn(i + 1).width = w; put(ws, 1, i + 1, h, { bold: true, center: true, fill: G }); });
+    ws.views = [{ state: 'frozen', ySplit: 1 }];
+    r = 2;
+    T.forEach(x => { const a = AG[x.id] || {};
+      [H.UN[x.u], x.d, x.old, x.nw, x.st.join('; '), r2(x.was), r2(x.now), x.pp.map(p => p.n + ' (' + H.fmt(p.r) + ')').join(', '), ST[a.st] || '', a.c || '']
+        .forEach((v, i) => put(ws, r, i + 1, v, { size: 10, center: i === 5 || i === 6, fill: FL[a.st] })); r++; });
+    return wb.xlsx.writeBuffer();
+  };
 })();
