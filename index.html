@@ -175,6 +175,7 @@ html,body{margin:0}
 <div class="foot"><div class="foot-in">
   <button class="btn primary" id="dl-shr" type="button">Скачать штатное расписание</button>
   <button class="btn primary" id="dl-ras" type="button">Скачать штатную расстановку</button>
+  <button class="btn" id="dl-cmp" type="button">Сравнить со старым штатным</button>
   <span class="note" id="dl-note">Excel в форме бланков, с учётом всех правок</span>
   <label class="link upl">загрузить исходные данные<input type="file" id="upl" accept=".json" hidden></label>
   <button class="link" type="button" id="logout">выйти</button>
@@ -214,7 +215,7 @@ const rid=()=>'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 // effective data = исходные данные + все правки коллег (переносы людей, новые сотрудники, изменения должностей)
 function applyMoves(){
   if(!BD)return;
-  const units=JSON.parse(JSON.stringify(BD.units)); let src=BD.shrsrc.map(x=>Object.assign({},x));
+  const units=JSON.parse(JSON.stringify(BD.units)); let src=BD.shrsrc.map(x=>Object.assign({},x,{cnt0:x.cnt,k0:K(x.u,x.g,x.d,x.p)}));
   const dept=(u,g,d)=>{const U=units.find(x=>x.id===u),G=U&&U.groups.find(x=>x.name===g);return G&&G.depts.find(x=>x.name===d)};
   const alias={}; POSID={};
   Object.entries(POSX).sort((a,b)=>(a[1].at||0)-(b[1].at||0)).forEach(([id,x])=>{
@@ -229,7 +230,7 @@ function applyMoves(){
     [fk,...(x.hist||[])].filter(Boolean).forEach(k=>{if(k!==tk)alias[k]=tk||null});
     if(tk) POSID[tk]=id;
   });
-  src=src.filter(s=>!s._del);
+  const removedSrc=src.filter(s=>s._del); src=src.filter(s=>!s._del);
   const struct=new Set(); units.forEach(U=>U.groups.forEach(G=>G.depts.forEach(D=>D.pos.forEach(p=>struct.add(K(U.id,G.name,D.name,p))))));
   const res=k=>(k in alias)?alias[k]:k;
   const place=(r,k)=>{ if(k&&struct.has(k)){const [u,g,d,p]=k.split('|');return Object.assign({},r,{u,g,d,p})}
@@ -241,7 +242,7 @@ function applyMoves(){
   });
   Object.entries(PEOPLE).forEach(([id,x])=>rows.push(place({id:'x'+id,u:x.u,g:x.g,d:x.d,p:x.p,n:x.n,r:x.r,o:'',f:'add',c:'',note:'',mv:x,added:true},res(K(x.u,x.g,x.d,x.p)))));
   SHR={}; src.forEach(s=>{const k=K(s.u,s.g,s.d,s.p);SHR[k]=Math.round(((SHR[k]||0)+s.cnt)*100)/100});
-  DATA=Object.assign({},BD,{units,shrsrc:src,rows});
+  DATA=Object.assign({},BD,{units,shrsrc:src,rows,removedSrc});
 }
 function deptOptions(u,cur){const U=DATA.units.find(x=>x.id===u);let o='';
   U.groups.forEach(g=>g.depts.forEach(d=>{const v=K(g.name,d.name);o+=`<option value="${esc(v)}"${v===cur?' selected':''}>${esc(d.name==='Руководство'?g.name+' — руководство':dname(d.name))}</option>`}));return o}
@@ -410,10 +411,10 @@ window.addEventListener('hashchange',render);
 // downloads: build Excel in the center's forms from current data (edits included)
 async function dl(key){
   try{ toast('Формирую файл…');
-    const buf=key==='shr'?await buildShr(DATA):await buildRas(DATA);
+    const buf=key==='shr'?await buildShr(DATA):key==='cmp'?await buildCmp(DATA,BASE,MOVES):await buildRas(DATA);
     const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-    a.download=(key==='shr'?'Штатное расписание':'Штатная расстановка')+' (новая оргструктура) '+new Date().toLocaleDateString('ru-RU')+'.xlsx';
+    a.download=(key==='shr'?'Штатное расписание':key==='cmp'?'Сравнение было-стало':'Штатная расстановка')+' (новая оргструктура) '+new Date().toLocaleDateString('ru-RU')+'.xlsx';
     document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000); toast('Файл сформирован');
   }catch(err){toast('Не удалось сформировать файл: '+(err.message||err))}
 }
@@ -506,7 +507,7 @@ async function initShared(){
   db.collection('log').onSnapshot(sn=>{LOG=sn.docs.map(d=>d.data());rer()});
   rer();
 }
-$('dl-shr').onclick=()=>dl('shr'); $('dl-ras').onclick=()=>dl('ras');
+$('dl-shr').onclick=()=>dl('shr'); $('dl-ras').onclick=()=>dl('ras'); $('dl-cmp').onclick=()=>dl('cmp');
 
 async function loadData(){
   const {data,error}=await SB.from('dataset').select('data').eq('id','main').maybeSingle();

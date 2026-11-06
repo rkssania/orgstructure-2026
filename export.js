@@ -204,4 +204,77 @@
     });
     return wb.xlsx.writeBuffer();
   };
+  // ---------------- СРАВНЕНИЕ: старое ШР → новое (с правками) ----------------
+  const UNM = { 'ЦА': 'АУП (ЦА)', 'КРГ': 'Караганда', 'УК': 'Усть-Каменогорск', 'Астана': 'Астана', 'Лаборатория': 'Лаборатория' };
+  const GRN = FILL('FFE2EFDA');
+  function cmpHead(ws, cols, title) {
+    ws.mergeCells(1, 1, 1, cols.length); const t = ws.getCell(1, 1); t.value = title; t.font = { name: TNR, size: 13, bold: true };
+    ws.getCell(2, 1).value = 'Сформировано ' + new Date().toLocaleString('ru-RU') + '. Цвет: жёлтый — изменено, зелёный — новое, красный — исключено / требует решения.';
+    ws.getCell(2, 1).font = { name: TNR, size: 9, italic: true };
+    cols.forEach(([h, w], i) => { ws.getColumn(i + 1).width = w; put(ws, 4, i + 1, h, { bold: true, center: true, fill: G }); });
+    ws.views = [{ state: 'frozen', ySplit: 4 }];
+    return 5;
+  }
+  window.buildCmp = async function (D, base, moves) {
+    const wb = new ExcelJS.Workbook();
+    // Лист 1: должности
+    let ws = wb.addWorksheet('Должности');
+    let r = cmpHead(ws, [['Подразделение', 18], ['Отдел', 34], ['Должность (новая)', 40], ['Было по действующему ШР (наименования)', 44], ['Было, ед.', 10], ['Стало, ед.', 10], ['Разница', 10], ['Что изменилось', 36]], 'Сравнение штатного расписания: действующее → новое (с учётом правок)');
+    const tot = {};
+    const line = (u, d, p, olds, was, now, what, fill) => {
+      [UNM[u] || u, d, p, olds, r2(was), r2(now), r2(now - was), what].forEach((v, i) => put(ws, r, i + 1, v, { center: i >= 4 && i <= 6, fill, size: 10 }));
+      tot[u] = tot[u] || [0, 0]; tot[u][0] += was; tot[u][1] += now; r++;
+    };
+    D.units.forEach(U => {
+      U.groups.forEach(g => g.depts.forEach(d => d.pos.forEach(p => {
+        const es = D.shrsrc.filter(x => x.u === U.id && x.g === g.name && x.d === d.name && x.p === p);
+        const was = es.reduce((a, x) => a + (x.cnt0 || 0), 0), now = es.reduce((a, x) => a + x.cnt, 0);
+        const olds = [...new Set(es.filter(x => x.cnt0).map(x => x.old))];
+        const moved = es.some(x => x.k0 && x.k0 !== [U.id, g.name, d.name, p].join('|'));
+        const what = [];
+        if (!was && !olds.length) what.push('Новая должность');
+        else {
+          if (olds.some(o => norm(o) !== norm(p))) what.push('Новое наименование');
+          if (moved) what.push('Изменена в приложении (перенос / переименование)');
+        }
+        if (Math.abs(now - was) > 0.001 && was) what.push('Изменена численность');
+        const fill = !was && !olds.length ? GRN : what.length ? Y : undefined;
+        line(U.id, d.name === 'Руководство' ? g.name : dlabel(d.name), disp(p), olds.join('; '), was, now, what.join('; ') || 'Без изменений', fill);
+      })));
+      D.shrsrc.filter(x => x.u === U.id && x.d === DEC).forEach(x => line(U.id, '—', x.old, x.old, x.cnt0 || 0, x.cnt, 'Вне новой оргструктуры — требует решения', R));
+      (D.removedSrc || []).filter(x => x.u === U.id).forEach(x => line(U.id, '—', x.p, x.old, x.cnt0 || 0, 0, 'Должность исключена', R));
+    });
+    r++;
+    Object.entries(tot).forEach(([u, [a, b]]) => { [UNM[u] + ' — итого', '', '', '', r2(a), r2(b), r2(b - a), ''].forEach((v, i) => put(ws, r, i + 1, v, { bold: true, center: i >= 4 && i <= 6 })); r++; });
+    const all = Object.values(tot).reduce((s, [a, b]) => [s[0] + a, s[1] + b], [0, 0]);
+    ['ВСЕГО', '', '', '', r2(all[0]), r2(all[1]), r2(all[1] - all[0]), ''].forEach((v, i) => put(ws, r, i + 1, v, { bold: true, center: i >= 4 && i <= 6, fill: G }));
+
+    // Лист 2: сотрудники
+    ws = wb.addWorksheet('Сотрудники');
+    r = cmpHead(ws, [['ФИО', 34], ['Было: подразделение', 16], ['Было: должность', 40], ['Было: ставка', 9], ['Стало: подразделение', 16], ['Стало: отдел', 32], ['Стало: должность', 40], ['Стало: ставка', 9], ['Что изменилось', 34]], 'Сравнение штатной расстановки: было → стало (с учётом правок)');
+    const B = {}; base.forEach(x => B[x.id] = x);
+    const out = [];
+    D.rows.filter(x => x.n).forEach(x => {
+      const b = B[x.id], what = [];
+      let fill;
+      if (x.added || !b) { what.push('Новый сотрудник (добавлен в приложении)'); fill = GRN; }
+      else {
+        if (b.u !== x.u) what.push('Перевод в другое подразделение');
+        if (x.d === DEC) { what.push('Вне новой схемы — требует решения'); fill = R; }
+        else if (norm(b.o) !== norm(x.p)) what.push('Новая должность / наименование');
+        if (Math.abs((b.r || 0) - (x.r || 0)) > 0.001) what.push('Изменена ставка');
+        if (b.n && x.n !== b.n) what.push('Изменено ФИО');
+        if (what.length && !fill) fill = Y;
+      }
+      out.push([x.n, b ? UNM[b.u] : '—', b ? (b.o || b.p) : '—', b ? r2(b.r) : '', UNM[x.u], x.d === DEC ? '—' : (x.d === 'Руководство' ? x.g : dlabel(x.d)), disp(x.p), r2(x.r), what.join('; ') || 'Без изменений', fill, x.u]);
+    });
+    Object.entries(moves || {}).filter(([, m]) => m.del).forEach(([id]) => { const b = B[id]; if (b && b.n) out.push([b.n, UNM[b.u], b.o || b.p, r2(b.r), '—', '—', '—', 0, 'Убран(а) из расстановки', R, b.u]); });
+    const ord = Object.keys(UNM);
+    out.sort((a, b) => ord.indexOf(a[10]) - ord.indexOf(b[10]) || String(a[0]).localeCompare(String(b[0]), 'ru'));
+    out.forEach(row => { row.slice(0, 9).forEach((v, i) => put(ws, r, i + 1, v, { center: i === 3 || i === 7, fill: row[9], size: 10 })); r++; });
+    r++;
+    const ch = out.filter(x => x[8] !== 'Без изменений').length;
+    put(ws, r, 1, `Всего сотрудников: ${out.length}; с изменениями: ${ch}`, { bold: true, border: false });
+    return wb.xlsx.writeBuffer();
+  };
 })();
