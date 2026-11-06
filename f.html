@@ -1,0 +1,93 @@
+<!doctype html><html lang="ru"><head><title>Мои функции</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Sans+Narrow:wght@700&display=swap">
+<style>
+/* Сотрудник вводит ФИО → видит свою должность и функции; кнопка отправить исправления */
+:root{--bg:#f3f5f9;--card:#fff;--ink:#14223d;--muted:#5b6782;--line:#c3cbdb;--navy:#1b2f57;--navy-ink:#fff;--navy-soft:#e7ecf6;--terra:#b8562f;--amber:#9a6a00;--amber-soft:#fbf0d4;
+  --f-body:"PT Sans",system-ui,sans-serif;--f-head:"PT Sans Narrow","PT Sans",system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0e1626;--card:#16213a;--ink:#e6ebf5;--muted:#9aa6c0;--line:#34466b;--navy:#2c4a86;--navy-soft:#1d2c4c;--terra:#e08462;--amber:#e3b54d;--amber-soft:#3a3017;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1626;--card:#16213a;--ink:#e6ebf5;--muted:#9aa6c0;--line:#34466b;--navy:#2c4a86;--navy-soft:#1d2c4c;--terra:#e08462;--amber:#e3b54d;--amber-soft:#3a3017;color-scheme:dark}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--terra);outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px))}
+h1{font-family:var(--f-head);font-size:26px;margin:8px 0 4px}
+.hint{color:var(--muted);font-size:14px;margin:0 0 14px}
+form.find{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+form.find input{flex:1 1 220px;min-width:0;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:11px 12px;font-size:17px}
+.btn{border:1px solid var(--navy);background:var(--card);border-radius:8px;padding:10px 16px;cursor:pointer}
+.btn.primary{background:var(--navy);color:var(--navy-ink)}
+.msg{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;color:var(--muted)}
+.head{background:var(--navy);color:var(--navy-ink);border-radius:10px;padding:14px 16px;margin:6px 0 12px}
+.head h2{font-family:var(--f-head);font-size:23px;margin:0 0 4px;text-wrap:balance}
+.head .d{opacity:.9;font-size:14px}
+.draft{background:var(--amber-soft);color:var(--amber);border-radius:8px;padding:8px 12px;font-size:14px;margin-bottom:12px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:12px;overflow:hidden}
+.sec{padding:9px 14px;background:var(--navy-soft);font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.op{padding:12px 14px;border-top:1px solid var(--line)}
+.op:first-of-type{border-top:0}
+.op .p{font-weight:700;display:flex;gap:8px}
+.op .p span:first-child{color:var(--muted);font-weight:400;min-width:22px}
+.op .ds{margin:4px 0 0 30px;white-space:pre-line;font-size:15px;overflow-wrap:anywhere}
+.flow{margin:8px 0 0 30px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px 10px;font-size:13.5px}
+@media (max-width:540px){.flow{grid-template-columns:minmax(0,1fr)}}
+.flow div{background:var(--bg);border-radius:6px;padding:6px 8px;white-space:pre-line;overflow-wrap:anywhere}
+.flow b{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.chips{margin:6px 0 0 30px;display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);border-radius:99px;padding:0 8px;font-size:12.5px;color:var(--muted)}
+.fix{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:16px}
+.fix h3{font-family:var(--f-head);margin:0 0 6px;font-size:19px}
+.fix textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg);margin:6px 0 10px}
+.other{margin:4px 0 14px;display:flex;gap:8px;flex-wrap:wrap}
+</style></head><body>
+<div class="wrap">
+  <h1>Мои функции</h1>
+  <p class="hint">ТОО «Центр гематологии». Введите фамилию и имя — покажем вашу должность по новой структуре и функции.</p>
+  <form class="find" id="find"><input id="q" placeholder="Фамилия Имя" autocomplete="name" required aria-label="Фамилия и имя"><button class="btn primary" type="submit">Показать</button></form>
+  <div id="out"></div>
+</div>
+<script>
+(function(){
+const SALT='cg2026', KZ={'ә':'а','ғ':'г','қ':'к','ң':'н','ө':'о','ұ':'у','ү':'у','һ':'х','і':'и','ё':'е'};
+const SCN={'ЦА':'Центральный аппарат','Лаборатория':'Лаборатория и ООЛЛ','Филиалы':'Филиал'};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let DATA=null, FOUND=[], who='';
+const load=fetch('f-data.json?v=1').then(r=>r.json()).then(d=>DATA=d).catch(()=>{$('out').innerHTML='<div class="msg">Не удалось загрузить данные. Обновите страницу.</div>'});
+function key(n){n=n.toLowerCase().replace(/\(.*?\)/g,' ').replace(/[әғқңөұүһіё]/g,c=>KZ[c]);
+  const t=n.split(/[\s.]+/).map(x=>x.replace(/[^а-яa-z]/g,'')).filter(Boolean); return t.length<2?null:t[0]+'|'+t[1][0]}
+async function sha(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,16)}
+function opHtml(o,i,c){
+  const fl=(o.inp||o.outp)?`<div class="flow"><div><b>Получаю</b>${esc(o.inp||'—')}${o.frm?`<b style="margin-top:4px">от кого</b>${esc(o.frm)}`:''}</div><div><b>Передаю</b>${esc(o.outp||'—')}${o.to?`<b style="margin-top:4px">кому</b>${esc(o.to)}`:''}</div></div>`:'';
+  return `<div class="op"><div class="p"><span>${i}.</span><span>${esc(o.proc||'')}</span></div>${o.desc?`<div class="ds">${esc(o.desc)}</div>`:''}${fl}</div>`;
+}
+function show(k){
+  const [ci,u]=FOUND[k], c=DATA.cards[ci];
+  const ops=c.ops.filter(o=>c.s!=='Филиалы'||!u||!o.br||o.br.includes(u));
+  let h='';
+  if(FOUND.length>1) h+=`<div class="other">${FOUND.map(([i,uu],j)=>`<button class="btn${j===k?' primary':''}" type="button" data-k="${j}">${esc(DATA.cards[i].t)}${uu?' · '+esc(uu):''}</button>`).join('')}</div>`;
+  h+=`<div class="head"><h2>${esc(c.t)}</h2><div class="d">${esc(SCN[c.s]||c.s)}${c.s==='Филиалы'&&u?' '+esc(u):''} · ${esc(c.d.replace(' · ',' — '))}</div></div>`;
+  if(c.st==='draft') h+=`<div class="draft">Это новая должность — функции составлены черновиком. Поправьте их ниже.</div>`;
+  [['main','Основные обязанности'],['side','Сопутствующие обязанности']].forEach(([s,n])=>{const l=ops.filter(o=>(o.sec||'main')===s);if(!l.length)return;h+=`<div class="box"><div class="sec">${n}</div>${l.map((o,i)=>opHtml(o,i+1,c)).join('')}</div>`});
+  h+=`<div class="fix"><h3>Что не так?</h3><p class="hint" style="margin:0">Напишите, что лишнее, чего не хватает или что делаете иначе. Если должность указана неверно — тоже напишите.</p>
+  <textarea id="fx" placeholder="Например: п. 5 не делаю; ещё веду журнал…"></textarea>
+  <button class="btn primary" type="button" id="send">Отправить в WhatsApp</button></div>`;
+  $('out').innerHTML=h; window.scrollTo({top:$('out').offsetTop-8,behavior:'smooth'});
+}
+$('find').addEventListener('submit',async e=>{e.preventDefault(); await load; if(!DATA)return;
+  who=$('q').value.trim(); const k=key(who);
+  if(!k){$('out').innerHTML='<div class="msg">Введите фамилию и имя, например: Иванова Анна.</div>';return}
+  FOUND=DATA.idx[await sha(SALT+k)]||[];
+  if(!FOUND.length){$('out').innerHTML='<div class="msg">Не нашли вас в штатной расстановке. Проверьте написание (фамилия, затем имя) или обратитесь в отдел управления персоналом.</div>';return}
+  show(0)});
+$('out').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.k){show(+b.dataset.k);return}
+  if(b.id==='send'){const t=$('fx').value.trim(); if(!t){$('fx').focus();return}
+    const c=DATA.cards[FOUND[0][0]], cur=document.querySelector('.head h2').textContent;
+    const msg=`Исправления по функциям\nСотрудник: ${who}\nДолжность: ${cur}\n\n${t}`;
+    window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
+});
+})();
+</script>
+</body></html>
