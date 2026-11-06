@@ -186,8 +186,8 @@ html,body{margin:0}
 <button class="btn primary" type="submit" id="lf-go">Войти</button><button class="link" type="button" id="lf-mode">Нет аккаунта? Зарегистрироваться</button><div class="err" id="lf-err"></div></form></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-<script src="config.js"></script>
-<script src="export.js"></script>
+<script src="config.js?v=1793959529"></script>
+<script src="export.js?v=1793959529"></script>
 
 <script>
 (function(){
@@ -411,6 +411,7 @@ window.addEventListener('hashchange',render);
 // downloads: build Excel in the center's forms from current data (edits included)
 async function dl(key){
   try{ toast('Формирую файл…');
+    if(key==='cmp'&&typeof window.buildCmp!=='function'){toast('Обновите страницу: Ctrl+F5 (загружена старая версия)');return}
     const buf=key==='shr'?await buildShr(DATA):key==='cmp'?await buildCmp(DATA,BASE,MOVES):await buildRas(DATA);
     const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
