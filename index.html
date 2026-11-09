@@ -663,7 +663,8 @@ $('lf').addEventListener('submit',async e=>{e.preventDefault();$('lf-err').textC
   const {data:{session}}=await SB.auth.getSession();
   if(!session){$('login').hidden=false;$('main').innerHTML='';setSync('off','Войдите, чтобы открыть данные.');return}
   ME=session.user.email; setSync('load','Подключаю…');
-  try{const {data:ok,error}=await SB.rpc('is_allowed'); if(!error&&ok===false){$('main').innerHTML='<div class="loading">Вы зарегистрированы как '+esc(ME)+', но доступ к данным ещё не выдан.<br>Попросите администратора добавить ваш email в список доступа.</div>';setSync('view','Доступ не выдан');return}}catch(_){}
+  try{const {data:ok,error}=await SB.rpc('is_allowed'); if(!error&&ok===false){const box=$('main');box.innerHTML='<div style="max-width:380px;margin:40px auto;padding:20px;background:var(--card,#fff);border-radius:12px;font:inherit"><h2 style="margin:0 0 6px">Код приглашения</h2><p style="margin:0 0 12px;opacity:.75">Вы вошли как '+esc(ME)+'. Введите код из письма или сообщения руководства — это нужно один раз.</p><form id="jf"><input id="jf-code" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #c3cbdb;border-radius:8px;font:inherit;margin-bottom:10px" placeholder="Код"><button type="submit" style="padding:10px 16px;border:0;border-radius:8px;background:#1b2f57;color:#fff;font:inherit;cursor:pointer">Войти</button><div id="jf-err" style="color:#c4452f;margin-top:8px;min-height:1em"></div></form></div>';
+    $('jf').addEventListener('submit',async ev=>{ev.preventDefault();const {data:okj,error:ej}=await SB.rpc('join_with_code',{code:$('jf-code').value});if(ej||!okj){$('jf-err').textContent='Код не подошёл. Проверьте и введите ещё раз.';return}location.reload()});setSync('view','Нужен код приглашения');return}}catch(_){}
   loadData();
 })();
 })();
