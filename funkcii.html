@@ -368,18 +368,22 @@ function othEdits(ci,u){
     const mine=EDITS[`c${ci}o${x.oi}u${u}`]; if(!mine)return true; return !(!!mine.del===!!x.del&&F.every(([k])=>(mine[k]||'')===(x[k]||'')))});
 }
 /* Supabase: таблица items, коллекции fa (отметки), fe (правки), fdata (структура и функции) */
-async function up(coll,id,doc){const {error}=await SB.from('items').upsert({coll,id,data:doc,by_email:ME,at:new Date().toISOString()});if(error)throw error}
+function alertBar(m){let el=$('abar');if(!el){el=document.createElement('div');el.id='abar';el.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:#c4452f;color:#fff;padding:10px 14px;border-radius:10px;font-size:15px;z-index:60;max-width:calc(100% - 32px)';document.body.appendChild(el)}el.textContent=m;el.hidden=false;clearTimeout(alertBar.t);alertBar.t=setTimeout(()=>el.hidden=true,5000)}
+async function up(coll,id,doc){
+  const to=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15000));
+  return Promise.race([up0(coll,id,doc),to])}
+async function up0(coll,id,doc){const {error}=await SB.from('items').upsert({coll,id,data:doc,by_email:ME,at:new Date().toISOString()});if(error)throw error}
 async function putEdit(id,doc){
   if(!db){dbState='off';render();return false}
   const full=Object.assign({},doc,{id,by:ME||'',at:Date.now()}); const prev=EDITS[id]; EDITS[id]=full;
-  try{await up('fe',id,full);return true}catch(err){if(prev)EDITS[id]=prev;else delete EDITS[id];dbState='off';render();return false}
+  try{await up('fe',id,full);return true}catch(err){if(prev)EDITS[id]=prev;else delete EDITS[id];render();alertBar('Не сохранилось — проверьте интернет и попробуйте ещё раз.');return false}
 }
 async function save(id,patch,quiet){
   if(!db){dbState='off';render();return}
   const mm=id.match(/^u(\d+)g(\d+)c(\d+)o(\w+)$/); if(!mm)return;
   const prev=ALL[id]||{}; const doc=Object.assign({},prev,patch,{b:mm[1]+'-'+mm[2],by:ME||'',at:Date.now(),c:+mm[3],oi:mm[4],u:D.units[+mm[1]].id});
   ALL[id]=doc; if(!quiet) render(); else {const s=$('sv'); if(s) s.textContent='Сохранено'}
-  try{await up('fa',id,doc)}catch(err){ALL[id]=prev;dbState='off';render()}
+  try{await up('fa',id,doc)}catch(err){ALL[id]=prev;render();alertBar('Не сохранилось — проверьте интернет и нажмите ещё раз.')}
 }
 /* ---------- события ---------- */
 function formVals(){const r={};F.forEach(([k])=>{const x=$('ef-'+k);r[k]=x?x.value.trim():''});return r}
@@ -447,19 +451,25 @@ async function start(){
   $('mebar').hidden=false; $('mebar-e').textContent=ME;
   try{const {data:ok,error}=await SB.rpc('is_allowed'); if(!error&&ok===false){const box=$('out');box.innerHTML='<div style="max-width:380px;margin:40px auto;padding:20px;background:var(--card,#fff);border-radius:12px;font:inherit"><h2 style="margin:0 0 6px">Код приглашения</h2><p style="margin:0 0 12px;opacity:.75">Вы вошли как '+esc(ME)+'. Введите код из письма или сообщения руководства — это нужно один раз.</p><form id="jf"><input id="jf-code" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #c3cbdb;border-radius:8px;font:inherit;margin-bottom:10px" placeholder="Код"><button type="submit" style="padding:10px 16px;border:0;border-radius:8px;background:#1b2f57;color:#fff;font:inherit;cursor:pointer">Войти</button><div id="jf-err" style="color:#c4452f;margin-top:8px;min-height:1em"></div></form></div>';
     $('jf').addEventListener('submit',async ev=>{ev.preventDefault();const {data:okj,error:ej}=await SB.rpc('join_with_code',{code:$('jf-code').value});if(ej||!okj){$('jf-err').textContent='Код не подошёл. Проверьте и введите ещё раз.';return}location.reload()});return}}catch(_){}
+  const slow=setTimeout(()=>{const o=$('out');if(o&&/Загружаю/.test(o.textContent))o.innerHTML='<div class="msg">Загрузка идёт дольше обычного — возможно, слабый интернет.<br><br><button class="bt pr" type="button" onclick="location.reload()">Обновить страницу</button></div>'},20000);
+  $('out').innerHTML='<div class="msg">Загружаю должности и функции…</div>';
   let fd; try{fd=await loadColl('fdata')}catch(e){$('out').innerHTML='<div class="msg">Ошибка загрузки: '+esc(e.message||e)+'</div>';return}
   if(!fd.meta){seedScreen();return}
   const cards=[]; for(let i=0;i<fd.meta.n;i++){const ch=fd['c'+i]; if(!ch){$('out').innerHTML='<div class="msg">Данные загружены не полностью. Обновите страницу.</div>';return} ch.cards.forEach((c,k)=>cards[ch.start+k]=c)}
   D={units:fd.meta.units,auto:fd.meta.auto,cards}; index();
+  $('out').innerHTML='<div class="msg">Загружаю отметки коллег…</div>';
   try{ALL=await loadColl('fa'); const e=await loadColl('fe'); EDITS={}; Object.entries(e).forEach(([id,v])=>{v.id=id;EDITS[id]=v})}catch(_){}
-  db=true; dbState='on'; feedOn=true; render();
+  clearTimeout(slow); db=true; dbState='on'; feedOn=true; render();
   SB.channel('funkcii').on('postgres_changes',{event:'*',schema:'public',table:'items',filter:'coll=in.(fa,fe)'},p=>{
     const n=p.new&&p.new.coll?p.new:null, o=p.old||{}, coll=(n&&n.coll)||o.coll, id=(n&&n.id)||o.id; if(!id)return;
     const M=coll==='fe'?EDITS:coll==='fa'?ALL:null; if(!M)return;
     if(p.eventType==='DELETE'||!n) delete M[id]; else {const v=n.data||{}; if(coll==='fe')v.id=id; M[id]=v}
     rr();
-  }).subscribe(st=>{if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){dbState='off';rr()}});
+  }).subscribe(st=>{if(st==='SUBSCRIBED'){LIVE=true}else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'||st==='CLOSED'){LIVE=false}});
+  // если живое обновление не работает (сеть блокирует), подтягиваем изменения раз в 20 секунд
+  setInterval(async()=>{if(LIVE||document.hidden||busy())return;try{const fa=await loadColl('fa'),fe=await loadColl('fe');ALL=fa;EDITS={};Object.entries(fe).forEach(([id,v])=>{v.id=id;EDITS[id]=v});rr()}catch(_){}},20000);
 }
+let LIVE=false;
 let SIGNUP=false;
 $('lf-mode').addEventListener('click',()=>{SIGNUP=!SIGNUP;$('lf-go').textContent=SIGNUP?'Зарегистрироваться':'Войти';$('lf-mode').textContent=SIGNUP?'Уже есть аккаунт? Войти':'Нет аккаунта? Зарегистрироваться';$('lf-err').textContent=''});
 $('lf').addEventListener('submit',async e=>{e.preventDefault();$('lf-err').textContent='';const email=$('lf-email').value.trim(),password=$('lf-pass').value;
