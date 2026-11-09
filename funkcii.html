@@ -182,11 +182,12 @@ function nav(back,title){document.querySelector('.nav').hidden=!back&&!title;$('
 const warn=()=>dbState==='off'?`<div class="warn">Изменения сейчас не сохраняются: нет связи с базой или доступ не выдан. Обновите страницу.</div>`:'';
 function render(){
   if(!D)return;
-  const {k,a}=parse(); const lv={'':0,u:1,d:2,p:3,f:4,a:4}[k]||0; const out=$('out');
+  const {k,a}=parse(); const lv={'':0,u:1,d:2,p:3,f:4,a:4,m:5}[k]||0; const out=$('out');
   out.classList.remove('anim'); if(lv>depth){void out.offsetWidth;out.classList.add('anim')} depth=lv;
   try{
     if((k==='f'||k==='p'||k==='a')&&hidden(D.cards[posList(+a[0],+a[1],a[2])[+a[3]].c])){location.hash='';return}
     if(k==='f') return fScreen(+a[0],+a[1],a[2],+a[3],a[4]);
+    if(k==='m') return mScreen(+a[0],+a[1],a[2],+a[3],a[4]||'all');
     if(k==='a') return aScreen(+a[0],+a[1],a[2],+a[3],a[4]||'main');
     if(k==='p') return pScreen(+a[0],+a[1],a[2],+a[3]);
     if(k==='d') return dScreen(+a[0],+a[1],a[2]);
@@ -215,7 +216,7 @@ function feedHtml(){
   if(!items.length) return h+`<div class="ppl" style="color:var(--muted)">Пока никто ничего не менял. Как только коллеги отметят функции или изменят текст, это появится здесь сразу.</div>`;
   return h+`<div class="list feed">`+items.map(x=>{const L=LOC[x.u+'|'+x.c]; const c=D.cards[x.c]; if(!c)return'';
     const o=(opsOf(c,x.u).find(([,oi])=>oi===String(x.oi))||[])[0];
-    const what=x._e?(x.del?'удалил(а) функцию':x.isNew?'добавил(а) функцию':'изменил(а) текст'):(x.st?ST[x.st]:(x.how?'описал(а), как делает':'отметка снята'));
+    const what=x._e?(x.del?(x.movedTo?'перенёс(ла) функцию → '+x.movedTo.t:'удалил(а) функцию'):x.isNew?(x.movedFrom?(x.copy?'скопировал(а) функцию из ':'перенёс(ла) функцию из ')+x.movedFrom.t:'добавил(а) функцию'):'изменил(а) текст'):(x.st?ST[x.st]:(x.how?'описал(а), как делает':'отметка снята'));
     const go=L?`f-${L[0]}-${L[1]}-${L[2]}-${L[3]}-${x.oi}`:'';
     return `<button class="row" type="button" ${go&&!(x._e&&x.del)?`data-go="${go}"`:''}><span class="tx"><span class="t"><b>${esc(nm(x.by))}</b> · ${esc(what)}</span><span class="s">${esc(UN[x.u]||x.u||'')} · ${esc(disp(c.t))}${o||x.proc?' · «'+esc((o&&o.proc)||x.proc||'')+'»':''}${x.how&&!x._e?' — '+esc(x.how):''}</span></span><span class="r">${when(x.at)}</span></button>`}).join('')+`</div>`;
 }
@@ -272,9 +273,10 @@ function pScreen(ui,gi,di,pi){
   [['main','Основные обязанности'],['side','Сопутствующие обязанности']].forEach(([sec,n])=>{
     const l=ops.filter(([o])=>(o.sec||'main')===sec); if(!l.length&&sec==='side')return;
     h+=`<div class="sh">${n} · ${l.length}</div><div class="flist">`+l.map(([o,oi],i)=>{const id=oid(ui,gi,e.c,oi),a=ALL[id]||{};
-      const tag=o.added?'<span class="pill fx">добавлено</span>':o.ed?'<span class="pill fx">изменено</span>':o.chg?'<span class="pill fx">исправлено</span>':'';
+      const tag=o.ed&&o.ed.movedFrom?`<span class="pill fx">из: ${esc(o.ed.movedFrom.t)}</span>`:o.added?'<span class="pill fx">добавлено</span>':o.ed?'<span class="pill fx">изменено</span>':o.chg?'<span class="pill fx">исправлено</span>':'';
       return `<div class="fr"><button class="fn" type="button" data-go="f-${ui}-${gi}-${di}-${pi}-${oi}"><span class="num">${i+1}.</span><span class="tt">${esc(o.proc||'')}${tag}<span class="s">${a.st==='diff'&&a.how?esc(a.how):'Подробнее ›'}</span>${o.ed?`<span class="who">${esc(nm(o.ed.by))}, ${when(o.ed.at)}</span>`:''}</span></button><div class="sc" role="group" aria-label="Ответ">${Object.entries(ST).map(([k,v])=>`<button type="button" class="${k}" data-st="${k}" data-id="${id}" aria-pressed="${a.st===k}">${v}</button>`).join('')}</div>${othBox(oi,a,id)}</div>`}).join('')+(dbState!=='off'?`<button class="addb" type="button" data-go="a-${ui}-${gi}-${di}-${pi}-${sec}">＋ Добавить функцию</button>`:'')+`</div>`;
   });
+  if(dbState!=='off'&&ops.length) h+=`<div class="links" style="margin-top:18px"><button type="button" data-go="m-${ui}-${gi}-${di}-${pi}-all">Должность упраздняется — перенести все функции</button></div>`;
   const t=encodeURIComponent(`Комментарий по функциям\n${U.name} · ${c.t}\n\n`);
   h+=`<div class="sh">Общий комментарий</div><div class="ppl" style="color:var(--muted)">Кто на самом деле занимает должность, чего не хватает — напишите в WhatsApp.<a class="wa" href="https://wa.me/${WA}?text=${t}" target="_blank" rel="noopener">Написать в WhatsApp</a><div style="margin-top:6px;font-size:13px">Номер: +7 705 517 00 15</div></div>`;
   $('out').innerHTML=h;
@@ -294,7 +296,7 @@ function fScreen(ui,gi,di,pi,oi){
   nav([`p-${ui}-${gi}-${di}-${pi}`,disp(c.t)],`${idx+1} из ${ops.length}`);
   if(panel.edit){ $('out').innerHTML=`<h1 style="font-size:24px">Изменить функцию</h1><p class="sub">${esc(disp(c.t))}${BR.includes(U.id)?' · '+esc(UN[U.id]):''}. Изменение сразу увидят все.</p>`+editForm(o,'Сохранить',`f-${ui}-${gi}-${di}-${pi}-${oi}`,true); return }
   let h=`<h1 style="font-size:24px">${esc(o.proc||'')}</h1>`;
-  if(o.ed) h+=`<span class="who" style="margin:-2px 0 6px">${o.added?'Добавлено':'Изменено'}: ${esc(nm(o.ed.by))}, ${when(o.ed.at)}</span>`;
+  if(o.ed) h+=`<span class="who" style="margin:-2px 0 6px">${o.ed.movedFrom?(o.ed.copy?'Скопировано из «':'Перенесено из «')+esc(o.ed.movedFrom.t)+'»':o.added?'Добавлено':'Изменено'}: ${esc(nm(o.ed.by))}, ${when(o.ed.at)}</span>`;
   h+=`<div class="ans" role="group" aria-label="Ответ">${Object.entries(ST).map(([k,v])=>`<button type="button" class="${k}" data-st="${k}" data-id="${id}" aria-pressed="${a.st===k}">${v}</button>`).join('')}</div><div class="saved" id="sv">${a.at?'Сохранено '+when(a.at):''}</div>${warn()}${othBox(oi,a,id)}`;
   const ta=(f,label,ph)=>`<div class="ta"><label for="t-${f}">${label}</label><textarea id="t-${f}" data-f="${f}" data-id="${id}" placeholder="${ph}">${esc(a[f]||'')}</textarea><div class="hint">Сохраняется само. Надиктовать — микрофон на клавиатуре телефона.</div></div>`;
   if(a.st==='diff') h+=ta('how','Как делаете на самом деле','Опишите своими словами…');
@@ -303,10 +305,46 @@ function fScreen(ui,gi,di,pi,oi){
   if(o.au) h+=`<div class="note au"><b>Можно автоматизировать:</b> ${esc(D.auto[o.au])}</div>`;
   if(o.chg&&!o.ed) h+=`<div class="note fx"><b>Исправлено:</b> ${esc(o.chg)}</div>`;
   if(pn.idea||a.idea) h+=ta('idea','Ваша идея автоматизации','Что можно упростить или передать программе…');
-  const l=[]; if(dbState!=='off') l.push(`<button type="button" data-edit="1">Изменить текст функции</button>`); if(!(pn.idea||a.idea)) l.push(`<button type="button" data-pn="idea" data-id="${id}">Предложить автоматизацию</button>`);
+  const l=[]; if(dbState!=='off') l.push(`<button type="button" data-edit="1">Изменить текст функции</button>`,`<button type="button" data-go="m-${ui}-${gi}-${di}-${pi}-${oi}">Перенести в другую должность</button>`); if(!(pn.idea||a.idea)) l.push(`<button type="button" data-pn="idea" data-id="${id}">Предложить автоматизацию</button>`);
   if(l.length) h+=`<div class="links">${l.join('')}</div>`;
   h+=`<div class="pager"><button type="button" ${prev?`data-go="f-${ui}-${gi}-${di}-${pi}-${prev[1]}"`:'disabled'}>‹ Предыдущая</button><button type="button" data-go="${next?`f-${ui}-${gi}-${di}-${pi}-${next[1]}`:`p-${ui}-${gi}-${di}-${pi}`}">${next?'Следующая ›':'Готово'}</button></div>`;
   $('out').innerHTML=h;
+}
+let MV={u:null,q:'',copy:false,tgt:null};
+function allPos(ui){const U=D.units[ui],r=[];U.groups.forEach((g,gi)=>{g.head.forEach((e,pi)=>r.push({e,gi,di:'h',pi,d:g.name}));g.depts.forEach((dp,di)=>dp.pos.forEach((e,pi)=>r.push({e,gi,di,pi,d:dn(dp.name)})))});return r}
+function mScreen(ui,gi,di,pi,oi){
+  const U=D.units[ui], e=posList(ui,gi,di)[pi], c=D.cards[e.c], ops=opsOf(c,U.id), one=oi!=='all', op=one?(ops.find(([,x])=>x===oi)||[])[0]:null;
+  if(one&&!op){location.hash=`p-${ui}-${gi}-${di}-${pi}`;return}
+  if(MV.key!==location.hash){MV={key:location.hash,u:ui,q:'',copy:false,tgt:null}}
+  nav([one?`f-${ui}-${gi}-${di}-${pi}-${oi}`:`p-${ui}-${gi}-${di}-${pi}`,one?'Функция':disp(c.t)],'');
+  let h=`<h1 style="font-size:24px">${one?'Перенести функцию':'Перенести все функции'}</h1><p class="sub">${one?'«'+esc(op.proc||'')+'»':esc(ops.length+' функций')} · из должности «${esc(disp(c.t))}», ${esc(short(U.name))}</p>${warn()}
+  <div class="seg" role="group" aria-label="Как переносить"><button type="button" data-mvc="0" aria-pressed="${!MV.copy}">Перенести</button><button type="button" data-mvc="1" aria-pressed="${MV.copy}">Скопировать</button></div>
+  <p class="sub" style="margin-top:4px">${MV.copy?'Функция останется и здесь, и появится у новой должности.':'Функция уберётся отсюда и появится у новой должности.'}</p>
+  <div class="sh">Куда</div><div class="seg" role="group" aria-label="Подразделение">${D.units.map((u,i)=>`<button type="button" data-mvu="${i}" aria-pressed="${i===MV.u}">${esc(short(u.name))}</button>`).join('')}</div>
+  <div class="search"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input id="mvq" type="search" placeholder="Найти должность или фамилию" autocomplete="off" aria-label="Поиск должности" value="${esc(MV.q)}"></div><div id="mvres"></div>`;
+  $('out').innerHTML=h; mvResults();
+}
+function mvResults(){
+  const box=$('mvres'); if(!box)return; const {a}=parse(); const sci=posList(+a[0],+a[1],a[2])[+a[3]].c, sU=D.units[+a[0]];
+  const q=norm(MV.q), w=q?q.split(/\s+/):[];
+  const list=allPos(MV.u).filter(x=>!(MV.u===+a[0]&&x.e.c===sci)&&!hidden(D.cards[x.e.c])).filter(x=>{if(!w.length)return true;const k=norm(disp(D.cards[x.e.c].t)+' '+x.d+' '+x.e.p.join(' '));const ws=k.split(/\s+/);return w.every(t=>ws.some(y=>y.startsWith(t)))});
+  const T=MV.tgt;
+  box.innerHTML=(T?`<div class="warn" style="background:color-mix(in srgb,var(--tint) 12%,transparent);color:var(--ink)">${MV.copy?'Скопировать':'Перенести'} в <b>${esc(disp(D.cards[T.e.c].t))}</b> · ${esc(T.d)} · ${esc(short(D.units[MV.u].name))}?<div class="btns" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="bt pr" type="button" data-mvgo="1">${MV.copy?'Скопировать':'Перенести'}</button><button class="bt" type="button" data-mvx="1">Выбрать другую</button></div></div>`:'')+
+  `<div class="list">`+list.slice(0,60).map((x,i)=>`<button class="row" type="button" data-mvt="${x.gi}|${x.di}|${x.pi}"><span class="tx"><span class="t b">${esc(disp(D.cards[x.e.c].t))}</span><span class="s">${esc(x.d)}${x.e.p.length?' · '+esc(x.e.p.slice(0,2).join(', '))+(x.e.p.length>2?' и ещё '+(x.e.p.length-2):''):' · вакансия'}</span></span>${CHEV}</button>`).join('')+`</div>`+(list.length>60?`<p class="sub" style="margin-top:8px">Показаны первые 60 — уточните поиск.</p>`:'')+(!list.length?`<div class="msg">Ничего не нашли.</div>`:'');
+}
+async function doMove(){
+  const {a}=parse(); const ui=+a[0],gi=+a[1],di=a[2],pi=+a[3],oi=a[4], U=D.units[ui], ci=posList(ui,gi,di)[pi].c, c=D.cards[ci];
+  const T=MV.tgt, TU=D.units[MV.u], tci=T.e.c, tTitle=disp(D.cards[tci].t), sTitle=disp(c.t);
+  const ops=opsOf(c,U.id).filter(([,x])=>oi==='all'||x===oi); if(!ops.length)return;
+  const btn=document.querySelector('[data-mvgo]'); if(btn){btn.disabled=true;btn.textContent='Сохраняю…'}
+  let k=0;
+  for(const [o,x] of ops){
+    const nid='n'+(Date.now()+k++).toString(36);
+    const ok=await putEdit(ekey(tci,nid,TU.id),Object.assign(pick(o),{c:tci,oi:nid,u:TU.id,isNew:true,sec:o.sec||'main',t0:Date.now()+k,movedFrom:{c:ci,oi:x,u:U.id,t:sTitle},copy:MV.copy}));
+    if(!ok)return;
+    if(!MV.copy){const old=EDITS[ekey(ci,x,U.id)]||{}; if(!await putEdit(ekey(ci,x,U.id),Object.assign({},old,{c:ci,oi:x,u:U.id,del:true,proc:o.proc||'',movedTo:{c:tci,u:TU.id,t:tTitle}})))return}
+  }
+  const dest=`p-${D.units.indexOf(TU)}-${T.gi}-${T.di}-${T.pi}`; MV={}; location.hash=dest; window.scrollTo(0,0);
 }
 function aScreen(ui,gi,di,pi,sec){
   const U=D.units[ui], e=posList(ui,gi,di)[pi], c=D.cards[e.c];
@@ -315,7 +353,7 @@ function aScreen(ui,gi,di,pi,sec){
   const x=$('ef-proc'); if(x) x.focus();
 }
 /* ---------- данные ---------- */
-const busy=()=>{const x=document.activeElement;return x&&(x.tagName==='TEXTAREA'||x.id==='q')};
+const busy=()=>{const x=document.activeElement;return x&&(x.tagName==='TEXTAREA'||x.id==='q'||x.id==='mvq')};
 function rr(){if(!busy())render()}
 function sub(){}
 function subCard(ci,u){OTH={}; if(!BR.includes(u))return; Object.values(ALL).forEach(v=>{if(v.c===ci&&v.u&&v.u!==u&&(v.st==='no'||v.st==='diff'))(OTH[v.oi]=OTH[v.oi]||[]).push(v)})}
@@ -354,6 +392,11 @@ document.addEventListener('submit',async ev=>{if(ev.target.id!=='ef')return;ev.p
 });
 document.addEventListener('click',async ev=>{const b=ev.target.closest('button');if(!b)return;
   if(b.dataset.edit){panel={edit:1};render();window.scrollTo(0,0);return}
+  if(b.dataset.mvc!=null){MV.copy=b.dataset.mvc==='1';render();return}
+  if(b.dataset.mvu!=null){MV.u=+b.dataset.mvu;MV.tgt=null;render();return}
+  if(b.dataset.mvt){const [g,d,p]=b.dataset.mvt.split('|');const x=allPos(MV.u).find(y=>String(y.gi)===g&&String(y.di)===d&&String(y.pi)===p);MV.tgt=x;mvResults();$('mvres').scrollIntoView({block:'start',behavior:'smooth'});return}
+  if(b.dataset.mvx){MV.tgt=null;mvResults();return}
+  if(b.dataset.mvgo){doMove();return}
   if(b.dataset.del){if(b.dataset.del==='1'){panel.askDel=1;render();return} if(b.dataset.del==='0'){panel.askDel=0;render();return}
     const {a}=parse(); const ui=+a[0],gi=+a[1],di=a[2],pi=+a[3],U=D.units[ui],ci=posList(ui,gi,di)[pi].c,oi=a[4],old=EDITS[ekey(ci,oi,U.id)]||{};
     const o=(opsOf(D.cards[ci],U.id).find(([,x])=>x===oi)||[])[0]||{};
@@ -370,7 +413,7 @@ document.addEventListener('click',async ev=>{const b=ev.target.closest('button')
   if(b.dataset.pn){panel[b.dataset.id]=Object.assign(panel[b.dataset.id]||{},{[b.dataset.pn]:1});render();const t=$('t-'+b.dataset.pn);if(t)t.focus();return}
 });
 let tmr=null;
-document.addEventListener('input',ev=>{if(ev.target.id==='q'){Q=ev.target.value;results();return}const t=ev.target;if(t.tagName!=='TEXTAREA'||!t.dataset.id)return;const s=$('sv');if(s)s.textContent='Сохраняю…';clearTimeout(tmr);tmr=setTimeout(()=>save(t.dataset.id,{[t.dataset.f]:t.value.trim()},true),700)});
+document.addEventListener('input',ev=>{if(ev.target.id==='q'){Q=ev.target.value;results();return}if(ev.target.id==='mvq'){MV.q=ev.target.value;MV.tgt=null;mvResults();return}const t=ev.target;if(t.tagName!=='TEXTAREA'||!t.dataset.id)return;const s=$('sv');if(s)s.textContent='Сохраняю…';clearTimeout(tmr);tmr=setTimeout(()=>save(t.dataset.id,{[t.dataset.f]:t.value.trim()},true),700)});
 document.addEventListener('focusout',ev=>{const t=ev.target;if(t.tagName==='TEXTAREA'&&t.dataset.id){clearTimeout(tmr);const v=t.value.trim();if(v!==((ALL[t.dataset.id]||{})[t.dataset.f]||''))save(t.dataset.id,{[t.dataset.f]:v},true)}});
 window.addEventListener('hashchange',()=>{panel={};render()});
 async function loadColl(coll){const out={};let from=0;for(;;){const {data,error}=await SB.from('items').select('id,data').eq('coll',coll).range(from,from+999);if(error)throw error;data.forEach(x=>out[x.id]=x.data);if(data.length<1000)break;from+=1000}return out}
