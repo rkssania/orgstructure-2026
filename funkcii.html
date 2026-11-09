@@ -1,0 +1,427 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><title>Функционал</title>
+<style>
+/* Навигация в стиле iPhone: подразделение → отдел → должность → функция. Сгруппированные списки, стрелки, кнопка «Назад» в шапке */
+:root{--bg:#f2f2f7;--card:#ffffff;--ink:#14223d;--muted:#6b7590;--line:#d9dce5;--navy:#1b2f57;--navy-ink:#ffffff;--tint:#1d5fbf;
+  --ok:#2f8a4f;--ok-soft:#e3f2e8;--no:#c4452f;--diff:#b77a00;--diff-soft:#fbf0d4;--idle:#c4c8d2;
+  --f:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0b111d;--card:#172033;--ink:#e8edf6;--muted:#97a3bd;--line:#2c3a55;--navy:#2c4a86;--tint:#6ea8ff;
+  --ok:#5fc283;--ok-soft:#163024;--no:#ef7c66;--diff:#e3b54d;--diff-soft:#3a3017;--idle:#4a5672;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b111d;--card:#172033;--ink:#e8edf6;--muted:#97a3bd;--line:#2c3a55;--navy:#2c4a86;--tint:#6ea8ff;
+  --ok:#5fc283;--ok-soft:#163024;--no:#ef7c66;--diff:#e3b54d;--diff-soft:#3a3017;--idle:#4a5672;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:17px;line-height:1.35;-webkit-tap-highlight-color:transparent}
+button,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--tint);outline-offset:2px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:.5px solid var(--line)}
+.nav .in{max-width:720px;margin:0 auto;height:46px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.back{justify-self:start;background:none;border:0;color:var(--tint);display:flex;align-items:center;gap:4px;padding:6px 4px;cursor:pointer;max-width:42vw;white-space:nowrap;overflow:hidden}
+.back span{overflow:hidden;text-overflow:ellipsis}
+.back svg{flex:none}
+.nt{font-weight:600;font-size:15px;color:var(--muted);white-space:nowrap}
+.wrap{max-width:720px;margin:0 auto;padding-block:6px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-size:30px;font-weight:700;letter-spacing:-.02em;margin:8px 0 2px;text-wrap:balance;line-height:1.15}
+.sub{color:var(--muted);font-size:15px;margin:0 0 14px}
+.seg{display:flex;background:color-mix(in srgb,var(--idle) 35%,transparent);border-radius:9px;padding:2px;gap:2px;overflow-x:auto;scrollbar-width:none;margin-bottom:6px}
+.seg button{flex:1 0 auto;border:0;background:none;border-radius:7px;padding:6px 10px;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.15);font-weight:600}
+.search{position:relative;margin:4px 0 14px}
+.search input{width:100%;border:0;border-radius:11px;background:color-mix(in srgb,var(--idle) 35%,transparent);padding:10px 12px 10px 36px;font:inherit;font-size:17px;color:var(--ink)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.hl{background:color-mix(in srgb,var(--tint) 10%,transparent)}
+.me{display:block;font-size:13px;color:var(--tint);font-weight:600;margin-top:2px}
+.ui{flex:none;width:30px;height:30px;border-radius:8px;display:grid;place-items:center}
+.ui.big{width:44px;height:44px;border-radius:11px}
+.urow{min-height:68px}
+.uhead{display:flex;gap:14px;align-items:center;margin:10px 0 4px}
+.fr{background:var(--card);position:relative;padding:12px 14px 12px 16px;display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:10px 14px;align-items:center}
+.fr+.fr::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--line)}
+@media (max-width:600px){.fr{grid-template-columns:minmax(0,1fr)}}
+.fr .fn{display:flex;gap:10px;align-items:flex-start;background:none;border:0;text-align:left;padding:0;cursor:pointer;min-width:0}
+.fr .fn .num{flex:none;color:var(--muted);font-variant-numeric:tabular-nums;min-width:20px}
+.fr .fn .tt{min-width:0}
+.fr .fn .s{display:block;font-size:14px;color:var(--muted);margin-top:2px}
+.sc{display:grid;grid-template-columns:repeat(3,1fr);background:color-mix(in srgb,var(--idle) 32%,transparent);border-radius:9px;padding:2px;gap:2px}
+.sc button{border:0;background:none;border-radius:7px;padding:7px 4px;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--muted)}
+.sc button[aria-pressed="true"]{color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.sc button[aria-pressed="true"].do{background:var(--ok)} .sc button[aria-pressed="true"].diff{background:var(--diff)} .sc button[aria-pressed="true"].no{background:var(--no)}
+.ef{background:var(--card);border-radius:12px;padding:12px 14px;margin-top:12px;display:flex;flex-direction:column;gap:10px}
+.ef label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.ef textarea{width:100%;min-height:52px;border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--bg);font-size:16px;color:var(--ink);resize:vertical}
+.ef .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+@media (max-width:520px){.ef .two{grid-template-columns:minmax(0,1fr)}}
+.ef .btns{display:flex;gap:8px;flex-wrap:wrap}
+.bt{border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer;background:color-mix(in srgb,var(--idle) 35%,transparent);color:var(--ink)}
+.bt.pr{background:var(--tint);color:#fff} .bt.dg{background:transparent;color:var(--no)}
+.who{font-size:12.5px;color:var(--tint);margin-top:3px;display:block}
+.addb{width:100%;background:var(--card);border:0;border-top:.5px solid var(--line);text-align:left;padding:13px 16px;color:var(--tint);font-weight:600;cursor:pointer}
+.feed .row{min-height:56px}
+.feed .r{font-size:13px}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ok)}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.flist{border-radius:12px;overflow:hidden}
+.oth{grid-column:1/-1;background:color-mix(in srgb,var(--tint) 10%,transparent);border-radius:10px;padding:10px 12px;font-size:14.5px;display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.oth .s{font-size:13.5px;color:var(--muted);margin-top:2px}
+.oth .ob{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.oth .ob button{border:0;border-radius:8px;padding:7px 12px;font-size:14px;font-weight:600;cursor:pointer;background:var(--card);color:var(--tint)}
+.oth .ob button:first-child{background:var(--tint);color:#fff}
+.sh{font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin:22px 16px 6px}
+.list{background:var(--card);border-radius:12px;overflow:hidden}
+.row{width:100%;display:flex;align-items:center;gap:12px;background:none;border:0;text-align:left;padding:11px 14px 11px 16px;cursor:pointer;position:relative;min-height:48px}
+.row+.row::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--line)}
+.row:active{background:color-mix(in srgb,var(--idle) 30%,transparent)}
+.row .tx{flex:1;min-width:0}
+.row .t{display:block}
+.row .t.b{font-weight:600}
+.row .s{font-size:14px;color:var(--muted);margin-top:1px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.row .r{flex:none;font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chev{flex:none;color:var(--idle)}
+.ic{flex:none;width:30px;height:30px;border-radius:7px;display:grid;place-items:center;color:var(--navy-ink);font-size:14px;font-weight:700;background:var(--navy)}
+.dot{flex:none;display:inline-block;width:12px;height:12px;border-radius:50%;border:1.5px solid var(--idle)}
+.dot.do{background:var(--ok);border-color:var(--ok)} .dot.no{background:var(--no);border-color:var(--no)} .dot.diff{background:var(--diff);border-color:var(--diff)}
+.row .dot{margin:0 4px}
+.pill{display:inline-block;font-size:12px;border-radius:5px;padding:0 6px;margin-left:6px;vertical-align:1px;font-weight:500}
+.pill.dr{background:var(--diff-soft);color:var(--diff)} .pill.fx{background:color-mix(in srgb,var(--tint) 14%,transparent);color:var(--tint)}
+.ppl{background:var(--card);border-radius:12px;padding:12px 16px;font-size:15px}
+.ppl .lbl{font-size:13px;color:var(--muted);margin-bottom:4px}
+.prog{display:flex;align-items:center;gap:10px;margin:14px 2px 0;font-size:14px;color:var(--muted)}
+.bar{flex:1;height:6px;border-radius:3px;background:color-mix(in srgb,var(--idle) 45%,transparent);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:8px 2px 0}
+.legend span{display:flex;align-items:center;gap:5px}
+.card{background:var(--card);border-radius:12px;padding:14px 16px;margin-top:12px}
+.card .lbl{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
+.card .txt{white-space:pre-line;overflow-wrap:anywhere;font-size:16px}
+.io{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media (max-width:520px){.io{grid-template-columns:minmax(0,1fr)}}
+.io div{font-size:15px;white-space:pre-line;overflow-wrap:anywhere}
+.io b{display:block;font-size:13px;color:var(--muted);font-weight:500;margin-top:6px}
+.io b:first-child{margin-top:0}
+.ans{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.ans button{border:1.5px solid var(--line);background:var(--card);border-radius:12px;padding:12px 6px;font-weight:600;font-size:15px;cursor:pointer}
+.ans button[aria-pressed="true"].do{background:var(--ok);border-color:var(--ok);color:#fff}
+.ans button[aria-pressed="true"].no{background:var(--no);border-color:var(--no);color:#fff}
+.ans button[aria-pressed="true"].diff{background:var(--diff);border-color:var(--diff);color:#fff}
+.note{border-radius:12px;padding:12px 14px;margin-top:12px;font-size:15px}
+.note.au{background:var(--ok-soft)} .note.au b{color:var(--ok)}
+.note.fx{background:color-mix(in srgb,var(--tint) 12%,transparent)} .note.fx b{color:var(--tint)}
+.ta{margin-top:12px}
+.ta label{display:block;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:0 0 6px 4px}
+.ta textarea{width:100%;min-height:96px;border:0;border-radius:12px;padding:12px 14px;background:var(--card);font-size:16px;resize:vertical}
+.ta .hint{font-size:13px;color:var(--muted);margin:6px 4px 0}
+.links{display:flex;flex-direction:column;margin-top:12px;background:var(--card);border-radius:12px;overflow:hidden}
+.links button{background:none;border:0;text-align:left;padding:13px 16px;color:var(--tint);cursor:pointer;position:relative}
+.links button+button::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--line)}
+.pager{display:flex;justify-content:space-between;gap:10px;margin-top:20px}
+.pager button{flex:1;border:0;background:var(--card);border-radius:12px;padding:13px;color:var(--tint);font-weight:600;cursor:pointer}
+.pager button[disabled]{opacity:.4;cursor:default}
+.saved{font-size:13px;color:var(--ok);margin:8px 4px 0;min-height:1.2em}
+.warn{background:var(--diff-soft);color:var(--diff);border-radius:12px;padding:10px 14px;font-size:14px;margin-top:12px}
+.msg{color:var(--muted);padding:30px 0;text-align:center}
+.wa{display:block;text-align:center;background:var(--ok);color:#fff;border-radius:12px;padding:13px;font-weight:600;text-decoration:none;margin-top:10px}
+@media (prefers-reduced-motion:no-preference){.wrap.anim{animation:in .18s ease-out}@keyframes in{from{opacity:.5;transform:translateX(14px)}to{opacity:1;transform:none}}}
+.login{position:fixed;inset:0;z-index:50;background:var(--bg);display:grid;place-items:center;padding:16px}
+.login form{background:var(--card);border-radius:14px;padding:22px;width:min(380px,100%);display:flex;flex-direction:column;gap:10px}
+.login h2{margin:0;font-size:24px}
+.login input{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--bg);color:var(--ink);font:inherit}
+.login .err{color:var(--no);font-size:14px;min-height:1em}
+.login .lk{background:none;border:0;color:var(--tint);padding:0;cursor:pointer;font:inherit;font-size:15px}
+.me-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:24px}
+.me-bar button{background:none;border:0;color:var(--tint);cursor:pointer;font:inherit;font-size:13px}
+</style></head><body>
+<div class="nav"><div class="in"><span id="nb"></span><span class="nt" id="nt"></span><span></span></div></div>
+<div class="wrap" id="out"><div class="msg">Загружаю…</div></div>
+<div class="wrap" style="padding-block:0 30px"><div class="me-bar" id="mebar" hidden><span id="mebar-e"></span><span><a href="./" style="color:var(--tint);text-decoration:none;margin-right:12px">Оргструктура</a><button type="button" id="mebar-out">Выйти</button></span></div></div>
+
+<div class="login" id="login" hidden><form id="lf"><h2>Функционал</h2><p style="margin:0;color:var(--muted);font-size:15px">ТОО «Центр гематологии». Войдите с тем же email и паролем, что и в оргструктуре.</p>
+<input id="lf-email" type="email" placeholder="Email" autocomplete="username" required><input id="lf-pass" type="password" placeholder="Пароль" autocomplete="current-password" required>
+<button class="bt pr" type="submit" id="lf-go">Войти</button><button class="lk" type="button" id="lf-mode">Нет аккаунта? Зарегистрироваться</button><div class="err" id="lf-err"></div></form></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js?v=2"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dn=d=>String(d).replace(' · ',' — ');
+const disp=t=>t.includes('·')?t.split('·')[1].trim():t;
+const short=n=>n.replace('Медподразделение ','').replace('Филиал ','').replace('Лаборатория и ООЛЛ','Лаборатория').replace('Центральный аппарат','ЦА');
+const WA='77055170015', BR=['КРГ','УК','Астана'];
+const UN={'КРГ':'Караганда','УК':'Усть-Каменогорск','Астана':'Астана','ЦА':'ЦА','Лаборатория':'Лаборатория'};
+const ST={do:'Делаю',no:'Не делаю',diff:'Иначе'};
+const F=[['proc','Название функции'],['desc','Описание'],['inp','Получает (документы, информация)'],['frm','От кого'],['outp','Передаёт'],['to','Кому']];
+const CHEV='<svg class="chev" width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="M1 1l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const BACK='<svg width="12" height="20" viewBox="0 0 12 20" aria-hidden="true"><path d="M10 2L2 10l8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+let Q='', IDX=null, HL='', OWNER=false, USER=null, NAMES={}, LOC={};
+const HIDE=['Генеральный директор','Исполнительный директор'];
+const hidden=c=>!OWNER&&HIDE.includes(c.t);
+let D=null, ALL={}, SB=null, db=null, ME=null, dbState='load', HOME=0, panel={}, depth=0;
+const OWNERS=['rkssania@gmail.com'];
+let EDITS={}, OTH={}, feedOn=false;
+const when=t=>{try{return new Date(t).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}catch(_){return''}};
+const nm=id=>(id&&id===ME)?'Вы':(id?String(id).split('@')[0]:'Коллега');
+function names(ids){return;const need=[...new Set(ids.filter(x=>x&&!(x in NAMES)))];if(!need.length)return;need.forEach(x=>NAMES[x]='');
+  USER.profiles(need).then(ps=>{need.forEach(x=>NAMES[x]=(ps&&ps[x]&&ps[x].name)||'');rr()}).catch(()=>{})}
+// адреса: (пусто) | u-UI | d-UI-GI-DI (DI=h — руководство) | p-UI-GI-DI-PI | f-UI-GI-DI-PI-OI | a-UI-GI-DI-PI-SEC (новая функция)
+function parse(){const h=location.hash.slice(1).split('-');return{k:h[0]||'',a:h.slice(1)}}
+function posList(ui,gi,di){const G=D.units[ui].groups[gi];return di==='h'?G.head:G.depts[+di].pos}
+function deptName(ui,gi,di){const G=D.units[ui].groups[gi];return di==='h'?'Руководство':dn(G.depts[+di].name)}
+/* --- функции с учётом правок коллег --- */
+const ekey=(ci,oi,u)=>`c${ci}o${oi}`+(BR.includes(u)?`u${u}`:'');
+function opsOf(c,u){
+  const ci=D.cards.indexOf(c), out=[];
+  c.ops.forEach((o,i)=>{if(BR.includes(u)&&o.br&&!o.br.includes(u))return;const oi=String(i),e=EDITS[ekey(ci,oi,u)];if(e&&e.del)return;out.push([e?Object.assign({},o,pick(e),{ed:e}):o,oi])});
+  Object.values(EDITS).filter(e=>e.isNew&&e.c===ci&&(e.u===u||!BR.includes(u)&&!BR.includes(e.u))&&!e.del).sort((a,b)=>a.t0-b.t0).forEach(e=>out.push([Object.assign({sec:e.sec||'main'},pick(e),{ed:e,added:1}),e.oi]));
+  return out;
+}
+function pick(e){const r={};F.forEach(([k])=>{if(e[k]!=null)r[k]=e[k]});return r}
+const oid=(ui,gi,ci,oi)=>`u${ui}g${gi}c${ci}o${oi}`;
+function stats(ui,gi,e){const U=D.units[ui],ops=opsOf(D.cards[e.c],U.id);const r={do:0,no:0,diff:0,n:ops.length};ops.forEach(([,oi])=>{const a=ALL[oid(ui,gi,e.c,oi)];if(a&&r[a.st]!=null)r[a.st]++});r.done=r.do+r.no+r.diff;return r}
+function nav(back,title){document.querySelector('.nav').hidden=!back&&!title;$('nb').innerHTML=back?`<button class="back" type="button" data-go="${back[0]}">${BACK}<span>${esc(back[1])}</span></button>`:'';$('nt').textContent=title||''}
+const warn=()=>dbState==='off'?`<div class="warn">Изменения сейчас не сохраняются: нет связи с базой или доступ не выдан. Обновите страницу.</div>`:'';
+function render(){
+  if(!D)return;
+  const {k,a}=parse(); const lv={'':0,u:1,d:2,p:3,f:4,a:4}[k]||0; const out=$('out');
+  out.classList.remove('anim'); if(lv>depth){void out.offsetWidth;out.classList.add('anim')} depth=lv;
+  try{
+    if((k==='f'||k==='p'||k==='a')&&hidden(D.cards[posList(+a[0],+a[1],a[2])[+a[3]].c])){location.hash='';return}
+    if(k==='f') return fScreen(+a[0],+a[1],a[2],+a[3],a[4]);
+    if(k==='a') return aScreen(+a[0],+a[1],a[2],+a[3],a[4]||'main');
+    if(k==='p') return pScreen(+a[0],+a[1],a[2],+a[3]);
+    if(k==='d') return dScreen(+a[0],+a[1],a[2]);
+    if(k==='u'&&D.units[+a[0]]) return uScreen(+a[0]);
+  }catch(_){}
+  home();
+}
+const KZ={'ә':'а','ғ':'г','қ':'к','ң':'н','ө':'о','ұ':'у','ү':'у','һ':'х','і':'и','ё':'е'};
+const norm=s=>s.toLowerCase().replace(/[әғқңөұүһіё]/g,c=>KZ[c]).replace(/[^а-яa-z\s]/g,' ').trim();
+function index(){IDX=[];D.units.forEach((U,ui)=>U.groups.forEach((g,gi)=>{
+  const add=(e,di,pi,dname)=>{const k=U.id+'|'+e.c;if(!LOC[k])LOC[k]=[ui,gi,di,pi];e.p.forEach(n=>IDX.push({n,k:norm(n),ui,gi,di,pi,t:disp(D.cards[e.c].t),d:dname,u:short(U.name)}))};
+  g.head.forEach((e,pi)=>add(e,'h',pi,g.name)); g.depts.forEach((d,di)=>d.pos.forEach((e,pi)=>add(e,di,pi,dn(d.name))))}))}
+function results(){
+  const r=$('res'); if(!r)return; const q=norm(Q);
+  if(q.length<2){r.innerHTML='';return}
+  const w=q.split(/\s+/); const m=IDX.filter(x=>!(!OWNER&&HIDE.includes(x.t))).filter(x=>{const ws=x.k.split(/\s+/);return w.every(t=>ws.some(y=>y.startsWith(t)))}).slice(0,12);
+  r.innerHTML=m.length?`<div class="list">${m.map(x=>`<button class="row" type="button" data-go="d-${x.ui}-${x.gi}-${x.di}" data-hl="${esc(x.n)}"><span class="tx"><span class="t b">${esc(x.n)}</span><span class="s">${esc(x.t)} · ${esc(x.d)} · ${esc(x.u)}</span></span>${CHEV}</button>`).join('')}</div>`:`<div class="msg" style="padding:12px 0">Не нашли. Проверьте фамилию или выберите подразделение ниже.</div>`;
+}
+const UI={"ЦА": ["#1b2f57", "<path d=\"M4 20V8l8-4 8 4v12M9 20v-5h6v5M8 11h.01M12 11h.01M16 11h.01\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"], "Лаборатория": ["#0f7a7a", "<path d=\"M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3M7.5 15h9\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"], "КРГ": ["#b8562f", "<path d=\"M12 6v12M6 12h12\" fill=\"none\" stroke=\"#fff\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><rect x=\"3.5\" y=\"3.5\" width=\"17\" height=\"17\" rx=\"4\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.6\"/>"], "УК": ["#7a4fb0", "<path d=\"M12 6v12M6 12h12\" fill=\"none\" stroke=\"#fff\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><rect x=\"3.5\" y=\"3.5\" width=\"17\" height=\"17\" rx=\"4\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.6\"/>"], "Астана": ["#2f8a4f", "<path d=\"M12 6v12M6 12h12\" fill=\"none\" stroke=\"#fff\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><rect x=\"3.5\" y=\"3.5\" width=\"17\" height=\"17\" rx=\"4\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.6\"/>"]};
+const uicon=(U,big)=>{const [c,s]=UI[U.id]||['#1b2f57',''];return `<span class="ui${big?' big':''}" style="background:${c}" aria-hidden="true"><svg width="${big?26:20}" height="${big?26:20}" viewBox="0 0 24 24">${s}</svg></span>`};
+function feedHtml(){
+  if(!OWNER||!feedOn)return'';
+  const FEED=Object.values(ALL).filter(x=>x.at);const items=FEED.concat(Object.values(EDITS).filter(e=>e.kind!=='ack').map(e=>({...e,_e:1}))).sort((a,b)=>b.at-a.at).slice(0,25);
+  names(items.map(x=>x.by));
+  let h=`<div class="sh">Последние изменения <span class="live" style="margin-left:6px;text-transform:none;letter-spacing:0"><i></i>в реальном времени</span></div>`;
+  if(!items.length) return h+`<div class="ppl" style="color:var(--muted)">Пока никто ничего не менял. Как только коллеги отметят функции или изменят текст, это появится здесь сразу.</div>`;
+  return h+`<div class="list feed">`+items.map(x=>{const L=LOC[x.u+'|'+x.c]; const c=D.cards[x.c]; if(!c)return'';
+    const o=(opsOf(c,x.u).find(([,oi])=>oi===String(x.oi))||[])[0];
+    const what=x._e?(x.del?'удалил(а) функцию':x.isNew?'добавил(а) функцию':'изменил(а) текст'):(x.st?ST[x.st]:(x.how?'описал(а), как делает':'отметка снята'));
+    const go=L?`f-${L[0]}-${L[1]}-${L[2]}-${L[3]}-${x.oi}`:'';
+    return `<button class="row" type="button" ${go&&!(x._e&&x.del)?`data-go="${go}"`:''}><span class="tx"><span class="t"><b>${esc(nm(x.by))}</b> · ${esc(what)}</span><span class="s">${esc(UN[x.u]||x.u||'')} · ${esc(disp(c.t))}${o||x.proc?' · «'+esc((o&&o.proc)||x.proc||'')+'»':''}${x.how&&!x._e?' — '+esc(x.how):''}</span></span><span class="r">${when(x.at)}</span></button>`}).join('')+`</div>`;
+}
+function home(){
+  sub(''); subCard(-1,''); nav(null,'');
+  let h=`<h1>Функционал</h1><p class="sub">ТОО «Центр гематологии» · новая структура</p>
+  <div class="search"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input id="q" type="search" placeholder="Поиск по фамилии" autocomplete="off" aria-label="Фамилия сотрудника" value="${esc(Q)}"></div><div id="res"></div>
+  <div class="sh">Подразделения</div><div class="list">`+D.units.map((U,ui)=>{
+    const n=U.groups.reduce((a,g)=>a+g.head.concat(...g.depts.map(d=>d.pos)).reduce((x,e)=>x+e.p.length,0),0), nd=U.groups.reduce((a,g)=>a+g.depts.length,0);
+    return `<button class="row urow" type="button" data-go="u-${ui}">${uicon(U,true)}<span class="tx"><span class="t b">${esc(U.name)}</span><span class="s">${nd} отделов · ${n} сотрудников</span></span>${CHEV}</button>`}).join('')+`</div>`+feedHtml();
+  $('out').innerHTML=h; results();
+}
+function uScreen(ui){
+  sub(''); HOME=ui; const U=D.units[ui];
+  nav(['','Подразделения'],'');
+  let h=`<div class="uhead">${uicon(U,true)}<div><h1 style="margin:0">${esc(short(U.name)==='ЦА'?'Центральный аппарат':U.name)}</h1><p class="sub" style="margin:2px 0 0">Отделы и руководство</p></div></div>`;
+  U.groups.forEach((g,gi)=>{
+    const hp=g.head.flatMap(e=>e.p), hid=g.head.every(e=>hidden(D.cards[e.c]));
+    h+=`<div class="sh">${esc(g.name)}</div><div class="list">`;
+    if(g.head.length&&!hid) h+=`<button class="row" type="button" data-go="d-${ui}-${gi}-h"><span class="ic" aria-hidden="true">Р</span><span class="tx"><span class="t b">Руководство</span><span class="s">${hp.length?esc(hp.join(', ')):'вакансия'}</span></span>${CHEV}</button>`;
+    else if(g.head.length) h+=`<div class="row" style="cursor:default"><span class="ic" aria-hidden="true">Р</span><span class="tx"><span class="t b">Руководство</span><span class="s">${esc(hp.join(', ')||'вакансия')}</span></span></div>`;
+    g.depts.forEach((d,di)=>{const n=d.pos.reduce((a,e)=>a+e.p.length,0);
+      h+=`<button class="row" type="button" data-go="d-${ui}-${gi}-${di}"><span class="tx"><span class="t">${esc(dn(d.name))}</span></span><span class="r">${n}</span>${CHEV}</button>`});
+    h+='</div>';
+  });
+  $('out').innerHTML=h;
+}
+function dScreen(ui,gi,di){
+  sub(`${ui}-${gi}`); subCard(-1,'');
+  const U=D.units[ui], list=posList(ui,gi,di);
+  nav([`u-${ui}`,short(U.name)],'');
+  let h=`<h1>${esc(deptName(ui,gi,di))}</h1><p class="sub">${esc(short(U.name))} · ${esc(D.units[ui].groups[gi].name)}</p>${warn()}`;
+  const G=D.units[ui].groups[gi];
+  if(di!=='h'&&G.head.length) h+=`<div class="sh">Руководитель блока</div><div class="list">`+G.head.map((e,pi)=>{const c=D.cards[e.c],s=stats(ui,gi,e),me=HL&&e.p.includes(HL);if(hidden(c)) return `<div class="row" style="cursor:default"><span class="ic" aria-hidden="true">Р</span><span class="tx"><span class="t b">${esc(disp(c.t))}</span><span class="s">${esc(e.p.join(', ')||'вакансия')}</span></span></div>`;return `<button class="row${me?' hl':''}" type="button" data-go="p-${ui}-${gi}-h-${pi}"><span class="ic" aria-hidden="true">Р</span><span class="tx"><span class="t b">${esc(disp(c.t))}</span><span class="s">${esc(e.p.join(', ')||'вакансия')}</span></span><span class="r">${s.done}/${s.n}</span>${CHEV}</button>`}).join('')+`</div>`;
+  h+=`<div class="sh">${di==='h'?'Должности':'Должности отдела'} · ${list.length}</div><div class="list">`+list.map((e,pi)=>{const c=D.cards[e.c], s=stats(ui,gi,e), me=HL&&e.p.includes(HL); if(hidden(c)) return `<div class="row" style="cursor:default"><span class="tx"><span class="t b">${esc(disp(c.t))}</span><span class="s">${esc(e.p.join(', '))}</span></span></div>`;
+    const names=e.p.length?(e.p.length<=2?e.p.join(', '):e.p.slice(0,2).join(', ')+` и ещё ${e.p.length-2}`):'вакансия';
+    return `<button class="row${me?' hl':''}" type="button" data-go="p-${ui}-${gi}-${di}-${pi}"><span class="tx"><span class="t b">${esc(disp(c.t))}${c.st==='draft'?'<span class="pill dr">черновик</span>':''}</span><span class="s">${esc(names)}</span>${me?`<span class="me">${esc(HL)}</span>`:''}</span><span class="r">${s.done}/${s.n}</span>${CHEV}</button>`}).join('')+`</div>`;
+  $('out').innerHTML=h;
+}
+function pScreen(ui,gi,di,pi){
+  sub(`${ui}-${gi}`);
+  const U=D.units[ui], e=posList(ui,gi,di)[pi], c=D.cards[e.c], s=stats(ui,gi,e), ops=opsOf(c,U.id);
+  subCard(e.c,U.id);
+  nav([`d-${ui}-${gi}-${di}`,deptName(ui,gi,di)],'');
+  const pc=k=>s.n?(s[k]/s.n*100).toFixed(1):0;
+  names(ops.map(([o])=>o.ed&&o.ed.by));
+  let h=`<h1>${esc(disp(c.t))}</h1><p class="sub">${esc(short(U.name))} · ${esc(deptName(ui,gi,di))}</p>
+  <div class="ppl"><div class="lbl">${e.p.length>1?'Сотрудники · '+e.p.length:'Сотрудник'}</div>${!e.p.length?'<span style="color:var(--muted)">Вакансия</span>':(e.p.length<=4||panel.all)?esc(e.p.join(', ')):esc(e.p.slice(0,3).join(', '))+` <button type="button" data-all="1" style="background:none;border:0;padding:0;color:var(--tint);cursor:pointer">и ещё ${e.p.length-3} — показать</button>`}</div>
+  <div class="prog"><span>Отмечено ${s.done} из ${s.n}</span><span class="bar"><i style="width:${pc('do')}%;background:var(--ok)"></i><i style="width:${pc('diff')}%;background:var(--diff)"></i><i style="width:${pc('no')}%;background:var(--no)"></i></span></div>
+  <div class="legend"><span><i class="dot do"></i>Делаю ${s.do}</span><span><i class="dot diff"></i>Иначе ${s.diff}</span><span><i class="dot no"></i>Не делаю ${s.no}</span><span><i class="dot"></i>Не отмечено ${s.n-s.done}</span></div>${warn()}`;
+  const ob=othEdits(e.c,U.id);
+  {const nOth=ops.filter(([o,oi])=>othOf(oi,ALL[oid(ui,gi,e.c,oi)]||{}).length).length+ob.length; if(nOth) h+=`<div class="warn" style="background:color-mix(in srgb,var(--tint) 12%,transparent);color:var(--ink)"><b>В других филиалах изменили ${nOth} ${nOth===1?'функцию':nOth<5?'функции':'функций'}</b> этой должности. Проверьте ниже, так ли у вас.</div>`;}
+  if(ob.length) h+=`<div class="sh">Изменения из других филиалов</div><div class="flist">`+ob.map(x=>`<div class="fr" style="grid-template-columns:minmax(0,1fr)"><div><b>${esc(UN[x.u])}</b> · ${x.del?'удалили':x.isNew?'добавили':'изменили'}: «${esc(x.proc||((c.ops[+x.oi]||{}).proc)||'')}»${!x.del&&!x.isNew&&x.desc?`<span class="who" style="color:var(--muted)">${esc(x.desc)}</span>`:''}</div><div class="ob" style="display:flex;gap:8px;flex-wrap:wrap"><button class="bt pr" type="button" data-take="${esc(x.id)}">Так же у нас</button><button class="bt" type="button" data-skip="${esc(x.id)}">У нас по-другому</button></div></div>`).join('')+`</div>`;
+  [['main','Основные обязанности'],['side','Сопутствующие обязанности']].forEach(([sec,n])=>{
+    const l=ops.filter(([o])=>(o.sec||'main')===sec); if(!l.length&&sec==='side')return;
+    h+=`<div class="sh">${n} · ${l.length}</div><div class="flist">`+l.map(([o,oi],i)=>{const id=oid(ui,gi,e.c,oi),a=ALL[id]||{};
+      const tag=o.added?'<span class="pill fx">добавлено</span>':o.ed?'<span class="pill fx">изменено</span>':o.chg?'<span class="pill fx">исправлено</span>':'';
+      return `<div class="fr"><button class="fn" type="button" data-go="f-${ui}-${gi}-${di}-${pi}-${oi}"><span class="num">${i+1}.</span><span class="tt">${esc(o.proc||'')}${tag}<span class="s">${a.st==='diff'&&a.how?esc(a.how):'Подробнее ›'}</span>${o.ed?`<span class="who">${esc(nm(o.ed.by))}, ${when(o.ed.at)}</span>`:''}</span></button><div class="sc" role="group" aria-label="Ответ">${Object.entries(ST).map(([k,v])=>`<button type="button" class="${k}" data-st="${k}" data-id="${id}" aria-pressed="${a.st===k}">${v}</button>`).join('')}</div>${othBox(oi,a,id)}</div>`}).join('')+(dbState!=='off'?`<button class="addb" type="button" data-go="a-${ui}-${gi}-${di}-${pi}-${sec}">＋ Добавить функцию</button>`:'')+`</div>`;
+  });
+  const t=encodeURIComponent(`Комментарий по функциям\n${U.name} · ${c.t}\n\n`);
+  h+=`<div class="sh">Общий комментарий</div><div class="ppl" style="color:var(--muted)">Кто на самом деле занимает должность, чего не хватает — напишите в WhatsApp.<a class="wa" href="https://wa.me/${WA}?text=${t}" target="_blank" rel="noopener">Написать в WhatsApp</a><div style="margin-top:6px;font-size:13px">Номер: +7 705 517 00 15</div></div>`;
+  $('out').innerHTML=h;
+}
+function editForm(o,save,cancel,del){
+  return `<form class="ef" id="ef">${F.slice(0,2).map(([k,l])=>`<label>${l}<textarea name="${k}" id="ef-${k}" rows="${k==='desc'?4:2}">${esc(o[k]||'')}</textarea></label>`).join('')}
+  <div class="two">${F.slice(2).map(([k,l])=>`<label>${l}<textarea name="${k}" id="ef-${k}" rows="2">${esc(o[k]||'')}</textarea></label>`).join('')}</div>
+  <div class="btns"><button class="bt pr" type="submit">${save}</button><button class="bt" type="button" data-go="${cancel}">Отмена</button>${del?`<span style="flex:1"></span><button class="bt dg" type="button" data-del="1">Удалить функцию</button>`:''}</div>
+  ${panel.askDel?`<div class="warn" style="margin-top:0">Удалить функцию «${esc(o.proc||'')}»? <div class="btns" style="margin-top:8px"><button class="bt dg" type="button" data-del="2" style="background:var(--no);color:#fff">Удалить</button><button class="bt" type="button" data-del="0">Не удалять</button></div></div>`:''}</form>`;
+}
+function fScreen(ui,gi,di,pi,oi){
+  sub(`${ui}-${gi}`);
+  const U=D.units[ui], e=posList(ui,gi,di)[pi], c=D.cards[e.c], ops=opsOf(c,U.id), idx=ops.findIndex(([,x])=>x===oi);
+  if(idx<0){location.hash=`p-${ui}-${gi}-${di}-${pi}`;return}
+  const o=ops[idx][0], id=oid(ui,gi,e.c,oi), a=ALL[id]||{}, pn=panel[id]||{}, prev=ops[idx-1], next=ops[idx+1];
+  subCard(e.c,U.id); if(o.ed) names([o.ed.by]);
+  nav([`p-${ui}-${gi}-${di}-${pi}`,disp(c.t)],`${idx+1} из ${ops.length}`);
+  if(panel.edit){ $('out').innerHTML=`<h1 style="font-size:24px">Изменить функцию</h1><p class="sub">${esc(disp(c.t))}${BR.includes(U.id)?' · '+esc(UN[U.id]):''}. Изменение сразу увидят все.</p>`+editForm(o,'Сохранить',`f-${ui}-${gi}-${di}-${pi}-${oi}`,true); return }
+  let h=`<h1 style="font-size:24px">${esc(o.proc||'')}</h1>`;
+  if(o.ed) h+=`<span class="who" style="margin:-2px 0 6px">${o.added?'Добавлено':'Изменено'}: ${esc(nm(o.ed.by))}, ${when(o.ed.at)}</span>`;
+  h+=`<div class="ans" role="group" aria-label="Ответ">${Object.entries(ST).map(([k,v])=>`<button type="button" class="${k}" data-st="${k}" data-id="${id}" aria-pressed="${a.st===k}">${v}</button>`).join('')}</div><div class="saved" id="sv">${a.at?'Сохранено '+when(a.at):''}</div>${warn()}${othBox(oi,a,id)}`;
+  const ta=(f,label,ph)=>`<div class="ta"><label for="t-${f}">${label}</label><textarea id="t-${f}" data-f="${f}" data-id="${id}" placeholder="${ph}">${esc(a[f]||'')}</textarea><div class="hint">Сохраняется само. Надиктовать — микрофон на клавиатуре телефона.</div></div>`;
+  if(a.st==='diff') h+=ta('how','Как делаете на самом деле','Опишите своими словами…');
+  if(o.desc) h+=`<div class="card"><div class="lbl">Описание</div><div class="txt">${esc(o.desc)}</div></div>`;
+  if(o.inp||o.outp) h+=`<div class="card io"><div><b>Получает</b>${esc(o.inp||'—')}${o.frm?`<b>От кого</b>${esc(o.frm)}`:''}</div><div><b>Передаёт</b>${esc(o.outp||'—')}${o.to?`<b>Кому</b>${esc(o.to)}`:''}</div></div>`;
+  if(o.au) h+=`<div class="note au"><b>Можно автоматизировать:</b> ${esc(D.auto[o.au])}</div>`;
+  if(o.chg&&!o.ed) h+=`<div class="note fx"><b>Исправлено:</b> ${esc(o.chg)}</div>`;
+  if(pn.idea||a.idea) h+=ta('idea','Ваша идея автоматизации','Что можно упростить или передать программе…');
+  const l=[]; if(dbState!=='off') l.push(`<button type="button" data-edit="1">Изменить текст функции</button>`); if(!(pn.idea||a.idea)) l.push(`<button type="button" data-pn="idea" data-id="${id}">Предложить автоматизацию</button>`);
+  if(l.length) h+=`<div class="links">${l.join('')}</div>`;
+  h+=`<div class="pager"><button type="button" ${prev?`data-go="f-${ui}-${gi}-${di}-${pi}-${prev[1]}"`:'disabled'}>‹ Предыдущая</button><button type="button" data-go="${next?`f-${ui}-${gi}-${di}-${pi}-${next[1]}`:`p-${ui}-${gi}-${di}-${pi}`}">${next?'Следующая ›':'Готово'}</button></div>`;
+  $('out').innerHTML=h;
+}
+function aScreen(ui,gi,di,pi,sec){
+  const U=D.units[ui], e=posList(ui,gi,di)[pi], c=D.cards[e.c];
+  nav([`p-${ui}-${gi}-${di}-${pi}`,disp(c.t)],'');
+  $('out').innerHTML=`<h1 style="font-size:24px">Новая функция</h1><p class="sub">${esc(disp(c.t))} · ${sec==='side'?'сопутствующие обязанности':'основные обязанности'}${BR.includes(U.id)?' · '+esc(UN[U.id]):''}</p>${warn()}`+editForm({},'Добавить',`p-${ui}-${gi}-${di}-${pi}`,false);
+  const x=$('ef-proc'); if(x) x.focus();
+}
+/* ---------- данные ---------- */
+const busy=()=>{const x=document.activeElement;return x&&(x.tagName==='TEXTAREA'||x.id==='q')};
+function rr(){if(!busy())render()}
+function sub(){}
+function subCard(ci,u){OTH={}; if(!BR.includes(u))return; Object.values(ALL).forEach(v=>{if(v.c===ci&&v.u&&v.u!==u&&(v.st==='no'||v.st==='diff'))(OTH[v.oi]=OTH[v.oi]||[]).push(v)})}
+function othOf(oi,a){return (OTH[oi]||[]).filter(v=>{if(a.ack&&a.ack[v.u]>=v.at)return false;return !(a.st===v.st&&(a.how||'')===(v.how||''))})}
+function othBox(oi,a,id){const l=othOf(oi,a);if(!l.length)return'';
+  return `<div class="oth">${l.map(v=>`<div><b>${esc(UN[v.u]||v.u)}:</b> ${v.st?esc(ST[v.st]):''}${v.how?' — «'+esc(v.how)+'»':''}<div class="ob"><button type="button" data-apply="${esc(v.u)}" data-id="${id}" data-oi="${oi}">Так же у нас</button><button type="button" data-ack="${esc(v.u)}" data-id="${id}">У нас по-другому</button></div></div>`).join('')}</div>`}
+function othEdits(ci,u){
+  if(!BR.includes(u))return[];
+  const ack=EDITS[`c${ci}k${u}`]||{}, seen=ack.seen||{};
+  return Object.values(EDITS).filter(x=>x.kind!=='ack'&&x.c===ci&&BR.includes(x.u)&&x.u!==u&&!(seen[x.id]>=x.at)).filter(x=>{
+    if(x.isNew) return !Object.values(EDITS).some(y=>y.isNew&&y.c===ci&&y.u===u&&y.from===x.id);
+    const mine=EDITS[`c${ci}o${x.oi}u${u}`]; if(!mine)return true; return !(!!mine.del===!!x.del&&F.every(([k])=>(mine[k]||'')===(x[k]||'')))});
+}
+/* Supabase: таблица items, коллекции fa (отметки), fe (правки), fdata (структура и функции) */
+async function up(coll,id,doc){const {error}=await SB.from('items').upsert({coll,id,data:doc,by_email:ME,at:new Date().toISOString()});if(error)throw error}
+async function putEdit(id,doc){
+  if(!db){dbState='off';render();return false}
+  const full=Object.assign({},doc,{id,by:ME||'',at:Date.now()}); const prev=EDITS[id]; EDITS[id]=full;
+  try{await up('fe',id,full);return true}catch(err){if(prev)EDITS[id]=prev;else delete EDITS[id];dbState='off';render();return false}
+}
+async function save(id,patch,quiet){
+  if(!db){dbState='off';render();return}
+  const mm=id.match(/^u(\d+)g(\d+)c(\d+)o(\w+)$/); if(!mm)return;
+  const prev=ALL[id]||{}; const doc=Object.assign({},prev,patch,{b:mm[1]+'-'+mm[2],by:ME||'',at:Date.now(),c:+mm[3],oi:mm[4],u:D.units[+mm[1]].id});
+  ALL[id]=doc; if(!quiet) render(); else {const s=$('sv'); if(s) s.textContent='Сохранено'}
+  try{await up('fa',id,doc)}catch(err){ALL[id]=prev;dbState='off';render()}
+}
+/* ---------- события ---------- */
+function formVals(){const r={};F.forEach(([k])=>{const x=$('ef-'+k);r[k]=x?x.value.trim():''});return r}
+document.addEventListener('submit',async ev=>{if(ev.target.id!=='ef')return;ev.preventDefault();
+  const {k,a}=parse(); const ui=+a[0],gi=+a[1],di=a[2],pi=+a[3], U=D.units[ui], ci=posList(ui,gi,di)[pi].c, v=formVals();
+  if(!v.proc){$('ef-proc').focus();return}
+  if(k==='a'){const oi='n'+Date.now().toString(36); if(await putEdit(ekey(ci,oi,U.id),Object.assign(v,{c:ci,oi,u:U.id,isNew:true,sec:a[4]||'main',t0:Date.now()}))) location.hash=`p-${ui}-${gi}-${di}-${pi}`; return}
+  if(k==='f'){const oi=a[4], base=oi[0]==='n'?null:D.cards[ci].ops[+oi], old=EDITS[ekey(ci,oi,U.id)]||{};
+    if(await putEdit(ekey(ci,oi,U.id),Object.assign({},old,v,{c:ci,oi,u:U.id,kind:'',del:false},old.isNew?{}:{base:base?base.proc:''}))){panel={};render()}}
+});
+document.addEventListener('click',async ev=>{const b=ev.target.closest('button');if(!b)return;
+  if(b.dataset.edit){panel={edit:1};render();window.scrollTo(0,0);return}
+  if(b.dataset.del){if(b.dataset.del==='1'){panel.askDel=1;render();return} if(b.dataset.del==='0'){panel.askDel=0;render();return}
+    const {a}=parse(); const ui=+a[0],gi=+a[1],di=a[2],pi=+a[3],U=D.units[ui],ci=posList(ui,gi,di)[pi].c,oi=a[4],old=EDITS[ekey(ci,oi,U.id)]||{};
+    const o=(opsOf(D.cards[ci],U.id).find(([,x])=>x===oi)||[])[0]||{};
+    if(await putEdit(ekey(ci,oi,U.id),Object.assign({},old,{c:ci,oi,u:U.id,del:true,proc:o.proc||''}))){panel={};location.hash=`p-${ui}-${gi}-${di}-${pi}`}return}
+  if(b.dataset.take||b.dataset.skip){const x=EDITS[b.dataset.take||b.dataset.skip]; if(!x)return; const {a}=parse(); const U=D.units[+a[0]], u=U.id, ci=x.c;
+    if(b.dataset.take){ if(x.isNew){const oi='n'+Date.now().toString(36); await putEdit(ekey(ci,oi,u),Object.assign(pick(x),{c:ci,oi,u,isNew:true,sec:x.sec||'main',t0:Date.now(),from:x.id}))}
+      else await putEdit(ekey(ci,x.oi,u),Object.assign(pick(x),{c:ci,oi:x.oi,u,del:!!x.del,from:x.id})) }
+    const k=`c${ci}k${u}`, ack=EDITS[k]||{}; await putEdit(k,{kind:'ack',c:ci,u,seen:Object.assign({},ack.seen,{[x.id]:Date.now()})}); render(); return}
+  if(b.dataset.apply){const v=(OTH[b.dataset.oi]||[]).find(x=>x.u===b.dataset.apply);if(v){const p={st:v.st||''};if(v.how)p.how=v.how;save(b.dataset.id,p)}return}
+  if(b.dataset.ack){const a=ALL[b.dataset.id]||{};save(b.dataset.id,{ack:Object.assign({},a.ack,{[b.dataset.ack]:Date.now()})});return}
+  if(b.dataset.all){panel.all=1;render();return}
+  if(b.dataset.go!=null){if(b.dataset.hl!=null)HL=b.dataset.hl;else if(b.dataset.go.startsWith('u-'))HL='';panel={};location.hash=b.dataset.go;window.scrollTo(0,0);return}
+  if(b.dataset.st){const id=b.dataset.id,cur=(ALL[id]||{}).st;save(id,{st:cur===b.dataset.st?'':b.dataset.st});const fr=b.closest('.fr');if(fr&&b.dataset.st==='diff'&&cur!=='diff'){location.hash=fr.querySelector('.fn').dataset.go;window.scrollTo(0,0);setTimeout(()=>{const x=$('t-how');if(x)x.focus()},120);return}if(b.dataset.st==='diff'&&cur!=='diff')setTimeout(()=>{const t=$('t-how');if(t)t.focus()},60);return}
+  if(b.dataset.pn){panel[b.dataset.id]=Object.assign(panel[b.dataset.id]||{},{[b.dataset.pn]:1});render();const t=$('t-'+b.dataset.pn);if(t)t.focus();return}
+});
+let tmr=null;
+document.addEventListener('input',ev=>{if(ev.target.id==='q'){Q=ev.target.value;results();return}const t=ev.target;if(t.tagName!=='TEXTAREA'||!t.dataset.id)return;const s=$('sv');if(s)s.textContent='Сохраняю…';clearTimeout(tmr);tmr=setTimeout(()=>save(t.dataset.id,{[t.dataset.f]:t.value.trim()},true),700)});
+document.addEventListener('focusout',ev=>{const t=ev.target;if(t.tagName==='TEXTAREA'&&t.dataset.id){clearTimeout(tmr);const v=t.value.trim();if(v!==((ALL[t.dataset.id]||{})[t.dataset.f]||''))save(t.dataset.id,{[t.dataset.f]:v},true)}});
+window.addEventListener('hashchange',()=>{panel={};render()});
+async function loadColl(coll){const out={};let from=0;for(;;){const {data,error}=await SB.from('items').select('id,data').eq('coll',coll).range(from,from+999);if(error)throw error;data.forEach(x=>out[x.id]=x.data);if(data.length<1000)break;from+=1000}return out}
+async function decryptSeed(pass){
+  const r=await fetch('f-seed.enc?v=1'); const j=await r.json(); const ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass.trim().normalize('NFC').toLowerCase()),'PBKDF2',false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:ub(j.salt),iterations:j.it,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
+  return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:ub(j.iv)},key,ub(j.ct))));
+}
+async function seed(d){
+  const rows=[{coll:'fdata',id:'meta',data:{units:d.units,auto:d.auto,n:Math.ceil(d.cards.length/20)},by_email:ME,at:new Date().toISOString()}];
+  for(let i=0;i<d.cards.length;i+=20) rows.push({coll:'fdata',id:'c'+(i/20),data:{start:i,cards:d.cards.slice(i,i+20)},by_email:ME,at:new Date().toISOString()});
+  for(let i=0;i<rows.length;i+=4){const {error}=await SB.from('items').upsert(rows.slice(i,i+4));if(error)throw error}
+  await SB.from('log').insert({by_email:ME,text:'Функционал: загружены должности и функции'});
+}
+function seedScreen(msg){
+  nav(null,'');
+  $('out').innerHTML=`<h1>Первый запуск</h1><p class="sub">Должности и функции ещё не загружены в базу. Введите код загрузки — его прислал Claude в чате. Это нужно сделать один раз.</p>
+  <form class="ef" id="sf"><label>Код загрузки<textarea id="sf-code" rows="1" autocomplete="off" style="min-height:44px"></textarea></label><div class="btns"><button class="bt pr" type="submit">Загрузить</button></div><div style="color:var(--no);font-size:14px">${esc(msg||'')}</div></form>`;
+  $('sf').addEventListener('submit',async ev=>{ev.preventDefault();const b=ev.target.querySelector('button');b.disabled=true;b.textContent='Загружаю…';
+    let d; try{d=await decryptSeed($('sf-code').value)}catch(_){seedScreen('Код не подошёл. Проверьте и введите ещё раз.');return}
+    try{await seed(d)}catch(e){seedScreen('Не получилось сохранить в базу: '+(e.message||e));return}
+    location.reload()});
+}
+async function start(){
+  if(!window.supabase||!window.SUPABASE_URL){$('out').innerHTML='<div class="msg">Не загрузилась библиотека базы. Обновите страницу.</div>';return}
+  SB=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+  const {data:{session}}=await SB.auth.getSession();
+  if(!session){$('login').hidden=false;$('out').innerHTML='';return}
+  ME=session.user.email; OWNER=OWNERS.includes(String(ME).toLowerCase());
+  $('mebar').hidden=false; $('mebar-e').textContent=ME;
+  try{const {data:ok,error}=await SB.rpc('is_allowed'); if(!error&&ok===false){$('out').innerHTML='<div class="msg">Вы вошли как '+esc(ME)+', но доступ ещё не выдан.<br>Попросите администратора добавить ваш email в список доступа.</div>';return}}catch(_){}
+  let fd; try{fd=await loadColl('fdata')}catch(e){$('out').innerHTML='<div class="msg">Ошибка загрузки: '+esc(e.message||e)+'</div>';return}
+  if(!fd.meta){seedScreen();return}
+  const cards=[]; for(let i=0;i<fd.meta.n;i++){const ch=fd['c'+i]; if(!ch){$('out').innerHTML='<div class="msg">Данные загружены не полностью. Обновите страницу.</div>';return} ch.cards.forEach((c,k)=>cards[ch.start+k]=c)}
+  D={units:fd.meta.units,auto:fd.meta.auto,cards}; index();
+  try{ALL=await loadColl('fa'); const e=await loadColl('fe'); EDITS={}; Object.entries(e).forEach(([id,v])=>{v.id=id;EDITS[id]=v})}catch(_){}
+  db=true; dbState='on'; feedOn=true; render();
+  SB.channel('funkcii').on('postgres_changes',{event:'*',schema:'public',table:'items',filter:'coll=in.(fa,fe)'},p=>{
+    const n=p.new&&p.new.coll?p.new:null, o=p.old||{}, coll=(n&&n.coll)||o.coll, id=(n&&n.id)||o.id; if(!id)return;
+    const M=coll==='fe'?EDITS:coll==='fa'?ALL:null; if(!M)return;
+    if(p.eventType==='DELETE'||!n) delete M[id]; else {const v=n.data||{}; if(coll==='fe')v.id=id; M[id]=v}
+    rr();
+  }).subscribe(st=>{if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){dbState='off';rr()}});
+}
+let SIGNUP=false;
+$('lf-mode').addEventListener('click',()=>{SIGNUP=!SIGNUP;$('lf-go').textContent=SIGNUP?'Зарегистрироваться':'Войти';$('lf-mode').textContent=SIGNUP?'Уже есть аккаунт? Войти':'Нет аккаунта? Зарегистрироваться';$('lf-err').textContent=''});
+$('lf').addEventListener('submit',async e=>{e.preventDefault();$('lf-err').textContent='';const email=$('lf-email').value.trim(),password=$('lf-pass').value;
+  if(SIGNUP){if(password.length<6){$('lf-err').textContent='Пароль — не короче 6 символов';return}const {data,error}=await SB.auth.signUp({email,password});if(error){$('lf-err').textContent='Не получилось: '+error.message;return}if(!data.session){$('lf-err').textContent='Почти готово: подтвердите email по ссылке из письма, затем войдите.';return}location.reload();return}
+  const {error}=await SB.auth.signInWithPassword({email,password});if(error){$('lf-err').textContent=/confirm/i.test(error.message)?'Сначала подтвердите email по ссылке из письма':'Неверный email или пароль';return}location.reload()});
+$('mebar-out').addEventListener('click',async()=>{await SB.auth.signOut();location.reload()});
+start();
+})();
+</script></body></html>
