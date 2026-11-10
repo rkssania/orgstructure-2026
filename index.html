@@ -196,6 +196,8 @@ html,body{margin:0}
   <button class="btn primary" id="dl-shr" type="button">Скачать штатное расписание</button>
   <button class="btn primary" id="dl-ras" type="button">Скачать штатную расстановку</button>
   <button class="btn" id="dl-cmp" type="button">Сравнить со старым штатным</button>
+  <button class="btn" type="button" data-org3="0">⤓ 3 филиала без людей (PDF)</button>
+  <button class="btn" type="button" data-org3="1">⤓ 3 филиала с людьми (PDF)</button>
   <span class="note" id="dl-note">Excel в форме бланков, с учётом всех правок</span>
   <label class="link upl">загрузить исходные данные<input type="file" id="upl" accept=".json" hidden></label>
   <a class="link" href="funkcii.html">функционал</a>
@@ -396,21 +398,23 @@ function saveBlob(blob,name){const a=document.createElement('a'); a.href=URL.cre
 let jsPdfP=null;
 function loadJsPdf(){ if(window.jspdf) return Promise.resolve(); if(!jsPdfP) jsPdfP=new Promise((res,rej)=>{const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'; s.onload=res; s.onerror=()=>{jsPdfP=null;rej(new Error('не загрузилась библиотека PDF'))}; document.head.appendChild(s);}); return jsPdfP; }
 async function dlOrg(uid,withP,pdf){
-  try{toast('Готовлю схему…');
-    const c=await orgCanvas(uid,withP), name=`Оргструктура — ${UN[uid]} — ${withP?'с сотрудниками':'без сотрудников'} — ${stamp()}`;
-    if(!pdf){ const blob=await new Promise(r=>c.toBlob(r,'image/png')); saveBlob(blob,name+'.png'); toast('Схема скачана'); return; }
+  const uids=Array.isArray(uid)?uid:[uid];
+  try{toast('Готовлю PDF…');
     await loadJsPdf();
-    // A3 альбомная; если схема высокая — продолжается на следующих листах
+    const name=`Оргструктура — ${uids.length>1?'филиалы '+uids.map(u=>UN[u]).join(', '):UN[uids[0]]} — ${withP?'с сотрудниками':'без сотрудников'} — ${stamp()}`;
+    // А3 альбомная; каждое подразделение с нового листа; высокая схема продолжается на следующих листах
     const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a3',compress:true});
-    const PW=420, PH=297, M=8, aw=PW-2*M, ah=PH-2*M;
-    const kw=aw/c.width;
-    if(c.height*kw<=ah*1.35){ const k=Math.min(kw,ah/c.height), iw=c.width*k, ih=c.height*k; doc.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',(PW-iw)/2,M,iw,ih); saveBlob(doc.output('blob'),name+'.pdf'); toast('PDF скачан'); return; }
-    const k=kw, sliceH=Math.floor(ah/k);
-    for(let y=0,pg=0;y<c.height;y+=sliceH,pg++){
-      const hh=Math.min(sliceH,c.height-y), part=document.createElement('canvas'); part.width=c.width; part.height=hh;
-      const pc=part.getContext('2d'); pc.fillStyle='#fff'; pc.fillRect(0,0,part.width,hh); pc.drawImage(c,0,y,c.width,hh,0,0,c.width,hh);
-      if(pg) doc.addPage('a3','landscape');
-      doc.addImage(part.toDataURL('image/jpeg',0.92),'JPEG',M,M,aw,hh*k);
+    const PW=420, PH=297, M=8, aw=PW-2*M, ah=PH-2*M; let first=true;
+    const page=()=>{ if(!first) doc.addPage('a3','landscape'); first=false; };
+    for(const u of uids){
+      const c=await orgCanvas(u,withP), kw=aw/c.width;
+      if(c.height*kw<=ah*1.35){ const k=Math.min(kw,ah/c.height), iw=c.width*k, ih=c.height*k; page(); doc.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',(PW-iw)/2,M,iw,ih); continue; }
+      const sliceH=Math.floor(ah/kw);
+      for(let y=0;y<c.height;y+=sliceH){
+        const hh=Math.min(sliceH,c.height-y), part=document.createElement('canvas'); part.width=c.width; part.height=hh;
+        const pc=part.getContext('2d'); pc.fillStyle='#fff'; pc.fillRect(0,0,part.width,hh); pc.drawImage(c,0,y,c.width,hh,0,0,c.width,hh);
+        page(); doc.addImage(part.toDataURL('image/jpeg',0.92),'JPEG',M,M,aw,hh*kw);
+      }
     }
     saveBlob(doc.output('blob'),name+'.pdf'); toast('PDF скачан');
   }catch(err){toast('Не получилось: '+(err.message||err))}
@@ -565,6 +569,7 @@ function render(){
   $('main').innerHTML=r==='plan'?planView():r==='agree'?agreeView():unitView(ROUTES[r]||'ЦА');
 }
 document.addEventListener('click',e=>{
+  const o3=e.target.closest('[data-org3]'); if(o3) return dlOrg(['КРГ','УК','Астана'],o3.dataset.org3==='1',true);
   const og=e.target.closest('[data-org]'); if(og){const r=(location.hash||'#ca').slice(1); return dlOrg(ROUTES[r]||'ЦА',og.dataset.org==='1',og.dataset.pdf==='1')}
   const ag=e.target.closest('[data-ag],[data-agc],[data-agcs],[data-agu],[data-ags],[data-ago],[data-agall],#dl-agree');
   if(ag){
