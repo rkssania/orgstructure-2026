@@ -67,6 +67,11 @@ h1{font-size:30px;font-weight:700;letter-spacing:-.02em;margin:8px 0 2px;text-wr
 .oth .ob{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 .oth .ob button{border:0;border-radius:8px;padding:7px 12px;font-size:14px;font-weight:600;cursor:pointer;background:var(--card);color:var(--tint)}
 .oth .ob button:first-child{background:var(--tint);color:#fff}
+.orgcard{display:flex;align-items:center;gap:14px;background:var(--card);border-radius:14px;padding:14px 16px;margin:6px 0 14px;text-decoration:none;color:var(--ink);box-shadow:0 1px 2px rgba(20,34,61,.06)}
+.orgcard:active{opacity:.85}
+.orgcard .tx{flex:1;min-width:0}
+.orgcard .t{display:block;font-size:18px}
+.orgcard .s{display:block;font-size:14px;color:var(--muted);margin-top:2px}
 .sh{font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin:22px 16px 6px}
 .list{background:var(--card);border-radius:12px;overflow:hidden}
 .row{width:100%;display:flex;align-items:center;gap:12px;background:none;border:0;text-align:left;padding:11px 14px 11px 16px;cursor:pointer;position:relative;min-height:48px}
@@ -133,7 +138,7 @@ h1{font-size:30px;font-weight:700;letter-spacing:-.02em;margin:8px 0 2px;text-wr
 </style></head><body>
 <div class="nav"><div class="in"><span id="nb"></span><span class="nt" id="nt"></span><span></span></div></div>
 <div class="wrap" id="out"><div class="msg">Загружаю…</div></div>
-<div class="wrap" style="padding-block:0 30px"><div class="me-bar" id="mebar" hidden><span id="mebar-e"></span><span><a href="./" style="color:var(--tint);text-decoration:none;margin-right:12px">Оргструктура</a><button type="button" id="mebar-out">Выйти</button></span></div></div>
+<div class="wrap" style="padding-block:0 30px"><div class="me-bar" id="mebar" hidden><span id="mebar-e"></span><span><a href="./" style="color:var(--tint);text-decoration:none;margin-right:12px">Новая оргструктура</a><button type="button" id="mebar-out">Выйти</button></span></div></div>
 
 <div class="login" id="login" hidden><form id="lf"><h2>Функционал</h2><p style="margin:0;color:var(--muted);font-size:15px">ТОО «Центр гематологии». Войдите с тем же email и паролем, что и в оргструктуре.</p>
 <input id="lf-email" type="email" placeholder="Email" autocomplete="username" required><input id="lf-pass" type="password" placeholder="Пароль" autocomplete="current-password" required>
@@ -223,6 +228,7 @@ function feedHtml(){
 function home(){
   sub(''); subCard(-1,''); nav(null,'');
   let h=`<h1>Функционал</h1><p class="sub">ТОО «Центр гематологии» · новая структура</p>
+  <a class="orgcard" href="./"><span class="ui big" style="background:var(--navy)" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="5" rx="1.2" fill="none" stroke="#fff" stroke-width="1.8"/><rect x="3" y="16" width="6" height="5" rx="1.2" fill="none" stroke="#fff" stroke-width="1.8"/><rect x="15" y="16" width="6" height="5" rx="1.2" fill="none" stroke="#fff" stroke-width="1.8"/><path d="M12 8v4M6 16v-4h12v4" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="tx"><span class="t b">Новая оргструктура</span><span class="s">Схема подразделений и штатная расстановка</span></span>${CHEV}</a>
   <div class="search"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input id="q" type="search" placeholder="Поиск по фамилии" autocomplete="off" aria-label="Фамилия сотрудника" value="${esc(Q)}"></div><div id="res"></div>
   <div class="sh">Подразделения</div><div class="list">`+D.units.map((U,ui)=>{
     const n=U.groups.reduce((a,g)=>a+g.head.concat(...g.depts.map(d=>d.pos)).reduce((x,e)=>x+e.p.length,0),0), nd=U.groups.reduce((a,g)=>a+g.depts.length,0);
