@@ -427,14 +427,14 @@ document.addEventListener('input',ev=>{if(ev.target.id==='q'){Q=ev.target.value;
 document.addEventListener('focusout',ev=>{const t=ev.target;if(t.tagName==='TEXTAREA'&&t.dataset.id){clearTimeout(tmr);const v=t.value.trim();if(v!==((ALL[t.dataset.id]||{})[t.dataset.f]||''))save(t.dataset.id,{[t.dataset.f]:v},true)}});
 window.addEventListener('hashchange',()=>{panel={};render()});
 async function loadColl(coll){const out={};let from=0;for(;;){const {data,error}=await SB.from('items').select('id,data').eq('coll',coll).range(from,from+999);if(error)throw error;data.forEach(x=>out[x.id]=x.data);if(data.length<1000)break;from+=1000}return out}
-async function decryptSeed(pass){
-  const r=await fetch('f-seed.enc?v=1'); const j=await r.json(); const ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function decryptSeed(pass,file){
+  const r=await fetch((file||'f-seed.enc')+'?v='+Date.now()); const j=await r.json(); const ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
   const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass.trim().normalize('NFC').toLowerCase()),'PBKDF2',false,['deriveKey']);
   const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:ub(j.salt),iterations:j.it,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
   return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:ub(j.iv)},key,ub(j.ct))));
 }
 async function seed(d){
-  const rows=[{coll:'fdata',id:'meta',data:{units:d.units,auto:d.auto,n:Math.ceil(d.cards.length/20)},by_email:ME,at:new Date().toISOString()}];
+  const rows=[{coll:'fdata',id:'meta',data:{units:d.units,auto:d.auto,ver:d.ver||1,n:Math.ceil(d.cards.length/20)},by_email:ME,at:new Date().toISOString()}];
   for(let i=0;i<d.cards.length;i+=20) rows.push({coll:'fdata',id:'c'+(i/20),data:{start:i,cards:d.cards.slice(i,i+20)},by_email:ME,at:new Date().toISOString()});
   for(let i=0;i<rows.length;i+=4){const {error}=await SB.from('items').upsert(rows.slice(i,i+4));if(error)throw error}
   await SB.from('log').insert({by_email:ME,text:'Функционал: загружены должности и функции'});
@@ -462,7 +462,13 @@ async function start(){
   let fd; try{fd=await loadColl('fdata')}catch(e){$('out').innerHTML='<div class="msg">Ошибка загрузки: '+esc(e.message||e)+'</div>';return}
   if(!fd.meta){seedScreen();return}
   const cards=[]; for(let i=0;i<fd.meta.n;i++){const ch=fd['c'+i]; if(!ch){$('out').innerHTML='<div class="msg">Данные загружены не полностью. Обновите страницу.</div>';return} ch.cards.forEach((c,k)=>cards[ch.start+k]=c)}
-  D={units:fd.meta.units,auto:fd.meta.auto,cards}; index();
+  D={units:fd.meta.units,auto:fd.meta.auto,cards};
+  // обновление структуры (версия 2: сектора у зама по клинике, главная медсестра, проектный офис)
+  if((fd.meta.ver||1)<2){ try{ $('out').innerHTML='<div class="msg">Обновляю оргструктуру…</div>';
+      const km=[];D.units.forEach(U=>U.groups.forEach(g=>{g.head.forEach(e=>km.push(...e.p));g.depts.forEach(dp=>dp.pos.forEach(e=>km.push(...e.p)))}));
+      const nd=await decryptSeed(km.join('|'),'f-patch-2.enc'); await seed(nd); D={units:nd.units,auto:nd.auto,cards:nd.cards};
+    }catch(e){console.warn('patch',e)} }
+  index();
   $('out').innerHTML='<div class="msg">Загружаю отметки коллег…</div>';
   try{ALL=await loadColl('fa'); const e=await loadColl('fe'); EDITS={}; Object.entries(e).forEach(([id,v])=>{v.id=id;EDITS[id]=v})}catch(_){}
   clearTimeout(slow); db=true; dbState='on'; feedOn=true; render();
