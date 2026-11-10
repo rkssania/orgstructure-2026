@@ -258,7 +258,7 @@ function dScreen(ui,gi,di){
   const G=D.units[ui].groups[gi];
   if(di!=='h'&&G.head.length) h+=`<div class="sh">Руководитель блока</div><div class="list">`+G.head.map((e,pi)=>{const c=D.cards[e.c],s=stats(ui,gi,e),me=HL&&e.p.includes(HL);if(hidden(c)) return `<div class="row" style="cursor:default"><span class="ic" aria-hidden="true">Р</span><span class="tx"><span class="t b">${esc(disp(c.t))}</span><span class="s">${esc(e.p.join(', ')||'вакансия')}</span></span></div>`;return `<button class="row${me?' hl':''}" type="button" data-go="p-${ui}-${gi}-h-${pi}"><span class="ic" aria-hidden="true">Р</span><span class="tx"><span class="t b">${esc(disp(c.t))}</span><span class="s">${esc(e.p.join(', ')||'вакансия')}</span></span><span class="r">${s.done}/${s.n}</span>${CHEV}</button>`}).join('')+`</div>`;
   h+=`<div class="sh">${di==='h'?'Должности':'Должности отдела'} · ${list.length}</div><div class="list">`+list.map((e,pi)=>{const c=D.cards[e.c], s=stats(ui,gi,e), me=HL&&e.p.includes(HL); if(hidden(c)) return `<div class="row" style="cursor:default"><span class="tx"><span class="t b">${esc(disp(c.t))}</span><span class="s">${esc(e.p.join(', '))}</span></span></div>`;
-    const names=e.p.length?(e.p.length<=2?e.p.join(', '):e.p.slice(0,2).join(', ')+` и ещё ${e.p.length-2}`):'вакансия';
+    const names=(e.p.length?(e.p.length<=2?e.p.join(', '):e.p.slice(0,2).join(', ')+` и ещё ${e.p.length-2}`):'вакансия')+(e.n?` · ${e.n} ${e.n<5?'ставки':'ставок'}`:'');
     return `<button class="row${me?' hl':''}" type="button" data-go="p-${ui}-${gi}-${di}-${pi}"><span class="tx"><span class="t b">${esc(disp(c.t))}${c.st==='draft'?'<span class="pill dr">черновик</span>':''}</span><span class="s">${esc(names)}</span>${me?`<span class="me">${esc(HL)}</span>`:''}</span><span class="r">${s.done}/${s.n}</span>${CHEV}</button>`}).join('')+`</div>`;
   $('out').innerHTML=h;
 }
@@ -270,7 +270,7 @@ function pScreen(ui,gi,di,pi){
   const pc=k=>s.n?(s[k]/s.n*100).toFixed(1):0;
   names(ops.map(([o])=>o.ed&&o.ed.by));
   let h=`<h1>${esc(disp(c.t))}</h1><p class="sub">${esc(short(U.name))} · ${esc(deptName(ui,gi,di))}</p>
-  <div class="ppl"><div class="lbl">${e.p.length>1?'Сотрудники · '+e.p.length:'Сотрудник'}</div>${!e.p.length?'<span style="color:var(--muted)">Вакансия</span>':(e.p.length<=4||panel.all)?esc(e.p.join(', ')):esc(e.p.slice(0,3).join(', '))+` <button type="button" data-all="1" style="background:none;border:0;padding:0;color:var(--tint);cursor:pointer">и ещё ${e.p.length-3} — показать</button>`}</div>
+  <div class="ppl"><div class="lbl">${e.p.length>1?'Сотрудники · '+e.p.length:'Сотрудник'}</div>${e.n?`<div style="color:var(--muted);font-size:14px;margin-bottom:4px">По штату: ${e.n} ${e.n<5?'ставки':'ставок'}</div>`:''}${!e.p.length?'<span style="color:var(--muted)">Вакансия</span>':(e.p.length<=4||panel.all)?esc(e.p.join(', ')):esc(e.p.slice(0,3).join(', '))+` <button type="button" data-all="1" style="background:none;border:0;padding:0;color:var(--tint);cursor:pointer">и ещё ${e.p.length-3} — показать</button>`}</div>
   <div class="prog"><span>Отмечено ${s.done} из ${s.n}</span><span class="bar"><i style="width:${pc('do')}%;background:var(--ok)"></i><i style="width:${pc('diff')}%;background:var(--diff)"></i><i style="width:${pc('no')}%;background:var(--no)"></i></span></div>
   <div class="legend"><span><i class="dot do"></i>Делаю ${s.do}</span><span><i class="dot diff"></i>Иначе ${s.diff}</span><span><i class="dot no"></i>Не делаю ${s.no}</span><span><i class="dot"></i>Не отмечено ${s.n-s.done}</span></div>${warn()}`;
   const ob=othEdits(e.c,U.id);
@@ -464,7 +464,7 @@ async function start(){
   const cards=[]; for(let i=0;i<fd.meta.n;i++){const ch=fd['c'+i]; if(!ch){$('out').innerHTML='<div class="msg">Данные загружены не полностью. Обновите страницу.</div>';return} ch.cards.forEach((c,k)=>cards[ch.start+k]=c)}
   D={units:fd.meta.units,auto:fd.meta.auto,cards};
   // обновление структуры: v2 — АУП (сектора, главная медсестра, проектный офис); v3 — филиалы (заведующий стационаром, служба поддержки пациентов из трёх отделов)
-  const LATEST=3, cur=fd.meta.ver||1;
+  const LATEST=4, cur=fd.meta.ver||1;
   if(cur<LATEST){ try{ $('out').innerHTML='<div class="msg">Обновляю оргструктуру…</div>';
       const km=[];D.units.forEach(U=>U.groups.forEach(g=>{g.head.forEach(e=>km.push(...e.p));g.depts.forEach(dp=>dp.pos.forEach(e=>km.push(...e.p)))}));
       const nd=await decryptSeed(km.join('|'),'f-up-'+cur+'.enc'); await seed(nd); D={units:nd.units,auto:nd.auto,cards:nd.cards};
