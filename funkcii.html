@@ -464,7 +464,7 @@ async function start(){
   const cards=[]; for(let i=0;i<fd.meta.n;i++){const ch=fd['c'+i]; if(!ch){$('out').innerHTML='<div class="msg">Данные загружены не полностью. Обновите страницу.</div>';return} ch.cards.forEach((c,k)=>cards[ch.start+k]=c)}
   D={units:fd.meta.units,auto:fd.meta.auto,cards};
   // обновление структуры: v2 — АУП (сектора, главная медсестра, проектный офис); v3 — филиалы (заведующий стационаром, служба поддержки пациентов из трёх отделов)
-  const LATEST=4, cur=fd.meta.ver||1;
+  const LATEST=5, cur=fd.meta.ver||1;
   if(cur<LATEST){ try{ $('out').innerHTML='<div class="msg">Обновляю оргструктуру…</div>';
       const km=[];D.units.forEach(U=>U.groups.forEach(g=>{g.head.forEach(e=>km.push(...e.p));g.depts.forEach(dp=>dp.pos.forEach(e=>km.push(...e.p)))}));
       const nd=await decryptSeed(km.join('|'),'f-up-'+cur+'.enc'); await seed(nd); D={units:nd.units,auto:nd.auto,cards:nd.cards};
