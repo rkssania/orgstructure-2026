@@ -384,16 +384,35 @@ function orgSvg(uid,withP){
   const H=maxY+44;
   return {w:W,h:H,svg:`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="100%" height="100%" fill="#fff"/>${body}</svg>`};
 }
-async function dlOrg(uid,withP){
+async function orgCanvas(uid,withP){
+  const {w,h,svg}=orgSvg(uid,withP), sc=Math.min(2, 16000/Math.max(w,h));
+  const img=new Image(); img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  await img.decode();
+  const c=document.createElement('canvas'); c.width=Math.round(w*sc); c.height=Math.round(h*sc);
+  const g=c.getContext('2d'); g.scale(sc,sc); g.drawImage(img,0,0);
+  return c;
+}
+function saveBlob(blob,name){const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove();}
+let jsPdfP=null;
+function loadJsPdf(){ if(window.jspdf) return Promise.resolve(); if(!jsPdfP) jsPdfP=new Promise((res,rej)=>{const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'; s.onload=res; s.onerror=()=>{jsPdfP=null;rej(new Error('не загрузилась библиотека PDF'))}; document.head.appendChild(s);}); return jsPdfP; }
+async function dlOrg(uid,withP,pdf){
   try{toast('Готовлю схему…');
-    const {w,h,svg}=orgSvg(uid,withP), sc=Math.min(2, 16000/Math.max(w,h));
-    const img=new Image(); img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
-    await img.decode();
-    const c=document.createElement('canvas'); c.width=Math.round(w*sc); c.height=Math.round(h*sc);
-    const g=c.getContext('2d'); g.scale(sc,sc); g.drawImage(img,0,0);
-    const blob=await new Promise(r=>c.toBlob(r,'image/png'));
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`Оргструктура — ${UN[uid]} — ${withP?'с сотрудниками':'без сотрудников'} — ${stamp()}.png`; document.body.appendChild(a); a.click(); a.remove();
-    toast('Схема скачана');
+    const c=await orgCanvas(uid,withP), name=`Оргструктура — ${UN[uid]} — ${withP?'с сотрудниками':'без сотрудников'} — ${stamp()}`;
+    if(!pdf){ const blob=await new Promise(r=>c.toBlob(r,'image/png')); saveBlob(blob,name+'.png'); toast('Схема скачана'); return; }
+    await loadJsPdf();
+    // A3 альбомная; если схема высокая — продолжается на следующих листах
+    const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a3',compress:true});
+    const PW=420, PH=297, M=8, aw=PW-2*M, ah=PH-2*M;
+    const kw=aw/c.width;
+    if(c.height*kw<=ah*1.35){ const k=Math.min(kw,ah/c.height), iw=c.width*k, ih=c.height*k; doc.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',(PW-iw)/2,M,iw,ih); saveBlob(doc.output('blob'),name+'.pdf'); toast('PDF скачан'); return; }
+    const k=kw, sliceH=Math.floor(ah/k);
+    for(let y=0,pg=0;y<c.height;y+=sliceH,pg++){
+      const hh=Math.min(sliceH,c.height-y), part=document.createElement('canvas'); part.width=c.width; part.height=hh;
+      const pc=part.getContext('2d'); pc.fillStyle='#fff'; pc.fillRect(0,0,part.width,hh); pc.drawImage(c,0,y,c.width,hh,0,0,c.width,hh);
+      if(pg) doc.addPage('a3','landscape');
+      doc.addImage(part.toDataURL('image/jpeg',0.92),'JPEG',M,M,aw,hh*k);
+    }
+    saveBlob(doc.output('blob'),name+'.pdf'); toast('PDF скачан');
   }catch(err){toast('Не получилось: '+(err.message||err))}
 }
 function unitView(uid){
@@ -401,7 +420,7 @@ function unitView(uid){
   const rs=DATA.rows.filter(r=>r.u===uid);
   const tot=Object.entries(SHR).filter(([k])=>k.startsWith(uid+'|')).reduce((a,[,v])=>a+v,0);
   const occ=rs.reduce((a,r)=>a+r.r,0), people=new Set(rs.filter(r=>r.n).map(r=>r.n)).size, dec=rs.filter(r=>r.d===DEC).length;
-  let h=`<div class="stats"><div class="stat"><b>${fmt(tot)}</b>штатных единиц</div><div class="stat"><b>${fmt(occ)}</b>занято</div><div class="stat"><b>${people}</b>сотрудников</div>${dec?`<div class="stat"><b style="color:var(--terra)">${dec}</b>вне новой схемы</div>`:''}<span class="sp"></span>${db?`<button class="btn" type="button" data-log="1">История изменений · ${LOG.length}</button>`:''}<button class="btn" type="button" data-org="0">⤓ Схема без людей</button><button class="btn" type="button" data-org="1">⤓ Схема с людьми</button><button class="btn" type="button" data-all="1">Развернуть все отделы</button><button class="btn" type="button" data-all="0">Свернуть</button></div>
+  let h=`<div class="stats"><div class="stat"><b>${fmt(tot)}</b>штатных единиц</div><div class="stat"><b>${fmt(occ)}</b>занято</div><div class="stat"><b>${people}</b>сотрудников</div>${dec?`<div class="stat"><b style="color:var(--terra)">${dec}</b>вне новой схемы</div>`:''}<span class="sp"></span>${db?`<button class="btn" type="button" data-log="1">История изменений · ${LOG.length}</button>`:''}<button class="btn" type="button" data-org="0">⤓ Схема без людей</button><button class="btn" type="button" data-org="0" data-pdf="1">PDF</button><button class="btn" type="button" data-org="1">⤓ Схема с людьми</button><button class="btn" type="button" data-org="1" data-pdf="1">PDF</button><button class="btn" type="button" data-all="1">Развернуть все отделы</button><button class="btn" type="button" data-all="0">Свернуть</button></div>
   <p class="hint">Нажмите на должность, чтобы увидеть, кто её занимает. Цифры: занято / штатных единиц.${editable()?' Нажмите ✎ рядом с человеком, чтобы перенести его (в т.ч. в другой филиал), поменять ставку или ФИО. В раскрытой должности: «+ сотрудник», «изменить должность / ставки»; внизу отдела — «+ добавить должность».':''}</p>`;
   if(showLog) h+=`<div class="logp"><b>История изменений</b>${LOG.length?'<ul>'+LOG.map(l=>`<li><span class="lt">${when(l.at)}</span> ${esc(who(l.by))}: ${esc(l.text)}</li>`).join('')+'</ul>':'<p class="hint">Пока изменений нет.</p>'}</div>`;
   const head=u.groups[0];
@@ -546,7 +565,7 @@ function render(){
   $('main').innerHTML=r==='plan'?planView():r==='agree'?agreeView():unitView(ROUTES[r]||'ЦА');
 }
 document.addEventListener('click',e=>{
-  const og=e.target.closest('[data-org]'); if(og){const r=(location.hash||'#ca').slice(1); return dlOrg(ROUTES[r]||'ЦА',og.dataset.org==='1')}
+  const og=e.target.closest('[data-org]'); if(og){const r=(location.hash||'#ca').slice(1); return dlOrg(ROUTES[r]||'ЦА',og.dataset.org==='1',og.dataset.pdf==='1')}
   const ag=e.target.closest('[data-ag],[data-agc],[data-agcs],[data-agu],[data-ags],[data-ago],[data-agall],#dl-agree');
   if(ag){
     if(ag.id==='dl-agree') return dlAgree();
