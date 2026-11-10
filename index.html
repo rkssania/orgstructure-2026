@@ -196,8 +196,8 @@ html,body{margin:0}
   <button class="btn primary" id="dl-shr" type="button">Скачать штатное расписание</button>
   <button class="btn primary" id="dl-ras" type="button">Скачать штатную расстановку</button>
   <button class="btn" id="dl-cmp" type="button">Сравнить со старым штатным</button>
-  <button class="btn" type="button" data-org3="0">⤓ 3 филиала без людей (PDF)</button>
-  <button class="btn" type="button" data-org3="1">⤓ 3 филиала с людьми (PDF)</button>
+  <button class="btn" type="button" data-org3="0">⤓ Оргструктура без людей (PDF)</button>
+  <button class="btn" type="button" data-org3="1">⤓ Оргструктура с людьми (PDF)</button>
   <span class="note" id="dl-note">Excel в форме бланков, с учётом всех правок</span>
   <label class="link upl">загрузить исходные данные<input type="file" id="upl" accept=".json" hidden></label>
   <a class="link" href="funkcii.html">функционал</a>
@@ -401,7 +401,7 @@ async function dlOrg(uid,withP,pdf){
   const uids=Array.isArray(uid)?uid:[uid];
   try{toast('Готовлю PDF…');
     await loadJsPdf();
-    const name=`Оргструктура — ${uids.length>1?'филиалы '+uids.map(u=>UN[u]).join(', '):UN[uids[0]]} — ${withP?'с сотрудниками':'без сотрудников'} — ${stamp()}`;
+    const name=`Оргструктура — ${uids.length>1?uids.map(u=>UN[u]).join(', '):UN[uids[0]]} — ${withP?'с сотрудниками':'без сотрудников'} — ${stamp()}`;
     // каждое подразделение целиком на одном листе: без людей — А3, с людьми — А1; ориентация по форме схемы
     const F=withP?{f:'a1',w:841,h:594}:{f:'a3',w:420,h:297}, M=withP?12:8;
     let doc=null;
@@ -565,7 +565,7 @@ function render(){
   $('main').innerHTML=r==='plan'?planView():r==='agree'?agreeView():unitView(ROUTES[r]||'ЦА');
 }
 document.addEventListener('click',e=>{
-  const o3=e.target.closest('[data-org3]'); if(o3) return dlOrg(['КРГ','УК','Астана'],o3.dataset.org3==='1',true);
+  const o3=e.target.closest('[data-org3]'); if(o3) return dlOrg(['ЦА','КРГ','УК','Астана'],o3.dataset.org3==='1',true);
   const og=e.target.closest('[data-org]'); if(og){const r=(location.hash||'#ca').slice(1); return dlOrg(ROUTES[r]||'ЦА',og.dataset.org==='1',og.dataset.pdf==='1')}
   const ag=e.target.closest('[data-ag],[data-agc],[data-agcs],[data-agu],[data-ags],[data-ago],[data-agall],#dl-agree');
   if(ag){
