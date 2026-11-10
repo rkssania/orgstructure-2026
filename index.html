@@ -208,7 +208,7 @@ html,body{margin:0}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script src="config.js?v=1793959529"></script>
-<script src="export.js?v=1793982289"></script>
+<script src="export.js?v=1794284867"></script>
 
 <script>
 (function(){
@@ -321,12 +321,86 @@ function deptCard(u,g,d,dec,defOpen,flat){
   const label=d.name.startsWith(g+' · ')?d.name.slice(g.length+3):dname(d.name);
   return `<div class="dept${isOpen?' open':''}${d.name.startsWith(g+' · ')?' sub':''}"><button class="dbtn" type="button" data-o="${esc(key)}" data-def="${defOpen?1:0}" aria-expanded="${isOpen}"><span class="dn">${esc(label)}</span><span class="dm">${cnt}</span></button>${isOpen?list:''}</div>`;
 }
+
+// ---------------- СКАЧАТЬ СХЕМУ ОРГСТРУКТУРЫ (PNG) ----------------
+const UFULL={'ЦА':'Административно-управленческий персонал (центральный аппарат)','КРГ':'Филиал г. Караганда','УК':'Филиал г. Усть-Каменогорск','Астана':'Медицинское подразделение г. Астана','Лаборатория':'Лаборатория'};
+function orgSvg(uid,withP){
+  const u=DATA.units.find(x=>x.id===uid), CW=250, GAP=18, PAD=12, LH=15, F='Arial, Helvetica, sans-serif';
+  const ctx=document.createElement('canvas').getContext('2d');
+  const wrap=(t,w,font)=>{ctx.font=font;const out=[];String(t).split('\n').forEach(par=>{let line='';par.split(' ').forEach(wd=>{const tt=line?line+' '+wd:wd;if(ctx.measureText(tt).width>w&&line){out.push(line);line=wd}else line=tt});out.push(line)});return out};
+  const X=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const short=n=>n.split(' ').slice(0,3).join(' ');
+  let body='';
+  const txt=(x,y,lines,o={})=>{lines.forEach((l,i)=>{body+=`<text x="${x}" y="${y+i*(o.lh||LH)}" font-family="${F}" font-size="${o.size||12}" ${o.bold?'font-weight="700"':''} fill="${o.fill||'#1d2433'}" ${o.anchor?`text-anchor="${o.anchor}"`:''} ${o.italic?'font-style="italic"':''}>${X(l)}</text>`});return lines.length*(o.lh||LH)};
+  // блок должности: строки
+  const posLines=(g,d,p)=>{const c=sh(uid,g,d,p), pp=ppl(uid,g,d,p).filter(r=>r.n), occ=pp.reduce((a,r)=>a+r.r,0);
+    const L=[{t:`${disp(p)} — ${fmt(c)} ед.`,bold:withP}];
+    if(withP){pp.forEach(r=>L.push({t:`${short(r.n)} (${fmt(r.r)})`,ind:true})); const v=Math.round((c-occ)*100)/100; if(v>0) L.push({t:`вакансия ${fmt(v)}`,ind:true,vac:true}); if(!pp.length&&!(v>0)) L.push({t:'—',ind:true,vac:true});}
+    return L;};
+  const measureDept=(title,g,d)=>{let h=PAD; if(title) h+=wrap(title,CW-2*PAD,`700 12.5px ${F}`).length*LH+6;
+    d.pos.forEach(p=>posLines(g,d.name,p).forEach(l=>{h+=wrap(l.t,CW-2*PAD-(l.ind?12:0),`${l.bold?'700 ':''}11.5px ${F}`).length*14})); return h+PAD-2;};
+  const drawDept=(x,y,title,g,d)=>{const h=measureDept(title,g,d);
+    body+=`<rect x="${x}" y="${y}" width="${CW}" height="${h}" rx="6" fill="#f4f6fb" stroke="#c3cbdb"/>`;
+    let yy=y+PAD+11; if(title){yy+=txt(x+PAD,yy,wrap(title,CW-2*PAD,`700 12.5px ${F}`),{bold:true,size:12.5,fill:'#1b2f57'})+6;}
+    d.pos.forEach(p=>posLines(g,d.name,p).forEach(l=>{const ls=wrap(l.t,CW-2*PAD-(l.ind?12:0),`${l.bold?'700 ':''}11.5px ${F}`);yy+=txt(x+PAD+(l.ind?12:0),yy,ls,{size:11.5,lh:14,bold:l.bold,fill:l.vac?'#b8562f':l.ind?'#3a4357':'#1d2433',italic:l.vac})}));
+    return h;};
+  const hdr=(x,y,t,n,dark)=>{const tl=wrap(t,CW-2*PAD,`700 12.5px ${F}`), nl=n?wrap(n,CW-2*PAD,`12px ${F}`):[]; const h=PAD*2+tl.length*LH+(nl.length?nl.length*LH+2:0)-2;
+    body+=`<rect x="${x}" y="${y}" width="${CW}" height="${h}" rx="7" fill="${dark?'#1b2f57':'#dfe5f1'}"/>`;
+    let yy=y+PAD+11; yy+=txt(x+CW/2,yy,tl,{bold:true,size:12.5,fill:dark?'#fff':'#1b2f57',anchor:'middle'}); if(nl.length) txt(x+CW/2,yy+2,nl,{size:12,fill:dark?'#d7deec':'#3a4357',anchor:'middle'}); return h;};
+  // колонки
+  const head=u.groups[0], hd=head.depts[0], headPos=hd.pos[0];
+  const cols=[];
+  head.depts.slice(1).forEach(d=>cols.push({t:d.name,n:'',dark:false,depts:[{title:'',g:head.name,d}]}));
+  u.groups.slice(1).forEach(g=>{const lead=g.depts.find(d=>d.name==='Руководство');
+    const pp=lead?lead.pos.flatMap(p=>ppl(uid,g.name,'Руководство',p).filter(r=>r.n)):[];
+    const t=lead?lead.pos.map(disp).join(' / '):g.name;
+    const n=lead?(withP?(pp.map(r=>short(r.n)).join(', ')||'вакансия'):`${fmt(lead.pos.reduce((a,p)=>a+sh(uid,g.name,'Руководство',p),0))} ед.`):(FN.includes(g.name)?'функционально — ЦА':'');
+    cols.push({t,n,dark:!!lead,depts:g.depts.filter(d=>d.name!=='Руководство').map(d=>({title:dname(d.name),g:g.name,d}))});});
+  if(withP){const dr=DATA.rows.filter(r=>r.u===uid&&r.d===DEC&&r.n); if(dr.length) cols.push({t:'Вне новой схемы',n:'требует решения',dark:false,dec:true,list:dr});}
+  const W=Math.max(cols.length*(CW+GAP)-GAP+60, 900);
+  // заголовок
+  let y=30; txt(30,y,[`Оргструктура — ${UFULL[uid]}`],{bold:true,size:20,lh:24,fill:'#1b2f57'}); y+=22;
+  txt(30,y,[`${withP?'С сотрудниками':'Без сотрудников (штатные единицы)'} · сформировано ${new Date().toLocaleDateString('ru-RU')}`],{size:12,fill:'#5b6478'}); y+=26;
+  // руководитель
+  const hpp=ppl(uid,head.name,hd.name,headPos).filter(r=>r.n);
+  const hx=W/2-CW/2, hh=hdr(hx,y,disp(headPos),withP?(hpp.map(r=>short(r.n)).join(', ')||'вакансия'):'',true);
+  // доп. должности при руководителе — справа
+  let sx=hx+CW+GAP, sy=y; hd.pos.slice(1).forEach(p=>{const dd={name:hd.name,pos:[p]}; if(sx+CW>W-10){sx=hx-GAP-CW;} const h=drawDept(sx,sy,'',head.name,dd); body+=`<line x1="${hx+CW}" y1="${y+hh/2}" x2="${sx}" y2="${sy+12}" stroke="#8a94aa"/>`; sy+=h+8;});
+  y=Math.max(y+hh,sy)+24;
+  // шина
+  const cx=i=>30+i*(CW+GAP)+CW/2;
+  body+=`<line x1="${W/2}" y1="${y-24}" x2="${W/2}" y2="${y-8}" stroke="#8a94aa" stroke-width="1.5"/>`;
+  if(cols.length) body+=`<line x1="${cx(0)}" y1="${y-8}" x2="${cx(cols.length-1)}" y2="${y-8}" stroke="#8a94aa" stroke-width="1.5"/>`;
+  let maxY=y;
+  cols.forEach((c,i)=>{const x=30+i*(CW+GAP); let yy=y;
+    body+=`<line x1="${cx(i)}" y1="${y-8}" x2="${cx(i)}" y2="${y}" stroke="#8a94aa" stroke-width="1.5"/>`;
+    yy+=hdr(x,yy,c.t,c.n,c.dark)+8;
+    if(c.list){const d={name:DEC,pos:[...new Set(c.list.map(r=>r.p))]}; yy+=drawDept(x,yy,'',DEC,d)+8;}
+    else c.depts.forEach(dd=>{yy+=drawDept(x,yy,dd.title,dd.g,dd.d)+8;});
+    maxY=Math.max(maxY,yy);});
+  const tot=Object.entries(SHR).filter(([k])=>k.startsWith(uid+'|')).reduce((a,[,v])=>a+v,0);
+  txt(30,maxY+22,[`Итого штатных единиц: ${fmt(tot)}`+(withP?` · сотрудников: ${new Set(DATA.rows.filter(r=>r.u===uid&&r.n).map(r=>r.n)).size}`:'')],{bold:true,size:13});
+  const H=maxY+44;
+  return {w:W,h:H,svg:`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="100%" height="100%" fill="#fff"/>${body}</svg>`};
+}
+async function dlOrg(uid,withP){
+  try{toast('Готовлю схему…');
+    const {w,h,svg}=orgSvg(uid,withP), sc=Math.min(2, 16000/Math.max(w,h));
+    const img=new Image(); img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+    await img.decode();
+    const c=document.createElement('canvas'); c.width=Math.round(w*sc); c.height=Math.round(h*sc);
+    const g=c.getContext('2d'); g.scale(sc,sc); g.drawImage(img,0,0);
+    const blob=await new Promise(r=>c.toBlob(r,'image/png'));
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`Оргструктура — ${UN[uid]} — ${withP?'с сотрудниками':'без сотрудников'}.png`; document.body.appendChild(a); a.click(); a.remove();
+    toast('Схема скачана');
+  }catch(err){toast('Не получилось: '+(err.message||err))}
+}
 function unitView(uid){
   const u=DATA.units.find(x=>x.id===uid);
   const rs=DATA.rows.filter(r=>r.u===uid);
   const tot=Object.entries(SHR).filter(([k])=>k.startsWith(uid+'|')).reduce((a,[,v])=>a+v,0);
   const occ=rs.reduce((a,r)=>a+r.r,0), people=new Set(rs.filter(r=>r.n).map(r=>r.n)).size, dec=rs.filter(r=>r.d===DEC).length;
-  let h=`<div class="stats"><div class="stat"><b>${fmt(tot)}</b>штатных единиц</div><div class="stat"><b>${fmt(occ)}</b>занято</div><div class="stat"><b>${people}</b>сотрудников</div>${dec?`<div class="stat"><b style="color:var(--terra)">${dec}</b>вне новой схемы</div>`:''}<span class="sp"></span>${db?`<button class="btn" type="button" data-log="1">История изменений · ${LOG.length}</button>`:''}<button class="btn" type="button" data-all="1">Развернуть все отделы</button><button class="btn" type="button" data-all="0">Свернуть</button></div>
+  let h=`<div class="stats"><div class="stat"><b>${fmt(tot)}</b>штатных единиц</div><div class="stat"><b>${fmt(occ)}</b>занято</div><div class="stat"><b>${people}</b>сотрудников</div>${dec?`<div class="stat"><b style="color:var(--terra)">${dec}</b>вне новой схемы</div>`:''}<span class="sp"></span>${db?`<button class="btn" type="button" data-log="1">История изменений · ${LOG.length}</button>`:''}<button class="btn" type="button" data-org="0">⤓ Схема без людей</button><button class="btn" type="button" data-org="1">⤓ Схема с людьми</button><button class="btn" type="button" data-all="1">Развернуть все отделы</button><button class="btn" type="button" data-all="0">Свернуть</button></div>
   <p class="hint">Нажмите на должность, чтобы увидеть, кто её занимает. Цифры: занято / штатных единиц.${editable()?' Нажмите ✎ рядом с человеком, чтобы перенести его (в т.ч. в другой филиал), поменять ставку или ФИО. В раскрытой должности: «+ сотрудник», «изменить должность / ставки»; внизу отдела — «+ добавить должность».':''}</p>`;
   if(showLog) h+=`<div class="logp"><b>История изменений</b>${LOG.length?'<ul>'+LOG.map(l=>`<li><span class="lt">${when(l.at)}</span> ${esc(who(l.by))}: ${esc(l.text)}</li>`).join('')+'</ul>':'<p class="hint">Пока изменений нет.</p>'}</div>`;
   const head=u.groups[0];
@@ -471,6 +545,7 @@ function render(){
   $('main').innerHTML=r==='plan'?planView():r==='agree'?agreeView():unitView(ROUTES[r]||'ЦА');
 }
 document.addEventListener('click',e=>{
+  const og=e.target.closest('[data-org]'); if(og){const r=(location.hash||'#ca').slice(1); return dlOrg(ROUTES[r]||'ЦА',og.dataset.org==='1')}
   const ag=e.target.closest('[data-ag],[data-agc],[data-agcs],[data-agu],[data-ags],[data-ago],[data-agall],#dl-agree');
   if(ag){
     if(ag.id==='dl-agree') return dlAgree();
