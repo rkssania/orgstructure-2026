@@ -402,19 +402,15 @@ async function dlOrg(uid,withP,pdf){
   try{toast('Готовлю PDF…');
     await loadJsPdf();
     const name=`Оргструктура — ${uids.length>1?'филиалы '+uids.map(u=>UN[u]).join(', '):UN[uids[0]]} — ${withP?'с сотрудниками':'без сотрудников'} — ${stamp()}`;
-    // А3 альбомная; каждое подразделение с нового листа; высокая схема продолжается на следующих листах
-    const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a3',compress:true});
-    const PW=420, PH=297, M=8, aw=PW-2*M, ah=PH-2*M; let first=true;
-    const page=()=>{ if(!first) doc.addPage('a3','landscape'); first=false; };
+    // каждое подразделение целиком на одном листе: без людей — А3, с людьми — А1; ориентация по форме схемы
+    const F=withP?{f:'a1',w:841,h:594}:{f:'a3',w:420,h:297}, M=withP?12:8;
+    let doc=null;
     for(const u of uids){
-      const c=await orgCanvas(u,withP), kw=aw/c.width;
-      if(c.height*kw<=ah*1.35){ const k=Math.min(kw,ah/c.height), iw=c.width*k, ih=c.height*k; page(); doc.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',(PW-iw)/2,M,iw,ih); continue; }
-      const sliceH=Math.floor(ah/kw);
-      for(let y=0;y<c.height;y+=sliceH){
-        const hh=Math.min(sliceH,c.height-y), part=document.createElement('canvas'); part.width=c.width; part.height=hh;
-        const pc=part.getContext('2d'); pc.fillStyle='#fff'; pc.fillRect(0,0,part.width,hh); pc.drawImage(c,0,y,c.width,hh,0,0,c.width,hh);
-        page(); doc.addImage(part.toDataURL('image/jpeg',0.92),'JPEG',M,M,aw,hh*kw);
-      }
+      const c=await orgCanvas(u,withP), land=c.width>=c.height, PW=land?F.w:F.h, PH=land?F.h:F.w;
+      const k=Math.min((PW-2*M)/c.width,(PH-2*M)/c.height), iw=c.width*k, ih=c.height*k;
+      if(!doc) doc=new window.jspdf.jsPDF({orientation:land?'landscape':'portrait',unit:'mm',format:F.f,compress:true});
+      else doc.addPage(F.f,land?'landscape':'portrait');
+      doc.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',(PW-iw)/2,M,iw,ih);
     }
     saveBlob(doc.output('blob'),name+'.pdf'); toast('PDF скачан');
   }catch(err){toast('Не получилось: '+(err.message||err))}
