@@ -323,6 +323,7 @@ function deptCard(u,g,d,dec,defOpen,flat){
 }
 
 // ---------------- СКАЧАТЬ СХЕМУ ОРГСТРУКТУРЫ (PNG) ----------------
+const stamp=()=>{const d=new Date(),z=n=>String(n).padStart(2,'0');return `${z(d.getDate())}.${z(d.getMonth()+1)}.${d.getFullYear()} ${z(d.getHours())}-${z(d.getMinutes())}`};
 const UFULL={'ЦА':'Административно-управленческий персонал (центральный аппарат)','КРГ':'Филиал г. Караганда','УК':'Филиал г. Усть-Каменогорск','Астана':'Медицинское подразделение г. Астана','Лаборатория':'Лаборатория'};
 function orgSvg(uid,withP){
   const u=DATA.units.find(x=>x.id===uid), CW=250, GAP=18, PAD=12, LH=15, F='Arial, Helvetica, sans-serif';
@@ -360,7 +361,7 @@ function orgSvg(uid,withP){
   const W=Math.max(cols.length*(CW+GAP)-GAP+60, 900);
   // заголовок
   let y=30; txt(30,y,[`Оргструктура — ${UFULL[uid]}`],{bold:true,size:20,lh:24,fill:'#1b2f57'}); y+=22;
-  txt(30,y,[`${withP?'С сотрудниками':'Без сотрудников (штатные единицы)'} · сформировано ${new Date().toLocaleDateString('ru-RU')}`],{size:12,fill:'#5b6478'}); y+=26;
+  txt(30,y,[`${withP?'С сотрудниками':'Без сотрудников (штатные единицы)'} · состояние на ${new Date().toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}`],{size:13,bold:true,fill:'#b8562f'}); y+=26;
   // руководитель
   const hpp=ppl(uid,head.name,hd.name,headPos).filter(r=>r.n);
   const hx=W/2-CW/2, hh=hdr(hx,y,disp(headPos),withP?(hpp.map(r=>short(r.n)).join(', ')||'вакансия'):'',true);
@@ -391,7 +392,7 @@ async function dlOrg(uid,withP){
     const c=document.createElement('canvas'); c.width=Math.round(w*sc); c.height=Math.round(h*sc);
     const g=c.getContext('2d'); g.scale(sc,sc); g.drawImage(img,0,0);
     const blob=await new Promise(r=>c.toBlob(r,'image/png'));
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`Оргструктура — ${UN[uid]} — ${withP?'с сотрудниками':'без сотрудников'}.png`; document.body.appendChild(a); a.click(); a.remove();
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`Оргструктура — ${UN[uid]} — ${withP?'с сотрудниками':'без сотрудников'} — ${stamp()}.png`; document.body.appendChild(a); a.click(); a.remove();
     toast('Схема скачана');
   }catch(err){toast('Не получилось: '+(err.message||err))}
 }
@@ -605,7 +606,7 @@ async function dl(key){
     const buf=key==='shr'?await buildShr(DATA):key==='cmp'?await buildCmp(DATA,BASE,MOVES):await buildRas(DATA);
     const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-    a.download=(key==='shr'?'Штатное расписание':key==='cmp'?'Сравнение было-стало':'Штатная расстановка')+' (новая оргструктура) '+new Date().toLocaleDateString('ru-RU')+'.xlsx';
+    a.download=(key==='shr'?'Штатное расписание':key==='cmp'?'Сравнение было-стало':'Штатная расстановка')+' (новая оргструктура) — '+stamp()+'.xlsx';
     document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000); toast('Файл сформирован');
   }catch(err){toast('Не удалось сформировать файл: '+(err.message||err))}
 }
@@ -703,7 +704,7 @@ async function dlAgree(){
   if(typeof window.buildAgree!=='function'){toast('Обновите страницу: Ctrl+F5');return}
   try{toast('Формирую лист согласования…');
     const buf=await buildAgree(agItems(),agTable(),AG,{UN,fmt,who,when});
-    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download='Лист согласования ГД — оргструктура 2026.xlsx';document.body.appendChild(a);a.click();a.remove();toast('Файл сформирован');
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download='Лист согласования ГД — оргструктура 2026 — '+stamp()+'.xlsx';document.body.appendChild(a);a.click();a.remove();toast('Файл сформирован');
   }catch(err){toast('Не получилось: '+(err.message||err))}
 }
 
