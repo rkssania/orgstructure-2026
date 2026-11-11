@@ -46,6 +46,8 @@ button{font:inherit;cursor:pointer;color:inherit}
 .vline{width:2px;height:20px;background:var(--line)}
 .cols{display:flex;align-items:flex-start}
 .col{position:relative;padding:20px 8px 0;width:250px;display:flex;flex-direction:column;gap:8px}
+.subwrap{display:flex;flex-direction:column;gap:8px}.subh>.dept>.dbtn .dn{font-weight:800}.subh>.dept{border-width:2px}
+.subkids{margin-left:12px;padding-left:10px;border-left:2px solid var(--line);display:flex;flex-direction:column;gap:8px}
 .col::before{content:"";position:absolute;top:0;left:0;right:0;border-top:2px solid var(--line)}
 .col:first-child::before{left:50%} .col:last-child::before{right:50%} .col:only-child::before{display:none}
 .col::after{content:"";position:absolute;top:0;left:50%;height:20px;border-left:2px solid var(--line)}
@@ -233,6 +235,8 @@ function namesOf(list){return list.filter(r=>r.n).map(r=>r.n.split(' ').slice(0,
 
 let PLAN={}, openT=new Set(), BASE=[], MOVES={}, NOTES={}, LOG=[], db=null, usr=null, canW=null, editId=null, editVal={}, noteKey=null, noteVal='', showLog=false, PROF={};
 const nkey=k=>'n'+Array.from(k).reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7).toString(36)+k.length;
+// псевдонимы старых ключей должностей/отделов после реорганизации (из исходных данных)
+function akey(k){ const A=(BD&&BD.alias)||{}; if(k in A) return A[k]; const p=k.split('|'); const dk=p.slice(0,3).join('|'); return (dk in A)?A[dk]+'|'+p[3]:k; }
 let BD=null, POSX={}, PEOPLE={}, POSID={}, addKey=null, apVal={}, peKey=null, peVal={}, paKey=null, paVal={};
 const K=(...a)=>a.join('|');
 const rid=()=>'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -256,7 +260,7 @@ function applyMoves(){
   });
   const removedSrc=src.filter(s=>s._del); src=src.filter(s=>!s._del);
   const struct=new Set(); units.forEach(U=>U.groups.forEach(G=>G.depts.forEach(D=>D.pos.forEach(p=>struct.add(K(U.id,G.name,D.name,p))))));
-  const res=k=>(k in alias)?alias[k]:k;
+  const res=k=>{ if(k in alias) return alias[k]; const t=akey(k); return t!==k?((t in alias)?alias[t]:t):k; };
   const place=(r,k)=>{ if(k&&struct.has(k)){const [u,g,d,p]=k.split('|');return Object.assign({},r,{u,g,d,p})}
     const o=Object.assign({},r,{g:DEC,d:DEC}); if(k){const s=k.split('|');o.u=s[0];o.p=s[3]} return o; };
   const rows=[];
@@ -311,6 +315,14 @@ function posForm(key){
 }
 const FN=['Отдел госпитальной фармации','Отдел службы поддержки пациентов филиала','Лаборатория филиала','Специалисты ЦА в филиале'];
 const closed=new Set();
+function groupDepts(uid,g){
+  const subs=g.sub||[], kids=new Set(subs.flatMap(s=>s.depts)); let out='';
+  g.depts.filter(d=>d.name!=='Руководство').forEach(d=>{ if(kids.has(d.name)) return;
+    const s=subs.find(x=>x.head===d.name);
+    if(s) out+=`<div class="subwrap"><div class="subh">${deptCard(uid,g.name,d,false,true)}</div><div class="subkids">${s.depts.map(n=>g.depts.find(x=>x.name===n)).filter(Boolean).map(x=>deptCard(uid,g.name,x,false,true)).join('')}</div></div>`;
+    else out+=deptCard(uid,g.name,d,false,true); });
+  return out;
+}
 function deptCard(u,g,d,dec,defOpen,flat){
   const key=['d',u,g,d.name].join('|');
   const isOpen=open.has('all')||(defOpen?!closed.has(key):open.has(key));
@@ -341,12 +353,12 @@ function orgSvg(uid,withP){
     const L=[{t:`${disp(p)} — ${fmt(c)} ед.`,bold:withP}];
     if(withP){pp.forEach(r=>L.push({t:`${short(r.n)} (${fmt(r.r)})`,ind:true})); const v=Math.round((c-occ)*100)/100; if(v>0) L.push({t:`вакансия ${fmt(v)}`,ind:true,vac:true}); if(!pp.length&&!(v>0)) L.push({t:'—',ind:true,vac:true});}
     return L;};
-  const measureDept=(title,g,d)=>{let h=PAD; if(title) h+=wrap(title,CW-2*PAD,`700 12.5px ${F}`).length*LH+6;
-    d.pos.forEach(p=>posLines(g,d.name,p).forEach(l=>{h+=wrap(l.t,CW-2*PAD-(l.ind?12:0),`${l.bold?'700 ':''}11.5px ${F}`).length*14})); return h+PAD-2;};
-  const drawDept=(x,y,title,g,d)=>{const h=measureDept(title,g,d);
-    body+=`<rect x="${x}" y="${y}" width="${CW}" height="${h}" rx="6" fill="#f4f6fb" stroke="#c3cbdb"/>`;
-    let yy=y+PAD+11; if(title){yy+=txt(x+PAD,yy,wrap(title,CW-2*PAD,`700 12.5px ${F}`),{bold:true,size:12.5,fill:'#1b2f57'})+6;}
-    d.pos.forEach(p=>posLines(g,d.name,p).forEach(l=>{const ls=wrap(l.t,CW-2*PAD-(l.ind?12:0),`${l.bold?'700 ':''}11.5px ${F}`);yy+=txt(x+PAD+(l.ind?12:0),yy,ls,{size:11.5,lh:14,bold:l.bold,fill:l.vac?'#b8562f':l.ind?'#3a4357':'#1d2433',italic:l.vac})}));
+  const measureDept=(title,g,d,W=CW)=>{let h=PAD; if(title) h+=wrap(title,W-2*PAD,`700 12.5px ${F}`).length*LH+6;
+    d.pos.forEach(p=>posLines(g,d.name,p).forEach(l=>{h+=wrap(l.t,W-2*PAD-(l.ind?12:0),`${l.bold?'700 ':''}11.5px ${F}`).length*14})); return h+PAD-2;};
+  const drawDept=(x,y,title,g,d,W=CW,strong=false)=>{const h=measureDept(title,g,d,W);
+    body+=`<rect x="${x}" y="${y}" width="${W}" height="${h}" rx="6" fill="${strong?'#e6ebf5':'#f4f6fb'}" stroke="${strong?'#1b2f57':'#c3cbdb'}" stroke-width="${strong?1.6:1}"/>`;
+    let yy=y+PAD+11; if(title){yy+=txt(x+PAD,yy,wrap(title,W-2*PAD,`700 12.5px ${F}`),{bold:true,size:12.5,fill:'#1b2f57'})+6;}
+    d.pos.forEach(p=>posLines(g,d.name,p).forEach(l=>{const ls=wrap(l.t,W-2*PAD-(l.ind?12:0),`${l.bold?'700 ':''}11.5px ${F}`);yy+=txt(x+PAD+(l.ind?12:0),yy,ls,{size:11.5,lh:14,bold:l.bold,fill:l.vac?'#b8562f':l.ind?'#3a4357':'#1d2433',italic:l.vac})}));
     return h;};
   const hdr=(x,y,t,n,dark)=>{const tl=wrap(t,CW-2*PAD,`700 12.5px ${F}`), nl=n?wrap(n,CW-2*PAD,`12px ${F}`):[]; const h=PAD*2+tl.length*LH+(nl.length?nl.length*LH+2:0)-2;
     body+=`<rect x="${x}" y="${y}" width="${CW}" height="${h}" rx="7" fill="${dark?'#1b2f57':'#dfe5f1'}"/>`;
@@ -359,7 +371,11 @@ function orgSvg(uid,withP){
     const pp=lead?lead.pos.flatMap(p=>ppl(uid,g.name,'Руководство',p).filter(r=>r.n)):[];
     const t=lead?lead.pos.map(disp).join(' / '):g.name;
     const n=lead?(withP?(pp.map(r=>short(r.n)).join(', ')||'вакансия'):`${fmt(lead.pos.reduce((a,p)=>a+sh(uid,g.name,'Руководство',p),0))} ед.`):(FN.includes(g.name)?'функционально — ЦА':'');
-    cols.push({t,n,dark:!!lead,depts:g.depts.filter(d=>d.name!=='Руководство').map(d=>({title:dname(d.name),g:g.name,d}))});});
+    const subs=g.sub||[], kids=new Set(subs.flatMap(x=>x.depts)), list=[];
+    g.depts.filter(d=>d.name!=='Руководство').forEach(d=>{ if(kids.has(d.name)) return; const sb=subs.find(x=>x.head===d.name);
+      if(sb){ list.push({title:'',g:g.name,d,strong:true}); sb.depts.map(nm=>g.depts.find(x=>x.name===nm)).filter(Boolean).forEach(x=>list.push({title:dname(x.name),g:g.name,d:x,ind:true})); }
+      else list.push({title:dname(d.name),g:g.name,d}); });
+    cols.push({t,n,dark:!!lead,depts:list});});
   if(withP){const dr=DATA.rows.filter(r=>r.u===uid&&r.d===DEC&&r.n); if(dr.length) cols.push({t:'Вне новой схемы',n:'требует решения',dark:false,dec:true,list:dr});}
   const W=Math.max(cols.length*(CW+GAP)-GAP+60, 900);
   // заголовок
@@ -380,7 +396,7 @@ function orgSvg(uid,withP){
     body+=`<line x1="${cx(i)}" y1="${y-8}" x2="${cx(i)}" y2="${y}" stroke="#8a94aa" stroke-width="1.5"/>`;
     yy+=hdr(x,yy,c.t,c.n,c.dark)+8;
     if(c.list){const d={name:DEC,pos:[...new Set(c.list.map(r=>r.p))]}; yy+=drawDept(x,yy,'',DEC,d)+8;}
-    else c.depts.forEach(dd=>{yy+=drawDept(x,yy,dd.title,dd.g,dd.d)+8;});
+    else { let subTop=null; c.depts.forEach(dd=>{ if(dd.ind){ const ix=x+16; if(subTop===null) subTop=yy; const h=drawDept(ix,yy,dd.title,dd.g,dd.d,CW-16); body+=`<line x1="${x+6}" y1="${yy+14}" x2="${ix}" y2="${yy+14}" stroke="#8a94aa" stroke-width="1.5"/><line x1="${x+6}" y1="${subTop-8}" x2="${x+6}" y2="${yy+14}" stroke="#8a94aa" stroke-width="1.5"/>`; yy+=h+8; } else { subTop=null; yy+=drawDept(x,yy,dd.title,dd.g,dd.d,CW,!!dd.strong)+8; } }); }
     maxY=Math.max(maxY,yy);});
   const tot=Object.entries(SHR).filter(([k])=>k.startsWith(uid+'|')).reduce((a,[,v])=>a+v,0);
   txt(30,maxY+22,[`Итого штатных единиц: ${fmt(tot)}`+(withP?` · сотрудников: ${new Set(DATA.rows.filter(r=>r.u===uid&&r.n).map(r=>r.n)).size}`:'')],{bold:true,size:13});
@@ -439,7 +455,7 @@ function unitView(uid){
       mgr=`<div class="mgr"><span class="t">${esc(lead.pos.join(' / '))}</span><span class="n">${esc(namesOf(pp))||'вакансия'}</span>${editable()?`<button class="link" type="button" data-o="${esc(lk)}">${lo?'скрыть':'изменить'}</button>`:''}${lo?`<div class="leadl"><ul class="plist">${lead.pos.map(p=>posItem(uid,g.name,'Руководство',p)).join('')}</ul></div>`:''}</div>`}
     else mgr=`<div class="mgr plain${FN.includes(g.name)?' fn':''}"><span class="t">${esc(g.name)}</span>${FN.includes(g.name)?'<span class="n">функционально — ЦА</span>':''}</div>`;
     const svc=!lead;
-    h+=`<div class="col${svc?' svc':''}">${mgr}${g.depts.filter(d=>d.name!=='Руководство').map(d=>deptCard(uid,g.name,d,false,true)).join('')}</div>`;
+    h+=`<div class="col${svc?' svc':''}">${mgr}${groupDepts(uid,g)}</div>`;
   });
   const dr=rs.filter(r=>r.d===DEC);
   if(dr.length){
@@ -716,7 +732,7 @@ async function initShared(){
   db=mkDb();
   usr={id:async()=>ME,can:async()=>true,profiles:async ids=>Object.fromEntries(ids.map(i=>[i,{name:i}]))};
   canW=true;
-  ['moves','people','posx','notes','plan','agree'].forEach(c=>db.collection(c).onSnapshot(sn=>{const m={};sn.docs.forEach(d=>m[d.id]=d.data());if(c==='agree'){AG=m}else if(c==='moves'){MOVES=m;applyMoves()}else if(c==='people'){PEOPLE=m;applyMoves()}else if(c==='posx'){POSX=m;applyMoves()}else if(c==='notes')NOTES=m;else PLAN=m;rer()},e=>setSync('err','Ошибка чтения: '+(e.message||e))));
+  ['moves','people','posx','notes','plan','agree'].forEach(c=>db.collection(c).onSnapshot(sn=>{const m={};sn.docs.forEach(d=>m[d.id]=d.data());if(c==='agree'){AG=m}else if(c==='moves'){MOVES=m;applyMoves()}else if(c==='people'){PEOPLE=m;applyMoves()}else if(c==='posx'){POSX=m;applyMoves()}else if(c==='notes'){const n={};Object.entries(m).forEach(([id,v])=>{n[id]=v; if(v&&v.key){const ak=akey(v.key); if(ak!==v.key) n[nkey(ak)]=Object.assign({},v,{key:ak});}});NOTES=n;}else PLAN=m;rer()},e=>setSync('err','Ошибка чтения: '+(e.message||e))));
   db.collection('log').onSnapshot(sn=>{LOG=sn.docs.map(d=>d.data());rer()});
   rer();
 }
