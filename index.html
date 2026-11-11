@@ -46,6 +46,7 @@ button{font:inherit;cursor:pointer;color:inherit}
 .vline{width:2px;height:20px;background:var(--line)}
 .cols{display:flex;align-items:flex-start}
 .col{position:relative;padding:20px 8px 0;width:250px;display:flex;flex-direction:column;gap:8px}
+.lablink{display:block;text-decoration:none;color:inherit}.lablink .dbtn{cursor:pointer;box-sizing:border-box}
 .subwrap{display:flex;flex-direction:column;gap:8px}.subh>.dept>.dbtn .dn{font-weight:800}.subh>.dept{border-width:2px}
 .subkids{margin-left:12px;padding-left:10px;border-left:2px solid var(--line);display:flex;flex-direction:column;gap:8px}
 .col::before{content:"";position:absolute;top:0;left:0;right:0;border-top:2px solid var(--line)}
@@ -315,6 +316,12 @@ function posForm(key){
 }
 const FN=['Отдел госпитальной фармации','Отдел службы поддержки пациентов филиала','Служба поддержки пациентов и внутренней экспертизы','Лаборатория филиала','Специалисты ЦА в филиале'];
 const closed=new Set();
+// Лаборатория — отдельное подразделение; в схеме АУП показывается ссылкой (без двойного счёта ставок)
+function labSum(){ const L=DATA.units.find(x=>x.id==='Лаборатория'); if(!L) return null; const g=L.groups[0], lead=g.depts.find(d=>d.name==='Руководство');
+  const sumD=d=>d.pos.reduce((a,p)=>a+sh('Лаборатория',g.name,d.name,p),0), occD=d=>DATA.rows.filter(r=>r.u==='Лаборатория'&&r.g===g.name&&r.d===d.name).reduce((a,r)=>a+r.r,0);
+  return {g, lead, leadPos:lead?lead.pos[0]:g.name, names:lead?lead.pos.flatMap(p=>ppl('Лаборатория',g.name,'Руководство',p)).filter(r=>r.n):[], depts:g.depts.filter(d=>d.name!=='Руководство').map(d=>({name:d.name,s:sumD(d),o:occD(d)}))}; }
+function labCol(){ const L=labSum(); if(!L) return '';
+  return `<div class="col"><div class="mgr"><span class="t">${esc(L.leadPos)}</span><span class="n">${esc(namesOf(L.names))||'вакансия'}</span><a class="link" href="#lab">отдельное подразделение — открыть</a></div>${L.depts.map(d=>`<a class="dept lablink" href="#lab"><span class="dbtn"><span class="dn">${esc(dname(d.name))}</span><span class="dm">${fmt(d.o)} / ${fmt(d.s)}</span></span></a>`).join('')}</div>`; }
 function groupDepts(uid,g){
   const subs=g.sub||[], kids=new Set(subs.flatMap(s=>s.depts)); let out='';
   g.depts.filter(d=>d.name!=='Руководство').forEach(d=>{ if(kids.has(d.name)) return;
@@ -376,6 +383,7 @@ function orgSvg(uid,withP){
       if(sb){ list.push({title:'',g:g.name,d,strong:true}); sb.depts.map(nm=>g.depts.find(x=>x.name===nm)).filter(Boolean).forEach(x=>list.push({title:dname(x.name),g:g.name,d:x,ind:true})); }
       else list.push({title:dname(d.name),g:g.name,d}); });
     cols.push({t,n,dark:!!lead,depts:list});});
+  if(uid==='ЦА'){ const L=labSum(); if(L) cols.push({t:L.leadPos,n:withP?(L.names.map(r=>short(r.n)).join(', ')||'вакансия'):'отдельное подразделение',dark:true,depts:L.depts.map(x=>({title:`${dname(x.name)} — ${fmt(x.s)} ед.`,g:L.g.name,d:{name:x.name,pos:[]}}))}); }
   if(withP){const dr=DATA.rows.filter(r=>r.u===uid&&r.d===DEC&&r.n); if(dr.length) cols.push({t:'Вне новой схемы',n:'требует решения',dark:false,dec:true,list:dr});}
   const W=Math.max(cols.length*(CW+GAP)-GAP+60, 900);
   // заголовок
@@ -457,6 +465,7 @@ function unitView(uid){
     const svc=!lead;
     h+=`<div class="col${svc?' svc':''}">${mgr}${groupDepts(uid,g)}</div>`;
   });
+  if(uid==='ЦА') h+=labCol();
   const dr=rs.filter(r=>r.d===DEC);
   if(dr.length){
     const pos=[...new Set(dr.map(r=>r.p))];
