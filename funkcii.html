@@ -234,6 +234,7 @@ function home(){
     const n=U.groups.reduce((a,g)=>a+g.head.concat(...g.depts.map(d=>d.pos)).reduce((x,e)=>x+e.p.length,0),0), nd=U.groups.reduce((a,g)=>a+g.depts.length,0);
     return `<button class="row urow" type="button" data-go="u-${ui}">${uicon(U,true)}<span class="tx"><span class="t b">${esc(U.name)}</span><span class="s">${nd} отделов · ${n} сотрудников</span></span>${CHEV}</button>`}).join('')+`</div>`+feedHtml();
   $('out').innerHTML=h; results();
+  if(UPFAIL&&OWNER){const w=document.createElement('div');w.className='warn';w.innerHTML='<b>Структура не обновилась автоматически.</b> Последние правки по АУП и филиалам могут быть не видны. <div style="margin-top:8px"><button class="bt pr" type="button" data-reseed="1">Обновить структуру по коду</button></div>';$('out').insertBefore(w,$('out').children[2]||null)}
 }
 function uScreen(ui){
   sub(''); HOME=ui; const U=D.units[ui];
@@ -401,6 +402,7 @@ document.addEventListener('submit',async ev=>{if(ev.target.id!=='ef')return;ev.p
     if(await putEdit(ekey(ci,oi,U.id),Object.assign({},old,v,{c:ci,oi,u:U.id,kind:'',del:false},old.isNew?{}:{base:base?base.proc:''}))){panel={};render()}}
 });
 document.addEventListener('click',async ev=>{const b=ev.target.closest('button');if(!b)return;
+  if(b.dataset.reseed){seedScreen('Введите код загрузки данных — структура обновится до последней версии. Отметки и правки коллег сохранятся.');return}
   if(b.dataset.edit){panel={edit:1};render();window.scrollTo(0,0);return}
   if(b.dataset.mvc!=null){MV.copy=b.dataset.mvc==='1';render();return}
   if(b.dataset.mvu!=null){MV.u=+b.dataset.mvu;MV.tgt=null;render();return}
@@ -468,7 +470,7 @@ async function start(){
   if(cur<LATEST){ try{ $('out').innerHTML='<div class="msg">Обновляю оргструктуру…</div>';
       const km=[];D.units.forEach(U=>U.groups.forEach(g=>{g.head.forEach(e=>km.push(...e.p));g.depts.forEach(dp=>dp.pos.forEach(e=>km.push(...e.p)))}));
       const nd=await decryptSeed(km.join('|'),'f-up-'+cur+'.enc'); await seed(nd); D={units:nd.units,auto:nd.auto,cards:nd.cards};
-    }catch(e){console.warn('patch',e)} }
+    }catch(e){console.warn('patch',e);UPFAIL=String(e&&e.message||e)} }
   index();
   $('out').innerHTML='<div class="msg">Загружаю отметки коллег…</div>';
   try{ALL=await loadColl('fa'); const e=await loadColl('fe'); EDITS={}; Object.entries(e).forEach(([id,v])=>{v.id=id;EDITS[id]=v})}catch(_){}
@@ -482,7 +484,7 @@ async function start(){
   // если живое обновление не работает (сеть блокирует), подтягиваем изменения раз в 20 секунд
   setInterval(async()=>{if(LIVE||document.hidden||busy())return;try{const fa=await loadColl('fa'),fe=await loadColl('fe');ALL=fa;EDITS={};Object.entries(fe).forEach(([id,v])=>{v.id=id;EDITS[id]=v});rr()}catch(_){}},20000);
 }
-let LIVE=false;
+let LIVE=false, UPFAIL='';
 let SIGNUP=false;
 $('lf-mode').addEventListener('click',()=>{SIGNUP=!SIGNUP;$('lf-go').textContent=SIGNUP?'Зарегистрироваться':'Войти';$('lf-mode').textContent=SIGNUP?'Уже есть аккаунт? Войти':'Нет аккаунта? Зарегистрироваться';$('lf-err').textContent=''});
 $('lf').addEventListener('submit',async e=>{e.preventDefault();$('lf-err').textContent='';const email=$('lf-email').value.trim(),password=$('lf-pass').value;
