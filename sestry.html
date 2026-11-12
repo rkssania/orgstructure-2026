@@ -1,0 +1,803 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><link rel="manifest" href="manifest.json"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body><title>Сестринский блок</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400&family=PT+Sans+Narrow:wght@700&display=swap">
+<style>
+/* Layout: navy top bar (branch, month, tabs) → day strip → two shift boards (day / night) with zone rows; grid, staff and settings as secondary tabs */
+:root{
+  --bg:#eef1f6; --card:#ffffff; --ink:#14223d; --muted:#5b6782; --line:#d2d8e4;
+  --navy:#1b2f57; --navy-ink:#ffffff; --navy-soft:#e5eaf4;
+  --terra:#b8562f; --terra-soft:#f7e4da;
+  --ok:#2d7a4b; --ok-soft:#e0f0e6; --warn:#a56c00; --warn-soft:#fbefd1; --bad:#b23a2c; --bad-soft:#f8e0dc;
+  --day:#fff1c9; --night:#22386a;
+  --fix:var(--warn); --fix-soft:var(--warn-soft); --no:var(--bad); --no-soft:var(--bad-soft);
+  --f-body:"PT Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --f-head:"PT Sans Narrow","PT Sans",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1423; --card:#152037; --ink:#e7ecf6; --muted:#9aa6c0; --line:#2e3e60;
+  --navy:#20396a; --navy-ink:#ffffff; --navy-soft:#1b2947;
+  --terra:#e3896a; --terra-soft:#3a251f;
+  --ok:#6cc58f; --ok-soft:#173226; --warn:#e4b652; --warn-soft:#3a3017; --bad:#ef8274; --bad-soft:#3d1f1c;
+  --day:#4a3c12; --night:#3a5596; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1423; --card:#152037; --ink:#e7ecf6; --muted:#9aa6c0; --line:#2e3e60;
+  --navy:#20396a; --navy-ink:#ffffff; --navy-soft:#1b2947;
+  --terra:#e3896a; --terra-soft:#3a251f;
+  --ok:#6cc58f; --ok-soft:#173226; --warn:#e4b652; --warn-soft:#3a3017; --bad:#ef8274; --bad-soft:#3d1f1c;
+  --day:#4a3c12; --night:#3a5596; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.4;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--terra);outline-offset:2px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--navy)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--navy);color:var(--navy-ink)}
+.in{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top .in{padding-block:10px 0;display:flex;flex-direction:column;gap:8px}
+.row1{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
+h1{font-family:var(--f-head);font-size:22px;margin:0;flex:1 1 auto;min-width:0}
+h1 small{display:block;font-family:var(--f-body);font-weight:400;font-size:12.5px;opacity:.75}
+.seg{display:flex;gap:2px;background:color-mix(in srgb,var(--navy-ink) 14%,transparent);border-radius:8px;padding:2px}
+.seg button{border:0;background:none;color:var(--navy-ink);border-radius:6px;padding:5px 12px;font-weight:700;cursor:pointer;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--navy-ink);color:var(--navy)}
+.mnav{display:flex;align-items:center;gap:4px;font-weight:700}
+.mnav button{border:0;background:color-mix(in srgb,var(--navy-ink) 14%,transparent);color:var(--navy-ink);border-radius:6px;width:30px;height:30px;cursor:pointer}
+.mnav span{min-width:112px;text-align:center}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.tabs a{flex:none;color:var(--navy-ink);opacity:.75;text-decoration:none;font-weight:700;font-size:14px;padding:8px 12px;border-bottom:3px solid transparent}
+.tabs a[aria-current="page"]{opacity:1;border-bottom-color:var(--terra)}
+.st{font-size:12px;opacity:.8}
+main .in{padding-block:14px 80px}
+.strip{display:flex;gap:4px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:thin}
+.strip button{flex:none;width:46px;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:5px 0;cursor:pointer;text-align:center;position:relative}
+.strip button b{display:block;font-size:16px;font-variant-numeric:tabular-nums}
+.strip button small{display:block;font-size:11px;color:var(--muted)}
+.strip button.we small{color:var(--terra)}
+.strip button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:var(--navy-ink)}
+.strip button[aria-pressed="true"] small{color:var(--navy-ink)}
+.strip button i{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%}
+.strip button i.bad{background:var(--bad)} .strip button i.p3{background:var(--terra)}
+.dayhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin:6px 0 10px}
+.dayhead h2{font-family:var(--f-head);font-size:24px;margin:0}
+.dayhead .ik{font-size:13.5px;color:var(--muted)}
+.acts{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+.btn{border:1px solid var(--navy);background:var(--card);color:var(--ink);border-radius:7px;padding:6px 11px;font-size:13.5px;font-weight:700;cursor:pointer}
+.btn.pri{background:var(--navy);color:var(--navy-ink)}
+.btn.terra{border-color:var(--terra);color:var(--terra)}
+.btn.sm{padding:3px 8px;font-size:12.5px}
+.boards{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media (max-width:820px){.boards{grid-template-columns:minmax(0,1fr)}}
+.board{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
+.bh{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.bh .ico{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:none}
+.board.day .ico{background:var(--day)} .board.night .ico{background:var(--night);color:#fff}
+.bh h3{margin:0;font-family:var(--f-head);font-size:19px}
+.bh .tm{font-size:13px;color:var(--muted)}
+.bh .cnt{margin-left:auto;font-size:13px;font-weight:700;padding:2px 8px;border-radius:12px;white-space:nowrap}
+.cnt.ok{background:var(--ok-soft);color:var(--ok)} .cnt.bad{background:var(--bad-soft);color:var(--bad)}
+.grp{padding:10px 14px 12px}
+.grp+.grp{border-top:1px dashed var(--line)}
+.gt{display:flex;align-items:center;gap:8px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:6px}
+.zone{display:grid;grid-template-columns:minmax(0,9fr) minmax(0,11fr);gap:8px;align-items:center;padding:5px 0}
+.zone+.zone{border-top:1px solid var(--line)}
+.zn{font-weight:700;font-size:14.5px;min-width:0}
+.zn small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.zn .sit{display:inline-block;font-size:11px;font-weight:700;background:var(--terra-soft);color:var(--terra);border-radius:4px;padding:0 5px;margin-left:4px;vertical-align:1px}
+.zs{display:flex;gap:4px;align-items:center;min-width:0}
+.zs select{flex:1;min-width:0;border:1px solid var(--line);border-radius:7px;background:var(--bg);padding:6px 6px;font-size:14px}
+.zs select.empty{border-color:var(--bad);background:var(--bad-soft)}
+.zs select.nodop{border-color:var(--warn);background:var(--warn-soft)}
+.x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 4px}
+.zone.st .zn{color:var(--terra)}
+.free{margin-top:8px;font-size:13px;color:var(--muted)}
+.free b{color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:14px;padding:2px 9px;font-size:12.5px;cursor:pointer}
+.chip.call{border-color:var(--ok);color:var(--ok)}
+.warn{background:var(--bad-soft);color:var(--bad);border-radius:8px;padding:7px 10px;font-size:13.5px;margin-top:8px}
+.note{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:7px 10px;font-size:13px;margin-top:8px}
+.p3form{background:var(--terra-soft);border-radius:8px;padding:8px 10px;margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13.5px}
+.p3form b{color:var(--terra)}
+.empty{color:var(--muted);text-align:center;padding:20px 0}
+/* grid */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 12px}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.kpi b{display:block;font-family:var(--f-head);font-size:22px;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12.5px;color:var(--muted)}
+.kpi.bad b{color:var(--bad)} .kpi.good b{color:var(--ok)}
+.gbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.seg2{display:flex;gap:2px;background:var(--line);border-radius:8px;padding:2px}
+.seg2 button{border:0;background:none;border-radius:6px;padding:5px 12px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--muted)}
+.seg2 button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.gwrap{overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:10px;max-height:calc(100vh - 190px);max-height:calc(100dvh - 190px);min-height:320px;overscroll-behavior:contain}
+table.g thead th{position:sticky;top:0;z-index:3}
+table.g thead th.nm,table.g thead th.hh{z-index:6}
+table.g tfoot td{position:sticky;z-index:3}
+table.g tfoot tr.f1 td{bottom:31px} table.g tfoot tr.f2 td{bottom:0}
+table.g tfoot td.nm,table.g tfoot td.hf{z-index:6}
+table.g tbody tr:hover td.nm{background:var(--navy-soft)}
+table.g tbody tr:hover td.c{filter:brightness(.97)}
+.gtools{display:flex;gap:6px;align-items:center;margin-left:auto}
+details.hints summary{cursor:pointer;font-weight:700}
+details.hints summary .r{color:var(--bad)} details.hints summary .okm{color:var(--ok)}
+table.g{border-collapse:separate;border-spacing:0;font-size:12.5px;font-variant-numeric:tabular-nums}
+table.g th,table.g td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:0;text-align:center;height:30px}
+table.g .nm{position:sticky;left:0;z-index:2;background:var(--card);text-align:left;padding:0 8px;min-width:132px;max-width:150px;box-shadow:6px 0 8px -6px rgba(0,0,0,.18);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+table.g thead th{background:var(--navy-soft);font-weight:700}
+table.g thead .nm{z-index:3}
+table.g th.dh{width:28px;min-width:28px;cursor:pointer;line-height:1.1;font-size:12px}
+table.g th.dh small{display:block;font-weight:400;color:var(--muted);font-size:10.5px}
+table.g th.dh.we{background:color-mix(in srgb,var(--terra) 16%,var(--navy-soft))}
+table.g th.dh.sel{background:var(--navy);color:var(--navy-ink)} table.g th.dh.sel small{color:var(--navy-ink)}
+table.g td.bg{min-width:60px;padding:0 3px}
+table.g td.bg select{font-size:12.5px;border:1px solid var(--line);border-radius:5px;background:var(--bg);padding:2px;width:100%}
+table.g td.c{cursor:pointer;font-weight:700;user-select:none;position:relative}
+table.g td.c.we{background:color-mix(in srgb,var(--terra) 6%,transparent)}
+.c.D{background:var(--day)!important} .c.N{background:var(--night)!important;color:#fff}
+.c.E{background:color-mix(in srgb,var(--day) 55%,var(--card))!important}
+.c.O{background:var(--ok-soft)!important;color:var(--ok)} .c.B{background:var(--bad-soft)!important;color:var(--bad)}
+.c.V{color:var(--muted);font-weight:400}
+.c.ov::after{content:"";position:absolute;top:3px;right:3px;width:4px;height:4px;border-radius:50%;background:var(--terra)}
+.c.rest{outline:2px solid var(--bad);outline-offset:-2px}
+.c.selc{box-shadow:inset 0 0 0 2px var(--terra)}
+table.g th.hh,table.g td.h{position:sticky;right:0;z-index:2;background:var(--card);min-width:92px;padding:2px 8px;text-align:right;border-left:2px solid var(--line);box-shadow:-6px 0 8px -6px rgba(0,0,0,.18)}
+table.g thead th.hh{background:var(--navy-soft);z-index:3;font-size:11.5px;line-height:1.15}
+table.g td.h b{display:block;font-size:13.5px;font-variant-numeric:tabular-nums}
+table.g td.h small{display:block;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted)}
+table.g td.h.ok small{color:var(--ok)}
+table.g td.h.under{background:var(--warn-soft)} table.g td.h.under small{color:var(--warn)}
+table.g td.h.over1{background:var(--bad-soft)} table.g td.h.over1 small,table.g td.h.over1 b{color:var(--bad)}
+table.g td.h.over{background:var(--bad);} table.g td.h.over b,table.g td.h.over small{color:#fff}
+table.g tfoot td.hf{position:sticky;right:0;background:var(--bg);border-left:2px solid var(--line)}
+.hints{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:14px}
+.hints h4{margin:0 0 6px;font-size:14.5px}
+.hints ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px;max-height:150px;overflow:auto}
+.hints li.r{color:var(--bad)} .hints li.r b{color:var(--bad)} .hints li.y{color:var(--warn)}
+.hints .okm{color:var(--ok);font-weight:700}
+.chip.call.hot{border-color:var(--bad);color:var(--bad)}
+table.g tr.fixed td.nm{color:var(--muted)}
+table.g tfoot td{background:var(--bg);font-size:11.5px;font-weight:700}
+table.g tfoot td.short{background:var(--bad-soft);color:var(--bad)} table.g tfoot td.okc{color:var(--ok)}
+table.g tfoot .nm{background:var(--bg)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin:8px 2px 0;align-items:center}
+.legend i{display:inline-grid;place-items:center;width:22px;height:20px;border-radius:4px;font-style:normal;font-weight:700;font-size:11.5px;margin-right:4px;border:1px solid var(--line)}
+/* staff & settings */
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.card h3{margin:0 0 4px;font-family:var(--f-head);font-size:19px}
+.card p.sub{margin:0 0 10px;color:var(--muted);font-size:13.5px}
+.tw{overflow-x:auto}
+table.s{border-collapse:collapse;width:100%;min-width:620px;font-size:13.5px}
+table.s th,table.s td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:middle}
+table.s th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+table.s td.ck,table.s th.ck{text-align:center;width:72px}
+table.s input[type=checkbox]{width:18px;height:18px;accent-color:var(--navy)}
+table.s .was{display:block;font-size:12px;color:var(--muted)}
+table.s tr.off td{opacity:.5}
+.add{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.add input{flex:1 1 220px;border:1px solid var(--line);border-radius:7px;padding:6px 9px;background:var(--bg)}
+.frow{display:flex;flex-wrap:wrap;gap:10px}
+.frow label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--muted)}
+.frow input,.frow select{border:1px solid var(--line);border-radius:6px;background:var(--bg);padding:5px 7px;font-size:14px;color:var(--ink)}
+.frow input[type=number]{width:76px}
+.zed{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:700px){.zed{grid-template-columns:minmax(0,1fr)}}
+.zl{border:1px solid var(--line);border-radius:8px;padding:8px}
+.zl h4{margin:0 0 6px;font-size:14px}
+.zr{display:flex;gap:6px;align-items:center;margin-bottom:5px;flex-wrap:wrap}
+.zr input[type=text]{flex:1 1 140px;min-width:0;border:1px solid var(--line);border-radius:6px;background:var(--bg);padding:4px 7px;font-size:14px}
+.zr select{border:1px solid var(--line);border-radius:6px;background:var(--bg);padding:4px;font-size:13px}
+.zr label{font-size:12.5px;color:var(--muted);display:flex;gap:4px;align-items:center}
+.law ul{margin:4px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.rv .sec-h h2{font-family:var(--f-head);font-size:22px;margin:4px 0 2px;text-wrap:balance}
+.rv .sec-h p{margin:0;color:var(--muted);font-size:14px}
+.rv .prog{display:flex;align-items:center;gap:10px;margin:12px 0 4px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rv .bar{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden;display:flex}
+.rv .bar i{display:block;height:100%}
+.rv .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin:6px 0 0}
+.rv .gh{font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:22px 4px 8px;font-weight:700}
+.rv .list{display:flex;flex-direction:column;gap:8px}
+.rv .fn{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.rv .fn.ok{border-color:color-mix(in srgb,var(--ok) 55%,var(--line))}
+.rv .fn.fix{border-color:color-mix(in srgb,var(--fix) 60%,var(--line))}
+.rv .fn.no{border-color:color-mix(in srgb,var(--no) 55%,var(--line))}
+.rv .fh{width:100%;background:none;border:0;text-align:left;padding:11px 12px 8px;display:flex;gap:10px;cursor:pointer}
+.rv .fh .num{flex:none;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:20px;padding-top:2px}
+.rv .fh .tx{flex:1;min-width:0}
+.rv .fh .t{font-weight:700;display:block}
+.rv .fh .ft{display:block;font-size:13px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
+.rv .fh .chev{flex:none;color:var(--muted);transition:transform .15s;padding-top:2px}
+.rv .fn.open .fh .chev{transform:rotate(90deg)}
+.rv .tag{display:inline-block;font-size:11.5px;font-weight:700;border-radius:4px;padding:1px 6px;margin:4px 6px 0 0;vertical-align:1px}
+.rv .tag.new{background:var(--terra-soft);color:var(--terra)}
+.rv .tag.move,.rv .tag.merge{background:var(--navy-soft);color:var(--ink)}
+.rv .tag.edit{border:1px solid var(--line);color:var(--muted)}
+.rv .tag.q{background:var(--terra);color:#fff}
+.rv .body{padding:0 12px 10px 42px;display:flex;flex-direction:column;gap:8px;font-size:14.5px}
+.rv .note{background:var(--terra-soft);border-radius:8px;padding:8px 10px;font-size:14px}
+.rv .desc{white-space:pre-line;overflow-wrap:anywhere}
+.rv .io{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 14px;font-size:13.5px}
+@media (max-width:520px){.rv .io{grid-template-columns:minmax(0,1fr)}}
+.rv .io div{white-space:pre-line;overflow-wrap:anywhere;min-width:0}
+.rv .io b{display:block;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.rv .ans{display:flex;gap:6px;padding:0 12px 12px 42px;flex-wrap:wrap}
+.rv .ans button{flex:1 1 0;min-width:88px;border:1.5px solid var(--line);background:var(--card);border-radius:8px;padding:8px 6px;font-size:14px;font-weight:700;cursor:pointer}
+.rv .ans button.ok[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:var(--card)}
+.rv .ans button.fix[aria-pressed="true"]{background:var(--fix);border-color:var(--fix);color:var(--card)}
+.rv .ans button.no[aria-pressed="true"]{background:var(--no);border-color:var(--no);color:var(--card)}
+.rv .cm{padding:0 12px 12px 42px}
+.rv .cm textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg);resize:vertical;font-size:15px}
+@media (max-width:440px){.rv .body,.rv .ans,.rv .cm{padding-left:12px}}
+.rv .qcard{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.rv .qcard h3{margin:0;font-family:var(--f-head);font-size:18px}
+.rv .qcard p{margin:0;color:var(--muted);font-size:14.5px}
+.rv .opts{display:flex;flex-wrap:wrap;gap:6px}
+.rv .opts button{border:1.5px solid var(--line);background:var(--card);border-radius:16px;padding:6px 12px;cursor:pointer;font-size:14px}
+.rv .opts button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:var(--navy-ink)}
+.rv .qcard textarea{width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg);resize:vertical;font-size:15px}
+.rv .facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.rv .facts div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+.rv .facts b{display:block;font-family:var(--f-head);font-size:17px}
+.rv .facts span{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rv .warn{background:var(--terra-soft);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:12px}
+.rv .sum{display:flex;flex-direction:column;gap:8px}
+.rv .srow{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.rv .srow .t{font-weight:700}
+.rv .srow .sec{font-size:12.5px;color:var(--muted)}
+.rv .cnt{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.rv .cnt span{font-size:12.5px;border-radius:4px;padding:1px 7px;font-variant-numeric:tabular-nums}
+.rv .cnt .ok{background:var(--ok-soft);color:var(--ok)}.rv .cnt .fix{background:var(--fix-soft);color:var(--fix)}.rv .cnt .no{background:var(--no-soft);color:var(--no)}
+.rv .srow ul{margin:6px 0 0;padding-left:18px;font-size:14px}
+.rv .srow li .who2{color:var(--muted);font-size:12.5px}
+.rv .chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.rv .chips button{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:4px 11px;font-size:13.5px;cursor:pointer}
+.rv .chips button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:var(--navy-ink)}
+.rv .people{display:flex;flex-direction:column;gap:4px;font-size:14px;margin-top:8px}
+.rv .people div{display:flex;justify-content:space-between;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.rv .people span{color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
+.rv .empty{color:var(--muted);text-align:center;padding:24px 0;font-size:14.5px}
+.rv .next{display:flex;justify-content:flex-end;margin-top:18px}
+.rv .next a{background:var(--navy);color:var(--navy-ink);text-decoration:none;border-radius:8px;padding:10px 16px;font-weight:700}
+@media (prefers-reduced-motion:reduce){.rv .fh .chev{transition:none}}
+.rv{max-width:800px;margin:0 auto}
+.rv .who{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.rv .who label{font-size:13px;color:var(--muted)}
+.rv .rbrs{display:flex;gap:6px;flex-wrap:wrap}
+.rv .rbrs button{border:1.5px solid var(--line);background:var(--card);border-radius:18px;padding:5px 14px;cursor:pointer;font-weight:700}
+.rv .rbrs button[aria-pressed="true"]{background:var(--navy);color:var(--navy-ink);border-color:var(--navy)}
+.rv .who input{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 11px;background:var(--bg)}
+.rv .who .rst{font-size:13px;color:var(--muted);min-height:1.2em}
+.rv .fnseg{display:flex;gap:2px;background:var(--line);border-radius:8px;padding:2px;margin:0 0 12px;overflow-x:auto}
+.rv .fnseg a{flex:1 0 auto;text-align:center;text-decoration:none;color:var(--muted);font-weight:700;font-size:13.5px;padding:6px 10px;border-radius:6px;white-space:nowrap}
+.rv .fnseg a[aria-current="page"]{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.rv .fnseg a span{font-weight:400;margin-left:4px;font-variant-numeric:tabular-nums}
+.rv .intro{background:var(--navy-soft);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14.5px}
+.rv .intro b{font-family:var(--f-head);font-size:17px;display:block;margin-bottom:2px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+</style>
+
+<header class="top"><div class="in">
+  <div class="row1">
+    <h1><a href="funkcii.html" style="color:inherit;text-decoration:none;opacity:.7;font-size:15px;font-family:var(--f-body);font-weight:700;display:block">‹ Функционал</a>Сестринский блок<small id="st">Подключаюсь…</small></h1>
+    <div class="seg" id="brs" role="group" aria-label="Филиал"></div>
+    <div class="mnav" id="mnav"><button type="button" data-m="-1" aria-label="Предыдущий месяц">‹</button><span id="mon"></span><button type="button" data-m="1" aria-label="Следующий месяц">›</button></div>
+  </div>
+  <nav class="tabs" id="tabs" aria-label="Разделы"></nav>
+</div></header>
+<main><div class="in" id="out"><div class="empty">Загружаю…</div></div></main>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js?v=2"></script>
+<script>
+/* Адаптер к общей базе «Функционала» (Supabase, таблица items): коллекции sb_cfg, sb_mon, sb_reviews */
+(function(){
+  const PFX='sb_';
+  let SB=null, ME=null, ready=null;
+  function init(){
+    if(ready)return ready;
+    ready=(async()=>{
+      if(!window.supabase||!window.SUPABASE_URL)return false;
+      SB=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+      const {data:{session}}=await SB.auth.getSession();
+      if(!session)return false;
+      ME=session.user.email;
+      try{const {data:ok,error}=await SB.rpc('is_allowed');if(!error&&ok===false)return false}catch(_){}
+      return true;
+    })();
+    return ready;
+  }
+  const split=p=>{const i=p.indexOf('/');return [PFX+p.slice(0,i),p.slice(i+1)]};
+  const mk=(id,data)=>({id,data:()=>data});
+  const db={
+    doc(path){const [coll,id]=split(path);return {
+      async get(){const {data,error}=await SB.from('items').select('data').eq('coll',coll).eq('id',id).maybeSingle();if(error)throw error;return {exists:!!data,data:()=>data?data.data:undefined}},
+      async set(doc){const {error}=await SB.from('items').upsert({coll,id,data:doc,by_email:ME,at:new Date().toISOString()});if(error)throw error}
+    }},
+    collection(name){const coll=PFX+name;return {
+      onSnapshot(cb,err){
+        let stop=false;
+        async function pull(){
+          if(stop)return;
+          if(document.visibilityState!=='hidden'){
+            try{const out=[];let from=0;for(;;){const {data,error}=await SB.from('items').select('id,data').eq('coll',coll).range(from,from+999);if(error)throw error;data.forEach(x=>out.push(mk(x.id,x.data)));if(data.length<1000)break;from+=1000}cb({docs:out})}
+            catch(e){err&&err(e)}
+          }
+          setTimeout(pull,15000);
+        }
+        pull();
+        return ()=>{stop=true};
+      }
+    }}
+  };
+  window.claude={use:async name=>{const ok=await init();if(!ok)return null;if(name==='db')return db;if(name==='user')return {id:async()=>ME,isOwner:async()=>false};return null}};
+})();
+</script>
+<script>
+const DATA = {"sections": [{"id": "mc", "name": "Медицинская сестра", "sub": "Сестринская служба · единая должность вместо МС ДС, КС, манипуляционной, трансфузионной и по уходу. ПИТ — отдельно", "groups": [{"name": "Общие функции", "items": [{"p": "Участие в ежедневных сестринских планерках", "d": "Участвует в сестринской планерке, предоставляет информации по поручениям ЗамДирСДИК, получает поручения, объявления", "i": "Объявление о предстоящих мероприятиях", "f": "Руководитель сестринской службы", "o": "График предстоящих мероприятий", "t": "все сотрудники младшего и среднего медицинского персонала", "id": "mc_333263f1", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Участие ежедневных пятиминутках / планерке", "d": "Предоставяет информации по изменениям показателей пациентов (давление, температура, сатурация, ЧДД,уходовые процедуры за ночь и другие);\n Докладывает по количеству режимных палат и по видам режимов изоляции", "i": "Отчеты за смену медицинских сестер и дежурного врача", "f": "медицинских сестер и дежурного врача", "o": "Информация по показателям пациентов\n Закрепленные пациенты", "t": "Врач-гематолог \n Дежурный врач\n дежурного врачаедперсонал\n МИС", "id": "mc_31585dde", "tag": "move", "note": "Перенесено от МС инфекционного контроля: доклад о состоянии пациентов за ночь — клиническая функция постовой медсестры."}, {"p": "Прием и передача смены дежурства по системе СПОР", "d": "Смена дежурств между медицинскими сестрами блока по уходу происходит у койки пациента\n Передача пациентов при пересмене происходит по схеме СПОР (устно):\n Ситуация (что происходит, есть ли беспокойства или жалобы), Предпосылка (что предшествовало этому, указать проблемы - например, если повышена температура тела, пульс, сатурация, АД, гидробаланс, стул); \n Оценка состояние пациента на момент передачи и риск падения на момент передачи (совместный осмотр обеими сестрами) \n Рекомендация (что необходимо делать дальше)", "i": "график дежурств\n изменения по пациентам", "f": "Руководитель сестринской службы", "o": "Показатели в МИС: измерение температуры, АД, подсчет пульса,, гидробаланса, сатурация", "t": "сотруднику следующей смены", "id": "mc_7d6ebfe8", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Соблюдение инфекционного контроля (меры инфекционного контроля, асептики и антисептики, дезинфекции и стерилизации, использования средств индивидуальной защиты, рекомендациям по профилактике инфекций)", "d": "Изучет СОП, инструкций по инфекционному контролю; проходить обучения, тестирование на образовательной платформе Moddle;\n Исполняет, соблюдает требования инфекционного контроля;\n Готовность к очному аудиту процессов по инфекционному контролю", "i": "Приказ на обучение", "f": "менеджер отдела образования", "o": "акт оценки знаний, итоги тестирования", "t": "moodle", "id": "mc_d0d85d6a"}, {"p": "Сверка остатков лекартсвенных средств \"общего пользования\" от предыдущей смены", "d": "Проводит сверку остатков лекартсвенных средств общего пользования, находящихся на посту с предыдущей ночной смены согласно чек листу", "i": "", "f": "", "o": "", "t": "", "id": "mc_a8cbdbca", "tag": "edit", "note": "Разграничение: на посту сверяет постовая медсестра, в кабинете разведения — МС фармблока."}, {"p": "Проведение информационно-разъяснительной работы с пациентом и родственниками", "d": "Проводят разъяснительную работы пациентам:\n - распорядок отделения\n - режимные палаты\n - график обходов врачей\n - расписание питания\n - объяснение по предстоящим манипуляциям", "i": "распорядок отделения\n - режимные палаты\n - график обходов врачей\n - расписание питания и т.п.", "f": "ДИ", "o": "устная информация", "t": "пациент", "id": "mc_12ef8398"}]}, {"name": "Приём и наблюдение за пациентом", "items": [{"p": "Выполнение триаж сортировки пациентов в приемном покое", "d": "Принимает пациентов, поступающих в приемный покой.\n Оценивает срочность состояния пациентов и определяет приоритетность обслуживания.\n Сортирует пациентов в соответствии с их срочностью и потребностью в медицинской помощи.\n Передает информацию о состоянии пациентов врачу гематологу, врачу реаниматологу;\n Мониторит состояние пациентов в приемном покое и предоставляет необходимую помощь в случае ухудшения состояния.\n Документирует информацию о пациентах и выполненных мероприятиях в МИС", "i": "", "f": "", "o": "", "t": "", "id": "mc_3b07c19c"}, {"p": "Измерение показаателей пациента при госпитализации", "d": "Измеряет температуру, рост, вес и давление пациента при госпитализации, и вносит эти данные в МИС", "i": "", "f": "", "o": "", "t": "", "id": "mc_5604de38"}, {"p": "Постоянный мониторинг показаний за состоянием пациента", "d": "Осуществляет контроль и измерение: температуры, АД , подсчет пульса, гидробаланса, сатурация", "i": "поступление пациента", "f": "врача гематолога, врача реаниматолога", "o": "раздел \"измерения\"", "t": "МИС", "id": "mc_97873e9b"}, {"p": "Оценка риска падения по шкалам", "d": "Осуществляет действия согласно СОП риск падения\n Проводит опрос по шкале Морзе, выставляет балл\n На основаниие балла выдается идентификационный браслет (красный- аллергоанамнез, синий - нет/не высокий риск, желтый -высокий риск падения)", "i": "поступление пациента", "f": "врача гематолога", "o": "Запись о статусе риска падения в МИС , браслет", "t": "МИС, браслет выдается пациенту", "id": "mc_85eea15b"}, {"p": "Обработка и профилактика пролежней", "d": "СОП «Обработка пролежней»;Алгоритм профилактики пролежней\n Проводит физическую активацию пациента;\n Использует противопролечневый матрас;\n Переворачивает пациента, меняет положение пациента по времени;\n Проводит обработку кожи", "i": "Назначения", "f": "врача гематолога, врача реаниматолога", "o": "комментарии, записи в МИС\n Процедура", "t": "МИС\n Пациент", "id": "mc_dd87882c"}, {"p": "Укомлектование процедурного столика в палатах", "d": "Дезинфецирует процедурный столик;\n Наклеиваеет идентификационные стикеры на медицинские изделия;\n Размещает: тонометр, фонендоском, термометр", "i": "Чек-лист", "f": "ДИ", "o": "Готовый процедурный столик", "t": "медицинская сестра", "id": "mc_c59565a6", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Организация гигиенических мероприятий с пациентом", "d": "Прводит разъяснительную работы пациентам по графику купания;\n Осуществляет смену постельного белья;\n Осуществляют контроль за санитарками по уходу по проведению гигиенических процедур", "i": "график", "f": "Руководитель сестринской службы", "o": "Проведенные гигиенические мероприятия", "t": "Пациент", "id": "mc_fd64d19d", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Подготовка пациента к инструментально-диагностическим исследованиям", "d": "Подготавливает пациента к следующим процедурам:\n консультация специалистов;\n к инструментальным исследованиям (УЗИ, колоноскопия, ВГДС, КТ, МРТ)\n Выполняют действия, готовят пациентов с вечера:\n УЗИ, Колоноскопия, ФГДС - выдают препарат по назначению, контролируют прием, проводят клизму; КТ, МРТ - следят об отмене питания заранее", "i": "Назначения", "f": "врача гематолога, врача реаниматолога", "o": "направление", "t": "МИС", "id": "mc_069bb14d"}]}, {"name": "Манипуляции", "items": [{"p": "Выполнение процедуры забора крови", "d": "Забор проводится, согласно СОП: \n -венозный забор крови: производится путем введения иглы в вену\n -артериальный забор крови: проводится путем введения иглы в артерию, обычно на запястье или локте\n -кровь из центрального венозного доступа: выполняется через центральный венозный катетер, введенный в крупный венозный сосуд\n Основные этапы процедуры:\n Подготовка расходных материалов, направлений для забора крови;\n Идентификация пациента;\n Обеспечение стерильности и безопасности процедуры\n Проведение асептической обработки места для забора крови\n Введение иглы в вену и сбор нужного объема крови в маркированную пробирки;\n Передача в ООЛЛ для доставки в лабораторию", "i": "Назначение на лабораторные исследования", "f": "врача гематолога, врача реаниматолога", "o": "пробирка с кровью с идентификационным стикером и направлением", "t": "Отдел организации лабораторной логистики (ООЛЛ) \n в выходные/праздничные дни - передают водителю", "id": "mc_85425252"}, {"p": "Сбор и забор биоматериала неинвазивным методом, подготовка и отправка в лабораторию", "d": "Сбор биоматериала (кал, моча, соскоб, мокрота)\nупаковывает биоматериал в соответствующие контейнеры или специальные транспортные средства, обеспечивая защиту от повреждений\n Осуществляет отправку биоматериала в лабораторию самостоятельно или по средствам отдела ООЛЛ", "i": "Назначение врача на исследование", "f": "врача гематолога, врача реаниматолога", "o": "курьер", "t": "лаборатория, другой филиал", "id": "mc_2df604b4", "tag": "merge", "note": "Объединены две функции: «Сбор биоматериала» и «Подготовка биоматериала к отправке». Внутренняя передача между медсёстрами больше не нужна."}, {"p": "Выполнение установки инфузий", "d": "Получает инфузий у медсестры отделения ГФ;\n Проверяет наличие правильных растворов, инфузионных систем, игл, шприцев и других необходимых материалов\n Проводит идентификацию пациента, подготовливает пациента, обеспечивает комфортное положение пациента, рассказывает о процедуре;\n Проводит антисептическую обработку места ввода иглы, обеспечивая стерильные условия\n Внимательно следит за точным позиционированием иглы или катетера в вену пациента;\n Настраивает инфузионную систему, чтобы обеспечить правильную скорость и объем инфузии согласно назначению врача\n Следит за состоянием пациента, контролирует его реакцию на инфузию, регулирует скорость инфузии;\n Вносит данные о проведенной инфузии", "i": "Назначение ведение \n Инфузия\n Требования инфекционной безопасности", "f": "врача гематолога, врача реаниматолога\n МС кабинета разведения (ГФ)", "o": "отметка о ведение\n Инфузия", "t": "МИС \n Пациент", "id": "mc_506ec026", "tag": "edit", "note": "Готовую инфузию медсестра получает из кабинета разведения, который переходит в фармблок."}, {"p": "Ассистирование при постановке центральновенозного катетера", "d": "Осуществляет действия согласно Руководства по установке ЦВК\n Обеспечивает чистоту и стерильность процедурной зоны Подготовить необходимые инструменты, расходные материалы и антисептики\n Предоставляет необходимые инструменты и материалы врачу во время установки ЦВК\n Наблюдает за состоянием пациента \n Оставляет запись в журнале по установке и удалению центрального венозного катетера (ЦВК),", "i": "Назначение процедуры", "f": "врач реаниматолог", "o": "Чек лист", "t": "Руководитель сестринской службы", "id": "mc_f3b9d182", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Осуществление манипуляции с центральным венозным катетером", "d": "Выполняет перевязку центрального венозного катетера в соответствии с установленными СОП;\n Проводит промывку центрального венозного катетера согласно установленным СОП; \n Оставляет запись в журнале по установке и удалению центрального венозного катетера (ЦВК),указавывая действия/ манипуляции с ЦВК", "i": "Назначение процедуры", "f": "врач реаниматолог", "o": "Чек лист", "t": "Руководитель сестринской службы", "id": "mc_c0a61ba5", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Измерение центрального венозного давления (ЦВД)", "d": "Подготавливает необходимые инструменты и приборы для измерения ЦВД, включая специальный манометр и шприц\n Пациенту объясняют процедуру измерения ЦВД и удобно размещают для проведения процедуры;\n Находит доступную центральную вену для измерения ЦВД, проводит измерение;\n Удаляет иглу или катетер из центральной вены и принимает меры по обработке и утилизации используемого оборудования;\n Результаты измерения заносит в МИС", "i": "Назначение в МИС", "f": "Врач гематолог", "o": "Внесение показателей в раздел мониторинг пациента", "t": "МИС", "id": "mc_2ba04f56"}, {"p": "Ассистирование при проведение пункции костного мозга", "d": "Накрывает манипуляционный стол, готовит необходимые инструменты и материалы (игла для трепана, препараты для анестезии);\n Предоставляет необходимые инструменты и материалы врачу во время пункции Она помогает врачу подготовить пациента, держит инструменты, подает необходимые препараты и анестетики, соблюдая стерильность;\n Помогает пациенту раздеться и принять правильное положение для процедуры;\n Следит за состоянием пациента во время процедуры;\n Предоставляет пациенту необходимую информацию о дальнейшем уходе за раной и оказывает поддержку и помощь при необходимости\n Передает материал в ООЛЛ", "i": "Назначение процедуры", "f": "Врач гематолог", "o": "мазок костного мозга, направдение, таймаут", "t": "Отдел организации лабораторной логистики", "id": "mc_a3e5b5e4"}, {"p": "Ассистирование при проведение трепанобиопсии", "d": "Накрывает манипуляционный стол, готовит необходимые инструменты и материалы (игла для трепана, препараты для анестезии);\n Предоставляет необходимые инструменты и материалы врачу во время пункции Она помогает врачу подготовить пациента, держит инструменты, подает необходимые препараты и анестетики, соблюдая стерильность;\n Помогает пациенту раздеться и принять правильное положение для процедуры;\n Следит за состоянием пациента во время процедуры;\n Предоставляет пациенту необходимую информацию о дальнейшем уходе за раной и оказывает поддержку и помощь при необходимости\n Передает материал в ООЛЛ", "i": "Назначение процедуры", "f": "Врач гематолог", "o": "Взятый биоматериал , трепонобиоптат, направление , таймаут", "t": "Лаборатория (Центр гематологии) Передает на прямую лаборатории для заготовки материала к дальнейшей транспортировки", "id": "mc_50f15d07"}, {"p": "Постановка мочевого катетера", "d": "СОП \"Поставнока мочевого катетера\"\n Проверяет наличиерасходные материалы (катетер, антисептические растворы, перчатки, стерильные компрессы и мочевой пакет);\n Объясняет процедуру пациенту;\n Моет и обрабатывает руки антисептическим раствором, выполняет постановку мочевого катетера;\n Проверяет, что мочеиспускание происходит без проблем и нет утечек;\n Обеспечивает правильную фиксацию катетера, а также подсоединяет мочевой пакет для сбора мочи", "i": "Назначения", "f": "врача гематолога, врача реаниматолога", "o": "комментарии, записи в МИС\n Катетер", "t": "МИС\n Пациент", "id": "mc_bd1fa917"}, {"p": "Проведение процедур клизмы", "d": "СОП «Клизма послаблящая»\n Подготавливает расходные материалы;\n Готовит раствора для клизмы;\n Заполняет клизменного баллона раствором;\n Водит конец шланга от в прямую кишку;\n Контролирует медленного ведения раствора;\n Проводит массаж живота пациента для распределения раствора;\n Направляет пациента в санузел для опорожнения кишечника;\n Обеспечивает уединение пациента", "i": "Назначения", "f": "врача гематолога, врача реаниматолога", "o": "комментарии, записи в МИС\n Процедура", "t": "МИС\n Пациент", "id": "mc_0bd5a439"}, {"p": "Проведение неинвазивных манипуляции", "d": "Оксигенация: предоставляет пациенту оксигинатор с Сипап -маско;\n ЭКГ- подключают к аппарату ЭКГ- контролирует запись - отключает- передает запись врачу;\n Ингаляция- разводит препарат в небулайзер -предоставляет пациенту небулайзер с индивидуальной маской;", "i": "Назначения", "f": "врача гематолога, врача реаниматолога", "o": "комементарии, записи в МИС", "t": "МИС", "id": "mc_5306ffd3"}, {"p": "Дезинфекция многоразового инструментария", "d": "Помещаются в контейнер с водой, где они проходят предварительное промывание для удаления видимых загрязнений\n После предварительной обработки инструменты помещаются в контейнер с дезинфицирующим раствором и выдерживает время экспазиции;\n После дезинфекции инструменты упаковываются в крафтупаковку или другую соответствующую упаковку для сохранения их стерильности Упаковка маркируется с указанием даты дезинфекции и других необходимых данных для обеспечения контроля над процессом и безопасности", "i": "Процедура дезинфекции многоразовых инструментов", "f": "Санитарные правила Приказ 68 МЗ РК", "o": "стерильный инструментарий в крафт упаковке с маркировкой (дата . время)", "t": "манипуляционный кабинет\n для использования другими медицинскмими сестрами", "id": "mc_653525d6"}, {"p": "Участие в генеральной уборке процедурного и манипуляционного кабинетов", "d": "Действия согласно СОП", "i": "График генеральных уборок", "f": "медицинская сестра инфекционного контроля", "o": "Журнал генеральных уборок", "t": "медицинская сестра инфекционного контроля, Руководитель сестринской службы", "id": "mc_c6d4b8e4", "tag": "new", "note": "Возвращено из старой матрицы: функция была у медсестёр, но выпала при инвентаризации."}]}, {"name": "ОИТ и трансфузия", "items": [{"p": "Подготовка трансфузионного кабинета и инструментария", "d": "Проверяет: \n наличие перевязочного материала;\n наличие расходного материала (шприцы, системы, перчатки, лотки, пинцеты и тд);\n исправность аппаратуры;\n наличие и комплектацию набора «антиспид»\n наличие дезинфицирующих средств", "i": "СОПы по трансфузионной терапии (Об утверждении номенклатуры, правил заготовки, переработки, контроля качества, хранения, реализации крови, ее компонентов, а также правил переливания крови, ее компонентов\n Приказ Министра здравоохранения Республики Казахстан от 20 октября 2020 года № ҚР ДСМ - 140/2020.", "f": "ДИ\n Инструкции\n Чек-листы", "o": "Материалы и оборудование", "t": "Руководитель сестринской службы", "id": "mc_da427911", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Проведение трансфузии", "d": "Согласно СОП по трансфузионной терапии:\n Формирует заявки на компоненты крови;\n Осуществляет доставку, регистрацию , хранение компонентов крови;\n Готовит среды;\n Проведит и ассистирует врачу трансфузиологу при проведение (биологической, совместимости) проб;\n Осуществляет мониторинг пациента в посттрансфузионный период", "i": "Назначение трансфузии", "f": "Врач гематолог, врач реаниматолог", "o": "Протокол трансфузии", "t": "МИС, врач трансфузиолог", "id": "mc_c22583ba"}, {"p": "Списание компонентов крови", "d": "Веденные компонтенты крови списываются в МИС автоматически;\n Проводит списание компонентов крови с истекшим сроком годности делается механически , ежемесячно", "i": "Срок компонентов крови в МИС", "f": "МИС", "o": "Акт списание компонентов крови", "t": "Центр крови", "id": "mc_52cdcb38"}]}, {"name": "Лабораторные функции в выходные и праздники", "items": [{"p": "Проведение исследование общего анализа крови и внесение результатов в МИС (в выходные и праздничные дни, в отсуствие лаборанта)", "d": "Проводит забор крови;\n Загружает пробирки в гематологический анализатор, проводит исследование согласно СОП АОК;\n Вносит полученные результаты в медицинскую информационную систему (МИС) или другую соответствующую документацию", "i": "назначние исследвоание ОАК", "f": "врач гематолог, врач анестезиолог", "o": "результат ОАК", "t": "МИС\n врач гематолог\n врач реаниматолог", "id": "mc_1ed0e78c"}, {"p": "Контроль за своевременным внесением в МИС ресультатов исследований", "d": "Ежедневно проводит мониторинг результатов исследований;\n В случае запрашивает у специалиста ООЛЛ", "i": "просмотр назначений", "f": "МИС", "o": "запрос невыполненных назначений", "t": "", "id": "mc_37ae5d7f"}, {"p": "Внесение результаты исследования ВИЧ пациентов и сотрудников", "d": "Загрузить результаты исследований ВИЧ с сайта СПИДцентра", "i": "Назначения, в случае исследования сотрудника -устная форма", "f": "Врач гематолог, врач реаниматолог, в случае исследования сотрудника медицинская сестра инфекционного контроля", "o": "Результат", "t": "МИС", "id": "mc_e4e42a28"}]}]}, {"id": "raz", "name": "МС кабинета разведения", "sub": "Переходит в отдел госпитальной фармации", "groups": [{"name": "Функции кабинета разведения", "items": [{"p": "Участие в планёрках отдела госпитальной фармации", "d": "Участвует в планёрке отдела ГФ, получает поручения от провизора", "i": "Объявление о предстоящих мероприятиях", "f": "Провизор / руководитель отдела ГФ", "o": "График предстоящих мероприятий", "t": "сотрудники отдела ГФ", "id": "raz_2f6c88ab", "tag": "edit", "note": "Сестринская планёрка заменена на планёрку отдела ГФ: кабинет подчиняется провизору."}, {"p": "Соблюдение требований хранения, учет и списание лекарственных средст и медицинские изделия", "d": "Обеспечивает правильное хранение лекарственных средств и медицинских изделий в соответствии с их требованиями, такими как температурный режим, освещение, влажность и другие факторы;\n Ведетза учет всех полученных и использованных лекарственных средств и медицинских изделий;\n Контролирует списание лекарственных средств и медицинских изделий, в том числе утилизации ЛС/МИ;\n Проводит регулярный контроль остатков лекарственных средств и медицинских изделий, чтобы обеспечить их наличие в достаточном количестве", "i": "", "f": "", "o": "", "t": "", "id": "raz_313b4c02"}, {"p": "Сверка остатков лекартсвенных средств \"общего пользования\" от предыдущей смены", "d": "Проводит сверку остатков лекартсвенных средств общего пользования, находящихся на посту с предыдущей ночной смены согласно чек листу", "i": "", "f": "", "o": "", "t": "", "id": "raz_a8cbdbca"}, {"p": "Подготовка и раздача лекарственных средств", "d": "Формирует выборку назначений на день;\n Проверяет наличие всех необходимых лекарственных средств в фармацевтической тележке\n Осуществляет проверку наличия расходных материалов (салфетки, перчатки, ансептик, маски) в фармацевтической тележки\n Отправляется по палатам пациентов;\n Проводит идентификацию пациента, осуществляет выдачу лекарственных средств пациентам;\n Ставит отметку о выдачи препарата в МИС", "i": "", "f": "", "o": "", "t": "", "id": "raz_a0b0fae6", "tag": "q", "note": "Открытый вопрос: раздачу ЛС у постели пациента оставить за кабинетом разведения или передать постовой медсестре?"}, {"p": "Прием и сдача кабинет разведения", "d": "Проверяет целостность, идентификационные данные, правильность подписи на флаконах с лекарственными растворами, используемыми для разведения инфузий;\n Проводит дезинфекцию и очистку процедурных столов и поверхностей, используемых для разведения инфузий;\n Осуществляет проверку остатков лекарственных растворов в холодильнике;\n Проверяет наличие достаточного количества контейнеров для транспортировки разведенных инфузий, осуществляет санобработку контейнеров, чтобы обеспечить безопасность и гигиену при транспортировке препаратов;\n Регистрирует показатели температуры, влажности;\n Следит за тем, чтобы условия хранения лекарственных растворов в холодильнике были соответствующими и не нарушали рекомендации производителя", "i": "начало смены", "f": "медицинская сестра с предыдущей смены", "o": "сверка лс", "t": "МС кабинета разведения (ГФ)", "id": "raz_4b944f2d", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Подготовка и разведения лекарственных средств", "d": "Формирует выборку назначений инфунзий на день;\n Проверяет наличие всех необходимых лекарственных средств в кабинете разведения;\n Сформировать выборку на день по пациентам и согласно времени инфузий:\n Выполняет процесс разведения лекарственных растворов в соответствии с установленными стандартами операционной процедуры (СОП);\n Выдает медицинской сестре манипуляционного блока подготовленные лекарственные растворы, обеспечивает правильную идентификацию препаратов;\n Ставить отметку о выдачи в МИС", "i": "Назначение", "f": "Врача гематолога", "o": "отметка о готовоности к выдачи лекаственных средств", "t": "медицинская сестра", "id": "raz_ec3247df", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Формирование кучной выдачи лекарственных средств пациенту", "d": "Получает от помощника врача лист назначения кучной выдачи ЛС;\nФормирует пакет препаратов;\nПодписывает у пациента и выдает препараты", "i": "Назначение", "f": "Врач-гематолог", "o": "Лист назначений кучной выдачи, пакет с препаратами", "t": "медицинская сестра, пациент", "id": "raz_11379798", "tag": "new", "note": "Добавлено: сейчас эта функция числится только за руководителем сестринской службы."}]}]}, {"id": "ik", "name": "МС инфекционного контроля", "sub": "Остаётся отдельной должностью в сестринской службе", "groups": [{"name": "Функции инфекционного контроля", "items": [{"p": "Участие в ежедневных сестринских планерках", "d": "Участвует в сестринской планерке, предоставляет информации по поручениям ЗамДирСДИК, получает поручения, объявления", "i": "Объявление о предстоящих мероприятиях", "f": "Руководитель сестринской службы", "o": "График предстоящих мероприятий", "t": "все сотрудники младшего и среднего медицинского персонала", "id": "ik_333263f1", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Проведение бракеражной пробы", "d": "Снимает пробу с питания для пациентов;\n Оставляет запись в бракеражном журанале;\n *При необходимости связывается с поставщиком питания, дает обратную связь по качеству блюд", "i": "график доставки питания , сигнал от раздатчицы", "f": "раздатчица", "o": "запись в бракеражном журнале", "t": "раздатчица", "id": "ik_a1eb29cd"}, {"p": "Подготовка к проверке санитарно-эпидемиологической службы", "d": "Осуществляет проверку наличия и актуальности всех требуемых документов, которые должны быть представлены в рамках проверки со стороны СЭС ( медицинские лицензии, сертификаты, протоколы обследований и проверок, санитарные книжки и другие);\n Организует и проводит инструктаж среднего и младшего медицинского персонала относительно требований и процедур, связанных с проверкой СЭС (разъяснение требований, описанных в приказе МЗ РК)", "i": "Уведомление о проверке", "f": "СЭС, Приказ МЗ РК", "o": "Документы\n Проведенный инструктаж среднего и младшего персонала", "t": "СЭС\n Средний и младший персонал", "id": "ik_93d071cf"}, {"p": "Осуществление контроля за соблюдением санитарно-гигиенического состояния помещений филиала", "d": "Осуществляет регулярные обходы, проверяет чистоту и состояние помещений;\n Следит за наличием необходимого оборудования, расходных материалов (мыло, салфетки, антисептик, туалетная бумага)", "i": "Фактическое санитарное состояние помещений\n Их оснащенность расходными материалами (мыло, салфетки, антисептик, туалетная бумага, дезинфицирующие средства )", "f": "ДИ", "o": "Чек-лист", "t": "Директор филиала, Заместитель директора СД и ИК", "id": "ik_3bfe7144"}, {"p": "Проведение обучения и инструктажей по инфекционной безопасности", "d": "Проводит обучения и инструктажей по инфекционной безопасности для нового сотрудника/ сотрудника участника инцидента , связанного с нарушением ИК, при внедрение нового СОП по ИК;\n Объясняет и демонстрирует правильные методы мытья рук, использования СИЗ, обработки и стерилизации инструментов, а также соблюдения режимов изоляции пациентов", "i": "Материалы для инструктажа НПА,СОП АЛГОРИТМЫ", "f": "Консультант по качеству,менеджер по качеству (отвечает за все СОП в организации)", "o": "Знания (инструкции, нормы и правила) по инфекционной безопасности на работе\n Результаты экзамена\n Подпись в Журнале инструктажей", "t": "Новый сотрудник (медицинская сестра, санитарок)\n Оценка в Листе адаптации\n Директор филиала, Заместитель директора СД и ИК", "id": "ik_0785b2a0"}, {"p": "Ведение журнала по установке и удалению центрального венозного катетера (ЦВК)", "d": "Регистрирует установку ЦВК в журнале, указывая дату установки, данные пациента, тип и место установки катетера;\n Регистрирует удаление ЦВК в журнале, указывая дату удаления, данные пациента, причину удаления катетера (например, завершение лечения, возникновение осложнений и т д)", "i": "Назначение", "f": "врач гематолог, врач реаниматолог", "o": "Регистрация в электронном журнале ЦВК", "t": "Врач реаниматолог", "id": "ik_16d0d058"}, {"p": "Ведение журнала по регистрации бактериальных посевов пациентов", "d": "Регистрирует основные данные пациента, такие как ФИО, возраст, пол, диагноз, медицинскую историю и другую информацию, необходимую для идентификации пациента;\n Отмечает в журнале дату, когда был взят образец у пациента;\n Указывает тип образца, взятого у пациента (кровь, моча, мокрота);\n Вносит результаты бакпосевов с указанием антибиотикорезистентности и чувствительности", "i": "Назначение", "f": "врач гематолог, \n врач реаниматолог", "o": "запись в электронном Журнал анализа результатов бак.исследований", "t": "члены комиссии по инфекционному контролю (далее КИК)", "id": "ik_78f91b67"}, {"p": "Ведение журанала по регистрации бактериальных посевов сотрудников", "d": "Регистрирует данные сотрудника ФИО, возраст, пол, должность;\n Отмечает в журнале дату, когда был взят образец;\n Указывает тип образца, у сотрудника (кровь, моча, мокрота);\n Вносит результаты бакпосевов;\n В случае положительного результата бакпосева сотрудника, проводит корретирующие мероприятия (направление в поликлинику, выдает средства для сонации дыхательных путей, назначает обязательное ношение маски)", "i": "Протокол комиссии по инфекционной безопасности (далее КИК)", "f": "Медицинская сестра инфекционного контроля", "o": "запись в электронном Журнале регистрации результатов производственного контроля\"", "t": "члены комиссии по инфекционному контролю (далее КИК)", "id": "ik_081f81ae"}, {"p": "Предоставление ежемесячного отчета на заседания комиссии по инфекционному контролю", "d": "Вносить данные в установленную форму отчета КИК, проведение анализа отчета;\n Демонстрация отчета на заседание КИК", "i": "График КИК", "f": "Секретарь КИК", "o": "Отчет", "t": "члены комиссии по инфекционному контролю (далее КИК)", "id": "ik_470928af"}, {"p": "Организации и проведения производственного контроля", "d": "Разработка программы производственного контроля;\n Осуществление (организацию) лабораторных исследований и замеров в случаях, установленных документами нормирования;\n Подает заявки исследование смывов в баклабораторию\n Сопровождает лаборантов баклаборатории и контролирует за проведение заборов;\n Получает результатов бакисследований;\n Регистрация в журнале регистрации производственного контроля;\n Ежемесячно проводит анализ по результатам , отчет предоставляет КИК", "i": "СОП по проведению производственного контроля (график)", "f": "КИК", "o": "результаты смывов, записи в журанале регистрации Журнал регистрации результатов производственного контроля", "t": "члены комиссии по инфекционному контролю (далее КИК), \n проверяющие органы (СЭС), врач эпидемиолог", "id": "ik_ece162a4"}, {"p": "Осуществляет контроль за очисткой вентиляционной/кондиционерных системы", "d": "Назначает дезинфицирующее средства (при химическом методе дезинфекции);\n Проводит расчет потребности в дезинфицирующих средствах для дезинфекции поверхностей систем вентиляции и кондиционирования воздуха;\n Оповещает заместителя директора по леч-проф работе о сроках проведения и объеме работ по очистке и дезинфекции системы вентиляции и кондиционирования воздуха, мерах предосторожности;\n Контролирует проведения санитарками клининг демонтажа (при необходимости) системы вентиляции и кондиционирования воздуха;\n Контролирует проведение очистки санитарками по клинингу;\n Регистрирует очистку в Журнал регистрации очистки системы вентиляции и кондиционирования воздуха", "i": "СанПин Мз РК 01.09.2021 № ҚР ДСМ-95\n Объекты здравоохранения:\n 1) системы местной вытяжной и местной приточной вентиляции – 1 раз в год;\n \n 2) системы общеобменной механической и естественной вентиляции – 1 раз в 3 года.", "f": "Приказ МЗ РК (№131) от МЗ РК", "o": "запись в бумажном журнале по очистке вентиляционных систем и кондиционеров", "t": "Руководитель сестринской службы, \n проверяющие органы (СЭС)", "id": "ik_388ede86", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Осуществление контроля за качеством уборкой в отделении", "d": "Выполняет проверку качества текущих уборок в отделении Проводит осмотр помещений с целью оценки чистоты и санитарного состояния, проверку соблюдения СОП по текущей уборке;\n Проводит оценку чек- листов по текущей уборки, выявление дефектов и сравнение данных (указано /не указано)", "i": "Фактическое качество уборки", "f": "Сестра-хозяйка", "o": "Чек-лист\n уведомление в рабочий чат (в случае выявленных дефектов)", "t": "директор филиала", "id": "ik_84ad6fb1"}, {"p": "Составление графика проведения генеральных уборок отделения", "d": "Формирует график проведения генеральных уборок;\n Печатает, ламинирует документ;\n Размещает в санитарной комнате;\n Внесит отметку о проведении генеральной уборки в в гугл-календарь", "i": "Шаблон графика , Санитарные правила", "f": "СанПин", "o": "утвержденный график генеральных уборок", "t": "санитарки- клининг, все медицинские сетсра,старшие медицинские сестра блоков\n предоставление органам СЭС по требованию", "id": "ik_4e53583d"}, {"p": "Осуществление проверки пригодности уборочного инвентаря", "d": "Определение необходимости замены или ремонта инвентария, проверка наличия маркировки инвентаря\n Проверяет наличие маркировки на уборочном инвентаре (емкости уборочного комбайна, ветошь)\n Проверяет санитарок по клинингу процедуры по оборащению с инвентарем: применять строго по назначению, дезинфицировать после применения и затем просушивать (согласно требованиям законодательных актов)", "i": "Фактическое состояние уборочного инвентаря\n Наличие маркировки", "f": "ДИ", "o": "уведомление в рабочий чат, акт поломки,замены", "t": "Сестра хозяйка должна дать информацию ,менеджер по закупу и Руководитель сестринской службы", "id": "ik_4408b6f3", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Контролирование и организация заключительной уборки с акцентом на дезинфекцию", "d": "По согласованию с врачом гематологом и заместителем директором по сестринскому делу и инфекционному контролю назначает заключительную уборку;\n Руководит процессом заключительной уборки согласно СОП \"Проведение заключительной уборки\";\n Внесит отметку о проведении заключительной уборки в в гугл-календарь", "i": "выписка пациента, результат положительного бак. Анализа\n СОП по заключительной уборки", "f": "врач гематолог", "o": "уведомление в рабочий чат , журнал регистрации уборок по форме 149У", "t": "Руководитель сестринской службы", "id": "ik_315b9b25", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Осуществление контроля за бельевым режимом круглосуточном стационаре", "d": "Контролирует смену постельного белья, проводит сверку с чек листом;\n Контролирует выдачу комплектов пижам пациентам при необходимости;\n Проверяет наличия достаточного запаса чистого белья;\n Осуществляет контроль за качеством стирки прачечной\n Проверяет помещение, предназначенное для хранения и обработки белья", "i": "График, нормы смены белья, гигиенические показания, СанПин ДСМ-96/2020", "f": "НПА", "o": "уведомление в рабочий чат, график смены белья, чек лист смены белья", "t": "Сестра хозяйка", "id": "ik_93682c2f"}, {"p": "Учет санитарных книжек медицинского персонала", "d": "Собирает и хранит санитарные книжки каждого медицинского работника;\n Проверяет наличия допуска и необходимого перечня обследований в санитарных книжках;\n Регистрирует и ведет учет санитарных книжек в журнале;\n Обновляет информацию о сроках действия допуска и необходимых обследованиях\n Напоминает медицинским работникам для о необходимости обновления исследований в санитарной книжке\n Предоставляет информации о статусе санитарных книжек ((допуске, исследования) при запросе со стороны", "i": "Санитарные книжки сотрудников", "f": "Приказ МЗ РК (№131)", "o": "Журнал санитарных книжек", "t": "Руководитель сестринской службы, \n проверяющие органы (СЭС)", "id": "ik_170253f3", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Организация профилактических, предварительных и обязательных медицинских осмотров", "d": "Формирует списки медицинских работников, подлежащих обязательному медицинскому осмотру;\n Согласовывает списки с отделом кадров и инжером по ТБ, согласование органами СЭС;\n Координирует работу с медицинскими учреждениями для проведения медицинского осмотра\n Организирует прием/записи медицинских работников на осмотр;\n Следит за выполнением медицинскими работниками требований по прохождению обязательного медицинского осмотра;\n Ведет учета прохождения медицинского осмотра каждым медицинским работником;\n Предоставление отчетности и обновление данных о статусе медицинского осмотра, при запросе", "i": "Данные о последнем медицинском осмотре приказ 131", "f": "Приказ МЗ РК (№131) сотрудники с эпид. показаниями", "o": "согласованный(утвержденный ) список сотрудников на мед.осмотр", "t": "Руководитель сестринской службы, \n проверяющие органы (СЭС)", "id": "ik_e0df4091", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Контроль учета рабочего времени оборудования (кварцевых ламп, hepo-фильтров, рециркуляторов)", "d": "Осуществляет контроль за регистрацией данных о начале и окончании работы оборудования;\n Ведение журнала учета рабочего времени (кварцевой лампы, бактерицидных облучателей);\n Согласно журналов ведет подсчет суммарного времени работы оборудования;\n Обеспечение своевременной замены расходников (ламп, фильтров) и обслуживания кварцевых ламп при необходимости", "i": "График замены расходников журнал учета бактерицидных ламп согласно форме 147У)", "f": "Инструкция к оборудованию от производителя оборудования", "o": "уведомление в рабочий чат, СанПИн, журнал по форме 147У", "t": "Руководитель сестринской службы- отдел закупа", "id": "ik_b750f2bf", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Контроль за соблюдением инфекционного контроля в отделение", "d": "Осуществляет контроль за: мытья и обработка рук, использование СИЗ (средств индивидуальной защиты), использования одноразоваго МИ, соблюдение правил сортировки и обращения медицинскими отходами\n Изучает СОП, инструкции по инфекционному контролю, проходить обучения, очную оценка медицинского персонала отделения", "i": "СОПы по инфекционной безопасности, правила изоляции пациентов -эпидрежимные палаты", "f": "Консультант по качеству, Медицинский директор", "o": "отчет об инциденте", "t": "электронный журнал инцидентов,\n Директор филиала\n Руководитель сестринской службы", "id": "ik_923d5414", "tag": "edit", "note": "Во входах и выходах упразднённые должности заменены на новые."}, {"p": "Участие в комиссии по утилизации лекарственных средств (медицинских ихделий)", "d": "Ознакомливается с перечнем ЛС/МИ подлежащие утилиззации с указанием причины утилизауии (срок годности, брак);\n Подтверждает факт утилизации, подписывает \"Акт об уничтожении непригодных к реализации и медицинскому применению лекарственных средств и медицинских изделий\n Журнал учета лекарственных средств (сроки годности)\"", "i": "акт", "f": "провизор", "o": "подписанный акт", "t": "провизор", "id": "ik_51d20524"}, {"p": "Проведение инструктажа по технике безопасности при обращении с дезинфицирующими средствами", "d": "Изучает инструкции от производителя дезинфицирующих средств;\n Проводит инструктаж среднему и младшему медицинскому персоналу по правильному обращению;\n Предоставляет информацию о правильной дозировке, способе применения, времени воздействия, мерам безопасности и другим рекомендациям, чтобы обеспечить эффективное использование дезсредств и защитить персонал и пациентов", "i": "Новое дезредство, новой сотрудник младшего персонала", "f": "Сестра -хозяйка", "o": "Журнале по ТБ у инженера", "t": "ТБ инженер", "id": "ik_c319d613"}]}]}], "questions": [{"id": "q_razdacha", "q": "Раздача ЛС у постели пациента", "h": "Кто раздаёт таблетки и пероральные ЛС пациентам у постели: МС кабинета разведения (фармблок) или постовая медсестра?", "opts": ["Кабинет разведения (фармблок)", "Постовая медсестра", "Другое"]}, {"id": "q_dopusk", "q": "Допуски универсальной медсестры", "h": "ОИТ, трансфузия, ЦВК, ассистирование при пункции — сколько ваших медсестёр сейчас умеют это делать и сколько нужно обучить?", "opts": []}, {"id": "q_grafik", "q": "График и ротация", "h": "Как вы видите перевод на универсальную медсестру: сразу всех или поэтапно через ротацию между ДС, КС и ОИТ?", "opts": ["Сразу всех", "Поэтапно, через ротацию", "Другое"]}, {"id": "q_miss", "q": "Чего не хватает", "h": "Какие функции ваши медсёстры выполняют, но их нет в этом списке?", "opts": []}], "staff": {"КРГ": [17, 6, 1], "УК": [14, 4, 1], "Астана": [4, 0, 0]}};
+(function(){
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const oneLine=s=>String(s||'').replace(/\s*\n\s*/g,', ').replace(/,\s*,/g,',').trim();
+const BR=['КРГ','УК','Астана'];
+const ST={ok:'Согласна',fix:'Изменить',no:'Не нужна'};
+const TAG={new:'добавлено',move:'перенесено',merge:'объединено',edit:'уточнено',q:'вопрос'};
+const VIEWS=[...DATA.sections.map(s=>'fn-'+s.id),'voprosy','itogi'];
+let me={b:'',n:'',a:{},q:{}}, uid=null, db=null, all={}, open=new Set(), saveT=null, saving=false, again=false, dbState='load', sumF='all';
+function toast(t){const el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3000)}
+const rerender=()=>window.NB_render&&window.NB_render();
+try{const l=JSON.parse(localStorage.getItem('nurse-draft')||'null');if(l&&typeof l==='object')me=Object.assign(me,l)}catch(_){}
+function keepLocal(){try{localStorage.setItem('nurse-draft',JSON.stringify(me))}catch(_){}}
+function view(){const h=location.hash.slice(1);return VIEWS.includes(h)?h:''}
+const items=s=>s.groups.flatMap(g=>g.items);
+function answered(s){return items(s).filter(it=>me.a[it.id]&&me.a[it.id].s).length}
+
+function status(){
+  const el=$('rst');if(!el)return;
+  if(dbState==='off'){el.textContent='Ответы сохраняются только на этом устройстве: сначала войдите в «Функционал».';return}
+  if(dbState==='load'){el.textContent='Подключаюсь…';return}
+  if(!me.b||!me.n.trim()){el.textContent='Выберите филиал и впишите ФИО, затем отмечайте функции.';return}
+  el.textContent=saving?'Сохраняю…':'Ответы сохраняются автоматически.';
+}
+function renderWho(){
+  const el=$('rbrs');if(!el)return;if(me.b&&!me.n&&SENIOR[me.b]){me.n=SENIOR[me.b];queue()}el.innerHTML=BR.map(b=>`<button type="button" data-rbr="${b}" aria-pressed="${me.b===b}">${b}</button>`).join('');
+  if(document.activeElement!==$('fio')) $('fio').value=me.n||'';
+  status();
+}
+function fnHtml(it,i){
+  const a=me.a[it.id]||{}, o=open.has(it.id), st=a.s||'';
+  const from=oneLine(it.f), to=oneLine(it.t);
+  return `<div class="fn ${st}${o?' open':''}" data-id="${it.id}">
+   <button class="fh" type="button" data-tog="${it.id}" aria-expanded="${o}"><span class="num">${i}</span><span class="tx"><span class="t">${esc(it.p)}</span>${it.tag?`<span class="tag ${it.tag}">${TAG[it.tag]}</span>`:''}${from||to?`<span class="ft">${esc(from||'—')} → ${esc(to||'—')}</span>`:''}</span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="M1 1l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+   ${o?`<div class="body">${it.note?`<div class="note">${esc(it.note)}</div>`:''}${it.d?`<div class="desc">${esc(it.d)}</div>`:''}
+     <div class="io"><div><b>Вход</b>${esc(it.i||'—')}</div><div><b>От кого</b>${esc(it.f||'—')}</div><div><b>Результат</b>${esc(it.o||'—')}</div><div><b>Кому</b>${esc(it.t||'—')}</div></div></div>`:''}
+   <div class="ans" role="group" aria-label="Оценка функции">${Object.entries(ST).map(([k,l])=>`<button type="button" class="${k}" data-ans="${k}" data-f="${it.id}" aria-pressed="${st===k}">${l}</button>`).join('')}</div>
+   ${(st&&st!=='ok')||(a.c)||o?`<div class="cm"><textarea id="c-${it.id}" data-cm="${it.id}" placeholder="${st==='no'?'Почему функция не нужна или кто её выполняет':'Что изменить: кто делает, от кого, кому, как у вас в филиале'}" aria-label="Комментарий">${esc(a.c||'')}</textarea></div>`:''}
+  </div>`;
+}
+function secView(s){
+  const its=items(s), n=its.length, c={ok:0,fix:0,no:0};
+  its.forEach(it=>{const a=me.a[it.id];if(a&&c[a.s]!=null)c[a.s]++});
+  let h=`<div class="sec-h"><h2>${esc(s.name)}</h2><p>${esc(s.sub)}</p></div>`;
+  if(s.id==='mc') h+=`<div class="facts">${BR.map(b=>`<div><b>${b}</b><span>${DATA.staff[b][0]} МС в сестринской службе</span></div>`).join('')}</div>`;
+  if(s.id==='raz') h+=`<div class="facts">${BR.map(b=>`<div><b>${b}</b><span>${DATA.staff[b][1]} МС в кабинете разведения</span></div>`).join('')}</div>`+(`<div class="warn">В Астане в кабинете разведения сейчас нет медсестёр. Если вы из Астаны, напишите в разделе «Вопросы», кто разводит препараты.</div>`);
+  h+=`<div class="prog"><span>Отмечено ${c.ok+c.fix+c.no} из ${n}</span><div class="bar" aria-hidden="true"><i style="width:${c.ok/n*100}%;background:var(--ok)"></i><i style="width:${c.fix/n*100}%;background:var(--fix)"></i><i style="width:${c.no/n*100}%;background:var(--no)"></i></div></div>`;
+  h+=`<div class="legend"><span>Нажмите на функцию, чтобы увидеть описание и предложение.</span></div>`;
+  let i=0;
+  s.groups.forEach(g=>{h+=`<div class="gh">${esc(g.name)} · ${g.items.length}</div><div class="list">`+g.items.map(it=>fnHtml(it,++i)).join('')+`</div>`});
+  const nx=VIEWS[VIEWS.indexOf('fn-'+s.id)+1];
+  h+=`<div class="next"><a href="#${nx}">Дальше: ${nx==='voprosy'?'вопросы':esc(DATA.sections.find(x=>'fn-'+x.id===nx).name)}</a></div>`;
+  return h;
+}
+function qView(){
+  let h=`<div class="sec-h"><h2>Вопросы на решение</h2><p>Ваше мнение нужно для записки генеральному директору.</p></div><div class="list" style="margin-top:14px">`;
+  DATA.questions.forEach(q=>{const a=me.q[q.id]||{};
+    h+=`<div class="qcard"><h3>${esc(q.q)}</h3><p>${esc(q.h)}</p>${q.opts.length?`<div class="opts" role="group">${q.opts.map(o=>`<button type="button" data-q="${q.id}" data-o="${esc(o)}" aria-pressed="${a.o===o}">${esc(o)}</button>`).join('')}</div>`:''}<textarea id="q-${q.id}" data-qc="${q.id}" placeholder="Ваш ответ" aria-label="${esc(q.q)}">${esc(a.c||'')}</textarea></div>`});
+  return h+`</div><div class="next"><a href="#itogi">Посмотреть итоги</a></div>`;
+}
+function sumView(){
+  const rs=Object.values(all).filter(r=>r&&r.b);
+  let h=`<div class="sec-h"><h2>Итоги рассмотрения</h2><p>Ответы всех старших медсестёр, обновляются сразу.</p></div>`;
+  if(dbState==='off') return h+`<div class="empty">Итоги видны только после входа в «Функционал».</div>`;
+  if(!rs.length) return h+`<div class="empty">Пока никто не ответил. Как только старшие медсёстры начнут отмечать функции, здесь появятся их оценки и комментарии.</div>`;
+  h+=`<div class="people">${rs.map(r=>{const k=Object.values(r.a||{}).filter(x=>x&&x.s).length;return `<div><b>${esc(r.n||'Без имени')}</b><span>${esc(r.b)} · ${k} функций</span></div>`}).join('')}</div>`;
+  h+=`<div class="chips" role="group" aria-label="Фильтр"><button type="button" data-sf="all" aria-pressed="${sumF==='all'}">Все функции</button><button type="button" data-sf="rem" aria-pressed="${sumF==='rem'}">Только с замечаниями</button></div><div class="sum">`;
+  let shown=0;
+  DATA.sections.forEach(s=>items(s).forEach(it=>{
+    const c={ok:[],fix:[],no:[]}, cm=[];
+    rs.forEach(r=>{const a=(r.a||{})[it.id];if(!a)return;if(c[a.s])c[a.s].push(r.b);if(a.c&&a.c.trim())cm.push({b:r.b,n:r.n,s:a.s,c:a.c})});
+    const rem=c.fix.length+c.no.length+cm.length;
+    if(sumF==='rem'&&!rem) return; shown++;
+    h+=`<div class="srow"><div class="sec">${esc(s.name)}</div><div class="t">${esc(it.p)}</div><div class="cnt">${['ok','fix','no'].map(k=>c[k].length?`<span class="${k}">${ST[k]}: ${c[k].join(', ')}</span>`:'').join('')||'<span style="color:var(--muted)">нет оценок</span>'}</div>${cm.length?`<ul>${cm.map(x=>`<li>${esc(x.c)} <span class="who2">— ${esc(x.b)}, ${esc((x.n||'').split(' ').slice(0,2).join(' '))}</span></li>`).join('')}</ul>`:''}</div>`;
+  }));
+  if(!shown) h+=`<div class="empty">Замечаний пока нет.</div>`;
+  h+=`</div><h2 style="font-family:var(--f-head);font-size:20px;margin:22px 0 8px">Ответы на вопросы</h2><div class="sum">`;
+  DATA.questions.forEach(q=>{const ans=rs.map(r=>({r,a:(r.q||{})[q.id]})).filter(x=>x.a&&(x.a.o||(x.a.c&&x.a.c.trim())));
+    h+=`<div class="srow"><div class="t">${esc(q.q)}</div>${ans.length?`<ul>${ans.map(x=>`<li>${x.a.o?`<b>${esc(x.a.o)}</b>${x.a.c?'. ':''}`:''}${esc(x.a.c||'')} <span class="who2">— ${esc(x.r.b)}, ${esc((x.r.n||'').split(' ').slice(0,2).join(' '))}</span></li>`).join('')}</ul>`:'<div class="sec">Ответов пока нет</div>'}</div>`});
+  return h+'</div>';
+}
+
+const SENIOR={'КРГ':'Турмуратова Дана Алмазовна','УК':'Егимбаева Жанерке Саулетбековна','Астана':'Сабитова Гульнара Каиржановна'};
+function whoHtml(){return `<div class="who"><div><label>Ваш филиал</label><div class="rbrs" id="rbrs" role="group" aria-label="Филиал"></div></div><div><label for="fio">Ваше ФИО</label><input id="fio" type="text" autocomplete="name" list="seniors" placeholder="Фамилия Имя Отчество"><datalist id="seniors">${Object.values(SENIOR).map(n=>`<option value="${esc(n)}">`).join('')}</datalist></div><div class="rst" id="rst" role="status"></div></div>`}
+function fnSeg(v){return `<nav class="fnseg" aria-label="Должности">${DATA.sections.map(s=>`<a href="#fn-${s.id}"${v==='fn-'+s.id?' aria-current="page"':''}>${esc(s.name)}<span>${answered(s)}/${items(s).length}</span></a>`).join('')}</nav>`}
+window.REV={
+  owns:t=>VIEWS.includes(t),
+  answered:()=>DATA.sections.reduce((a,s)=>a+answered(s),0), total:()=>DATA.sections.reduce((a,s)=>a+items(s).length,0),
+  render(t){
+    const s=DATA.sections.find(x=>'fn-'+x.id===t);
+    let h='<div class="rv">';
+    if(t!=='itogi') h+=`<div class="intro"><b>Функционал сестринского блока</b>Поручение генерального директора: оценить объединение сестринских функций и передачу кабинета разведения в фармблок. Отметьте по каждой функции, подходит ли она вашему филиалу.</div>`+whoHtml();
+    if(s) h+=fnSeg(t)+secView(s); else if(t==='voprosy') h+=qView(); else h+=sumView();
+    return h+'</div>';
+  },
+  after(){renderWho()}
+};
+
+function needWho(){if(!me.b||!me.n.trim()){toast('Сначала выберите филиал и впишите ФИО вверху');const f=$('fio');if(f)f.focus();window.scrollTo({top:0,behavior:'smooth'});return true}return false}
+function queue(){keepLocal();clearTimeout(saveT);saveT=setTimeout(save,700);status()}
+async function save(){
+  if(!db||!uid||!me.b||!me.n.trim())return;
+  if(saving){again=true;return}
+  saving=true;status();
+  try{await db.doc('reviews/'+uid).set({b:me.b,n:me.n.trim(),a:me.a,q:me.q,t:Date.now()})}
+  catch(e){toast('Не удалось сохранить. Ответ остался на устройстве, повторю позже.')}
+  saving=false;status();
+  if(again){again=false;save()}
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.rbr){me.b=b.dataset.rbr;renderWho();queue();return}
+  if(b.dataset.tog){const id=b.dataset.tog;open.has(id)?open.delete(id):open.add(id);rerender();return}
+  if(b.dataset.ans){if(needWho())return;const f=b.dataset.f,k=b.dataset.ans,a=me.a[f]||{};a.s=a.s===k?'':k;me.a[f]=a;rerender();queue();if(k!=='ok'&&a.s){const t=$('c-'+f);if(t)t.focus()}return}
+  if(b.dataset.q){if(needWho())return;const a=me.q[b.dataset.q]||{};a.o=a.o===b.dataset.o?'':b.dataset.o;me.q[b.dataset.q]=a;rerender();queue();return}
+  if(b.dataset.sf){sumF=b.dataset.sf;rerender();return}
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='fio'){me.n=t.value;queue();return}
+  if(t.dataset.cm){if(!me.b||!me.n.trim())return needWho();const a=me.a[t.dataset.cm]||{};a.c=t.value;me.a[t.dataset.cm]=a;queue();return}
+  if(t.dataset.qc){if(!me.b||!me.n.trim())return needWho();const a=me.q[t.dataset.qc]||{};a.c=t.value;me.q[t.dataset.qc]=a;queue();return}
+});
+(async function(){
+  const timer=setTimeout(()=>{if(dbState==='load'){dbState='off';renderWho();rerender()}},10000);
+  try{
+    const [d,u]=await Promise.all([window.claude?.use('db'),window.claude?.use('user')]);
+    if(!d||!u){clearTimeout(timer);dbState='off';renderWho();rerender();return}
+    db=d;uid=await u.id();
+    if(!uid){clearTimeout(timer);dbState='off';renderWho();rerender();return}
+    try{const s=await db.doc('reviews/'+uid).get();if(s.exists){const x=s.data()||{};const loc=me;me={b:x.b||loc.b,n:x.n||loc.n,a:Object.assign({},x.a||{},loc.a),q:Object.assign({},x.q||{},loc.q)}}}catch(_){}
+    clearTimeout(timer);dbState='on';renderWho();rerender();
+    if(me.b&&me.n.trim())save();
+    db.collection('reviews').onSnapshot(snap=>{const m={};snap.docs.forEach(x=>{m[x.id]=x.data()});all=m;if(view()==='itogi')rerender()},()=>{});
+  }catch(_){clearTimeout(timer);dbState='off';renderWho();rerender()}
+})();
+})();
+</script>
+<script>
+const STAFF = {"Астана": {"head": ["Сабитова Гульнара Каиржановна"], "mc": [{"n": "Байсаматова Гульнара Сабыровна", "r": 1.0, "o": "Старшая медсестра", "note": ""}, {"n": "Загипарова Алия Нурлановна", "r": 1.0, "o": "Старшая медсестра", "note": ""}, {"n": "Искакова Гаухар Толеухановна", "r": 1.0, "o": "Старшая медсестра", "note": ""}, {"n": "Шакирова Макпал Идаятовна", "r": 1.0, "o": "Старшая медсестра", "note": "перевод на 1,0 ст с 16.02.26"}], "ik": [], "san": [{"n": "Фаткулина Раушан Какимовна", "r": 1.75, "o": "Санитарка", "note": ""}]}, "КРГ": {"head": ["Турмуратова Дана Алмазовна"], "mc": [{"n": "Осипова Екатерина Евгеньевна", "r": 1.0, "o": "Старшая медицинская сестра КС и ПИТ", "note": ""}, {"n": "Абдырахманова Арай Сергазиевна", "r": 1.0, "o": "Старшая медицинская сестра КС и ПИТ", "note": ""}, {"n": "Камалова Малика Ахмуратовна", "r": 1.0, "o": "Медицинский (ая) брат\\ сестра", "note": ""}, {"n": "Қазытаева Маржан Мұратқызы", "r": 1.0, "o": "Медицинский (ая) брат\\ сестра", "note": ""}, {"n": "Тілегенқызы Әсем", "r": 1.0, "o": "Медицинский (ая) брат\\ сестра", "note": ""}, {"n": "Уйсымхан Дарьягул", "r": 1.0, "o": "Медицинский (ая) брат\\ сестра", "note": ""}, {"n": "Недева Е.М.", "r": 1.0, "o": "Медицинский (ая) брат\\ сестра", "note": "принята с 02.09.2026"}, {"n": "Хамитова Дамира Данияркызы", "r": 1.0, "o": "Медицинский (ая) брат\\ сестра", "note": ""}, {"n": "Шнайдер Людмила Викторовна", "r": 1.0, "o": "Медицинский (ая) брат\\ сестра", "note": ""}, {"n": "Ли Светлана Викторовна", "r": 1.0, "o": "Медицинский (ая) брат\\ сестра", "note": ""}, {"n": "Кокаева Акку Файзолловна", "r": 1.25, "o": "Медицинская сестра трансфузионная", "note": ""}, {"n": "Шамина Анна Евгеньевна", "r": 1.25, "o": "Медицинская сестра трансфузионная", "note": ""}, {"n": "Мамыржанов Серік Нұрланбекұлы", "r": 1.25, "o": "Медицинская сестра трансфузионная", "note": ""}, {"n": "Тусупова Лаззат Рашитовна", "r": 1.0, "o": "Медицинская сестра", "note": ""}, {"n": "Мартиросян Сюзанна", "r": 0.25, "o": "Медицинская сестра", "note": "Совместитель"}, {"n": "Жагипарова Бибигуль Сайлаукеновна", "r": 1.0, "o": "Медицинская сестра", "note": ""}, {"n": "Алиякпарова Жулдыз Шахзадаевна", "r": 1.0, "o": "Медицинская сестра", "note": "Осн рабо Сулейменова АА а за"}], "ik": [{"n": "Субота Наталья Владимировна", "r": 1.0, "o": "Медицинская сестра инфекционного контроля", "note": ""}], "san": [{"n": "Кунангараева Мадина Турсуновна", "r": 1.25, "o": "Санитарка по уходу", "note": ""}, {"n": "Маканова Гульмира Манаповна", "r": 1.25, "o": "Санитарка по уходу", "note": ""}, {"n": "Абжанова Алла Алжабаевна", "r": 1.25, "o": "Санитарка по уходу", "note": ""}, {"n": "Турсынханова Жазира Аргимбаевна", "r": 1.25, "o": "Санитарка по уходу", "note": ""}, {"n": "Мукатова Гульнар Кабдуллина", "r": 1.25, "o": "Санитарка по уходу", "note": ""}, {"n": "Оразбек Күмісжан Жұмабайқызы", "r": 1.25, "o": "Санитарка по уходу", "note": ""}, {"n": "Кунешева Маржан Болатовна", "r": 1.25, "o": "Санитарка по уходу", "note": ""}, {"n": "Ахметова Римма Кайдаровна", "r": 1.0, "o": "Санитарка по клинингу", "note": ""}, {"n": "Циммерлинг Алмагуль Майдановна", "r": 1.0, "o": "Санитарка по клинингу", "note": "Осн раб.Тогтогул Зейнеп Есерханқызы (отп по уходу 18.04.2025-10.02.2028"}, {"n": "Семеляк Иованна Тельмановна", "r": 1.0, "o": "Санитарка по клинингу", "note": ""}, {"n": "Касабаева Динара Сайлаухановна", "r": 1.0, "o": "Санитарка по клинингу", "note": ""}, {"n": "Есбергенова Збира Толысовна", "r": 1.0, "o": "Санитарка по клинингу", "note": ""}, {"n": "Горналова Оксана Игоревна", "r": 1.25, "o": "Санитарка по клинингу", "note": ""}, {"n": "Сахина Шолпан Уралхановна", "r": 1.25, "o": "Санитарка по клинингу", "note": ""}, {"n": "Дудченко Ольга Николаевна", "r": 1.25, "o": "Санитарка по клинингу", "note": ""}, {"n": "Тулепбергенова Айнаш Дайрабаевна", "r": 1.25, "o": "Санитарка по клинингу", "note": ""}, {"n": "Рахматуллаева Рауза Дайрабаевна", "r": 1.25, "o": "Санитарка по клинингу", "note": ""}, {"n": "Тимошенко Наталья Валерьевна", "r": 1.25, "o": "Санитарка по клинингу", "note": ""}, {"n": "Гулякевич Дарья Владимировна", "r": 1.25, "o": "Санитарка по клинингу", "note": ""}], "pit": [{"n": "Мироненко Елена Викторовна", "r": 1.0, "o": "Медицинский (ая) брат/ сестра отделения интенсивной терапии", "note": ""}, {"n": "Мурадян Ольга Владимировна", "r": 1.0, "o": "Медицинский (ая) брат/ сестра отделения интенсивной терапии", "note": ""}, {"n": "Орловская Татьяна Александровна", "r": 1.0, "o": "Медицинский (ая) брат/ сестра отделения интенсивной терапии", "note": ""}, {"n": "Фомина Наталья Викторовна", "r": 1.0, "o": "Медицинский (ая) брат/ сестра отделения интенсивной терапии", "note": ""}, {"n": "Есенаманова Светлана Владимировна", "r": 1.0, "o": "Медицинский (ая) брат/ сестра отделения интенсивной терапии", "note": ""}, {"n": "Төлеубай Мақсұт Кәрімұлы", "r": 1.0, "o": "Медицинский (ая) брат/ сестра отделения интенсивной терапии", "note": ""}, {"n": "Рыженко Виктория Николаевна", "r": 1.0, "o": "Медицинский (ая) брат/ сестра отделения интенсивной терапии", "note": ""}]}, "УК": {"head": ["Егимбаева Жанерке Саулетбековна"], "mc": [{"n": "Чекина Акмарал Рафхатқызы", "r": 1.0, "o": "Старшая медицинская сестра круглосуточного стационара и отделения интенсивной терапии", "note": "Жұмекенова (Елтринова) Жанель Уалихановна Отпуск БИР 24.09.26-15.02.2027"}, {"n": "Чередникова (Силина) Дарья Анатольевна", "r": 1.0, "o": "Медицинский(ая) брат / сестра", "note": "Тоқтарғазиева Динара Саятқызы Отп по бер и родам (01.02.2026-27.09.2029)"}, {"n": "Емелбаева Райгуль Сейткановна", "r": 1.0, "o": "Медицинский(ая) брат / сестра", "note": ""}, {"n": "Касенова Мейрамгуль Сабетовна", "r": 1.0, "o": "Медицинский(ая) брат / сестра", "note": ""}, {"n": "Искакова Жанар Адилгазыевна", "r": 1.0, "o": "Медицинский(ая) брат / сестра", "note": ""}, {"n": "Оспанова Наркес Даулетхановна", "r": 1.0, "o": "Медицинский(ая) брат / сестра", "note": ""}, {"n": "Құмаргалиева Жанерке Ерболатқызы", "r": 1.0, "o": "Медицинский(ая) брат / сестра", "note": ""}, {"n": "Зейнолдина Қарлығаш Еркінқызы", "r": 1.25, "o": "Медицинский(ая) брат / сестра трансфузионный(ая)", "note": ""}, {"n": "Қуанышбек Алтынбек Қуанышбекұлы", "r": 1.25, "o": "Медицинский(ая) брат / сестра трансфузионный(ая)", "note": ""}, {"n": "Сыдықова Лаура Оразқызы", "r": 1.0, "o": "Медицинский(ая) брат / сестра трансфузионный(ая)", "note": ""}, {"n": "Еремеева Татьяна Владимировна", "r": 1.0, "o": "Старшая медицинская сестра дневного стационара", "note": ""}, {"n": "Касенова Раушан Кумарбековна", "r": 1.0, "o": "Медицинская сестра отделения", "note": "принята с 16.07.2026"}, {"n": "Сейлгазина Инкар Муратбековна", "r": 1.0, "o": "Медицинская сестра отделения", "note": ""}, {"n": "Аюбаева Жанна Амангельдиновна", "r": 1.0, "o": "Медицинская сестра", "note": "манипуляция"}], "ik": [{"n": "Григорьева Светлана Николаевна", "r": 1.0, "o": "Медицинская сестра инфекционного контроля", "note": ""}], "san": [{"n": "Батырбаева Кульшат Токтарбековна", "r": 1.0, "o": "Санитарка по уходу", "note": ""}, {"n": "Боранбаева Сымбат Муратбековна", "r": 0.75, "o": "Санитарка по уходу", "note": "Совместитель"}, {"n": "Джунусова Айнаш Сакеновна", "r": 1.25, "o": "Санитарка по уходу", "note": ""}, {"n": "Дюсекова Шынар Муратовна", "r": 1.0, "o": "Санитарка по уходу", "note": ""}, {"n": "Львова Валерия Петровна", "r": 1.0, "o": "Санитарка по уходу", "note": ""}, {"n": "Маликова Кымбат Кыдырхановна", "r": 1.0, "o": "Санитарка по уходу", "note": ""}, {"n": "Шуткова Наталья Юрьевна", "r": 1.0, "o": "Санитарка по уходу", "note": "принята с 21.08.2026"}, {"n": "Сплавник Елена Валериевна", "r": 1.0, "o": "Санитарка по уходу", "note": ""}, {"n": "Санарова Ирина", "r": 1.0, "o": "Санитарка по уходу", "note": "принята с 14.09.2026"}, {"n": "Сапарова Махаббат Кыдырхановна", "r": 1.0, "o": "Санитарка по уходу", "note": ""}, {"n": "Елемесова Айнур", "r": 1.0, "o": "Санитарка", "note": "принята с 16.09.2026"}, {"n": "Маликова Надежда Владимировна", "r": 1.0, "o": "Кастелянша", "note": ""}, {"n": "Малева М", "r": 1.0, "o": "Санитарка (Гладильщик)", "note": "принята с 01.10.2026"}, {"n": "Шереметьева Елена Викторовна", "r": 1.0, "o": "Санитарка", "note": ""}, {"n": "Хуснутдинова Наталья В", "r": 1.0, "o": "Санитарка по клинингу", "note": "принята с 14.10.2026"}, {"n": "Бажекенова Арайлым Маутхановна", "r": 1.0, "o": "Санитарка по клинингу", "note": ""}, {"n": "Ақтанова Динара Тұрсынбекқызы", "r": 1.0, "o": "Санитарка по клинингу", "note": ""}, {"n": "Галитовская Светлана Геннадьевна", "r": 1.0, "o": "Санитарка по клинингу", "note": ""}, {"n": "Ержебаева Раушангул Бикеновна", "r": 1.0, "o": "Санитарка по клинингу", "note": ""}, {"n": "Жумаканова Акерке Саркытбековна", "r": 1.0, "o": "Санитарка по клинингу", "note": ""}, {"n": "Капшукурова Зауре Темергазыевна", "r": 1.0, "o": "Санитарка по клинингу", "note": ""}, {"n": "Тюлегенова Гульмира", "r": 1.0, "o": "Санитарка по клинингу", "note": "принята с 02.11.2026"}, {"n": "Зейнелова Ардак Турсынбековна", "r": 1.0, "o": "Санитарка по клинингу", "note": ""}], "pit": [{"n": "Тұқашев Ернар Жексенұлы", "r": 1.0, "o": "Медицинский(ая) брат / сестра отделения интенсивной терапии", "note": ""}, {"n": "Жомартов Ержан Болатханұлы", "r": 1.0, "o": "Медицинский(ая) брат / сестра отделения интенсивной терапии", "note": ""}, {"n": "Мұхтаров Естай Мұхтарұлы", "r": 1.0, "o": "Медицинский(ая) брат / сестра отделения интенсивной терапии", "note": ""}, {"n": "Тұрғамбек Бақытбек Тұрғамбекұлы", "r": 1.0, "o": "Медицинский(ая) брат / сестра отделения интенсивной терапии", "note": ""}, {"n": "Қыдырбек Іңкәр Қыдырбекқызы", "r": 1.0, "o": "Медицинский(ая) брат / сестра отделения интенсивной терапии", "note": ""}]}};
+(function(){
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(t){const el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3000)}
+const BR=['КРГ','УК','Астана'];
+const MON_N=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const MON_G=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const WD=['вс','пн','вт','ср','чт','пт','сб'], WDF=['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+const HOL=['01-01','01-02','01-07','03-08','03-21','03-22','03-23','05-01','05-07','05-09','07-06','08-30','10-25','12-16'];
+const ANCHOR=Date.UTC(2026,10,1);
+const SCH={
+  sep:{name:'2/2: дневные и ночные бригады отдельно',br:{'Д1':['Д','Д','В','В',0],'Д2':['Д','Д','В','В',2],'Н1':['Н','Н','В','В',0],'Н2':['Н','Н','В','В',2]}},
+  free:{name:'Плавающий: смены расставляю вручную',br:{}},
+  dnvv:{name:'День — ночь — отсыпной — выходной',br:{'А':['Д','Н','В','В',0],'Б':['Д','Н','В','В',3],'В':['Д','Н','В','В',2],'Г':['Д','Н','В','В',1]}}
+};
+const CYC=['Д','Н','В','О','Б','8'], CLS={'Д':'D','Н':'N','В':'V','О':'O','Б':'B','8':'E'};
+const DOP={mc:[['tr','Трансфузия'],['man','Манипуляционный'],['post','Пост'],['st','Старшая по смене']],pit:[['pit','Пост ПИТ'],['st','Старшая по смене']],san:[['cl','Клининг'],['care','Уход']]};
+const GN={mc:'Медсёстры-универсалы',pit:'Медсёстры ПИТ',san:'Санитарки'}, GNG={mc:'медсестёр',pit:'медсестёр ПИТ',san:'санитарок'};
+const GRPS=()=>['mc','pit','san'].filter(g=>((STAFF[S.br]||{})[g]||[]).length||((cfg().extra||{})[g]||[]).length);
+const DOPN={pit:'пост ПИТ',tr:'трансфузия',man:'манипуляционный',post:'пост',cl:'клининг',care:'уход'};
+const REASONS=['Пациент затяжелел','Агранулоцитоз','Поступление в ночь','Другое'];
+function defZones(br){
+  if(br==='Астана') return {mc:{day:[{id:'man',n:'Манипуляционный кабинет',k:'man'},{id:'p1',n:'Пост 1',k:'post'},{id:'tr',n:'Трансфузионный кабинет',k:'tr',sit:1}],night:[{id:'p1n',n:'Пост 1',k:'post',sit:1}]},
+    san:{day:[{id:'cl',n:'Клининг',k:'cl'},{id:'care',n:'Уход',k:'care',sit:1}],night:[{id:'caren',n:'Уход',k:'care',sit:1}]}};
+  return {pit:{day:[{id:'pit1',n:'ПИТ, пост 1',k:'pit'},{id:'pit2',n:'ПИТ, пост 2',k:'pit'},{id:'pit3',n:'ПИТ, пост 3',k:'pit',sit:1}],night:[{id:'pit1n',n:'ПИТ, пост 1',k:'pit'},{id:'pit2n',n:'ПИТ, пост 2',k:'pit'},{id:'pit3n',n:'ПИТ, пост 3',k:'pit',sit:1}]},
+          mc:{day:[{id:'tr',n:'Трансфузионный кабинет',k:'tr'},{id:'man',n:'Манипуляционный кабинет',k:'man'},{id:'p1',n:'Пост 1',k:'post'},{id:'p2',n:'Пост 2',k:'post'},{id:'p3',n:'Пост 3',k:'post',sit:1}],
+               night:[{id:'p1n',n:'Пост 1',k:'post'},{id:'p2n',n:'Пост 2',k:'post'},{id:'p3n',n:'Пост 3',k:'post',sit:1}]},
+          san:{day:[{id:'cl',n:'Клининг',k:'cl'},{id:'care',n:'Уход за пациентами',k:'care'},{id:'care2',n:'Уход, второй пост',k:'care',sit:1}],
+               night:[{id:'caren',n:'Уход за пациентами',k:'care'},{id:'cln',n:'Клининг ночью',k:'cl',sit:1}]}};
+}
+const defCfg=br=>({scheme:br==='Астана'?'sep':'sep',ds:'08:00',de:'20:00',ns:'20:00',ne:'08:00',brk:1,zones:defZones(br),dop:{},extra:{mc:[],pit:[],san:[]},gone:{}});
+const now=new Date();
+let S={br:'КРГ',y:now.getFullYear(),m:now.getMonth(),d:now.getDate(),grp:'mc',p3:null,calls:null};
+try{const b=localStorage.getItem('nar-br');if(BR.includes(b))S.br=b}catch(_){}
+let CFG={}, MON={}, db=null, dbState='load', dirty={}, tm={};
+const pid=n=>'p'+Array.from(n).reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7).toString(36);
+const short=n=>{const w=String(n).replace(/\(.*?\)\s*/,'').split(/\s+/);return w[0]+(w[1]?' '+w[1][0]+'.':'')+(w[2]&&w[2].length>2?w[2][0]+'.':'')};
+const ym=()=>S.y+'-'+String(S.m+1).padStart(2,'0');
+const mkey=()=>S.br+'_'+ym();
+const cfg=()=>CFG[S.br]||(CFG[S.br]=defCfg(S.br));
+const mon=()=>MON[mkey()]||{p:{},nar:{}};
+const touch=()=>{const k=mkey();if(!MON[k])MON[k]={p:{},nar:{}};if(!MON[k].nar)MON[k].nar={};if(!MON[k].p)MON[k].p={};return MON[k]};
+const days=()=>new Date(S.y,S.m+1,0).getDate();
+const wday=d=>new Date(S.y,S.m,d).getDay();
+const isHol=d=>HOL.includes(String(S.m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'));
+const isWE=d=>{const w=wday(d);return w===0||w===6||isHol(d)};
+const mins=t=>{const[a,b]=String(t||'0:0').split(':').map(Number);return (a||0)*60+(b||0)};
+const dur=(a,b)=>{let x=mins(b)-mins(a);if(x<=0)x+=1440;return x/60};
+function hrs(c,s){if(c==='Д')return Math.max(0,dur(s.ds,s.de)-s.brk);if(c==='Н')return Math.max(0,dur(s.ns,s.ne)-s.brk);if(c==='8')return 8;return 0}
+function normDef(){let n=0;for(let d=1;d<=days();d++){if(!isWE(d))n+=8}return n}
+const normM=()=>{const M=mon();return M.norm!=null?M.norm:normDef()};
+function bal(p,L){let ab=0;for(let d=1;d<=days();d++){const x=code(p,L,d);if((x==='О'||x==='Б')&&!isWE(d))ab++}return Math.round((+p.r||1)*(normM()-8*ab)*10)/10}
+function phrs(p,L){let h=0;const c=cfg();for(let d=1;d<=days();d++)h+=hrs(code(p,L,d),c);return h}
+const fm=x=>String(Math.round(x*10)/10).replace('.',',');
+function bstate(df,sh){return df>12?'over':df>0?'over1':df<=-2*sh?'under':'ok'}
+function balMsg(p,L){const h=phrs(p,L),b=bal(p,L),df=h-b,sh=hrs('Д',cfg())||11;
+  if(df>12)return {k:'r',t:`${short(p.n)}: ${fm(h)} ч при балансе ${fm(b)} — +${fm(df)} ч. Это больше лимита сверхурочных 12 ч в месяц: уберите ${Math.ceil((df-12)/sh)} смен(ы) или передайте их другой сестре.`};
+  if(df>0)return {k:'r',t:`${short(p.n)}: ${fm(h)} ч при балансе ${fm(b)} — +${fm(df)} ч сверх баланса. Уберите смену или оформите сверхурочные с письменного согласия.`};
+  if(df<=-2*sh)return {k:'y',t:`${short(p.n)}: ${fm(h)} ч при балансе ${fm(b)} — недобор ${fm(-df)} ч, можно поставить ещё ${Math.floor(-df/sh)} смен(ы).`};
+  return null}
+
+/* ---- people ---- */
+function people(grp){
+  const B=STAFF[S.br]||{}, c=cfg();
+  let L=(B[grp]||[]).map(x=>({n:x.n,r:x.r,o:x.o,note:x.note,grp}));
+  (c.extra[grp]||[]).forEach(n=>L.push({n,r:1,o:'добавлена вручную',note:'',grp,added:1}));
+  L=L.filter(x=>!c.gone[pid(x.n)]);
+  if(grp==='mc')(B.ik||[]).forEach(x=>L.push({n:x.n,r:x.r,o:x.o,grp,ik:1}));
+  return L.map(x=>Object.assign(x,{id:pid(x.n)}));
+}
+function hasDop(p,k){if(p.ik)return false;const d=cfg().dop[p.id];if(d&&d[k]!=null)return !!d[k];
+  if(k==='tr')return /трансфуз/i.test(p.o||'');return true}
+function zones(grp,sh){return ((cfg().zones[grp]||{})[sh])||[]}
+function nar(d){const M=mon();return (M.nar&&M.nar[d])||{}}
+function isOpen(d,z){return !z.sit||!!((nar(d).open||{})[z.id])}
+function activeZones(grp,sh,d){return zones(grp,sh).filter(z=>isOpen(d,z))}
+
+/* ---- brigades ---- */
+function brigadeDefault(L,grp){
+  const c=cfg(), keys=Object.keys(SCH[c.scheme].br), D=zones(grp,'day').filter(z=>!z.sit).length, N=zones(grp,'night').filter(z=>!z.sit).length;
+  const ord=[...L.filter(p=>!p.ik&&hasDop(p,'tr')),...L.filter(p=>!p.ik&&!hasDop(p,'tr'))];
+  const tgt=c.scheme==='sep'?{'Д1':D,'Д2':D,'Н1':N,'Н2':N}:Object.fromEntries(keys.map(k=>[k,Math.max(D,N)]));
+  const cnt=Object.fromEntries(keys.map(k=>[k,0])), trc=Object.fromEntries(keys.map(k=>[k,0])), out={};
+  ord.forEach(p=>{
+    let best=null,bv=1e9;
+    keys.forEach(k=>{if(!tgt[k])return;let v=cnt[k]/tgt[k];if(hasDop(p,'tr')&&k.startsWith('Д'))v+=trc[k]*2;if(c.scheme==='sep'&&hasDop(p,'tr')&&k.startsWith('Н'))v+=5;if(v<bv-1e-9){bv=v;best=k}});
+    out[p.id]=best||keys[0];cnt[out[p.id]]++;if(hasDop(p,'tr'))trc[out[p.id]]++;
+  });
+  return out;
+}
+let BDEF={};
+function brigade(p,L){
+  if(p.ik)return '5/2';
+  const b=(mon().p[p.id]||{}).b, keys=Object.keys(SCH[cfg().scheme].br);
+  if(b&&(keys.includes(b)||b==='5/2'||b==='—'))return b;
+  if((+p.r||1)<0.5||cfg().scheme==='free')return '—';
+  const k=S.br+'|'+p.grp+'|'+cfg().scheme+'|'+L.length;
+  if(!BDEF[k])BDEF[k]=brigadeDefault(L,p.grp);
+  return BDEF[k][p.id]||keys[0];
+}
+function auto(b,d){
+  if(b==='—')return '';
+  if(b==='5/2')return isWE(d)?'В':'8';
+  const p=SCH[cfg().scheme].br[b];if(!p)return '';
+  const idx=Math.round((Date.UTC(S.y,S.m,d)-ANCHOR)/864e5);
+  return p[(((idx+p[4])%4)+4)%4];
+}
+function code(p,L,d){const x=(mon().p[p.id]||{}).x||{};return x[d]!=null?x[d]:auto(brigade(p,L),d)}
+function onShift(grp,sh,d){const L=people(grp);return L.filter(p=>!p.ik&&(sh==='day'?['Д','8'].includes(code(p,L,d)):code(p,L,d)==='Н'))}
+function setCode(p,d,c){const M=touch();M.p[p.id]=M.p[p.id]||{};M.p[p.id].x=M.p[p.id].x||{};const L=people(p.grp);if(c===auto(brigade(p,L),d))delete M.p[p.id].x[d];else M.p[p.id].x[d]=c}
+
+/* ---- save / sync ---- */
+function saveMon(){const k=mkey();dirty[k]=1;clearTimeout(tm[k]);tm[k]=setTimeout(async()=>{if(db){try{await db.doc('mon/'+k).set(Object.assign({},MON[k],{t:Date.now()}))}catch(e){toast('Не сохранилось: нет права редактировать или нет связи')}}delete dirty[k]},500)}
+function saveCfg(){const b=S.br,k='c_'+b;dirty[k]=1;clearTimeout(tm[k]);tm[k]=setTimeout(async()=>{if(db){try{await db.doc('cfg/'+b).set(Object.assign({},CFG[b],{t:Date.now()}))}catch(e){toast('Настройки не сохранились')}}delete dirty[k]},500)}
+function status(){if(window.REV&&REV.owns(tab())){$('st').textContent='Функционал: оценки старших медсестёр';return}$('st').textContent=dbState==='on'?'Сохраняется в общей базе, коллеги видят изменения в течение 15 секунд':dbState==='off'?'Черновик на этом устройстве: войдите в «Функционал», чтобы сохранять для всех':'Подключаюсь…'}
+
+/* ---- наряд ---- */
+function counts(grp,zid,uptoD,sh){let n=0;const M=mon();for(let d=1;d<uptoD;d++){const a=((M.nar||{})[d]||{})[grp+'_'+sh]||{};Object.entries(a).forEach(([z,p])=>{if(z===zid)n++})}return n}
+function lastSame(grp,sh,zid,d,p){let run=0;for(let k=d-1;k>=1&&k>=d-3;k--){const a=(nar(k)[grp+'_'+sh]||{});if(a[zid]===p)run++;else break}return run}
+function autoAssign(d,sh,grp){
+  const M=touch(); M.nar[d]=M.nar[d]||{}; const key=grp+'_'+sh;
+  const ppl=onShift(grp,sh,d), zs=activeZones(grp,sh,d), A={}, used=new Set();
+  const order=[...zs].sort((a,b)=>ppl.filter(p=>hasDop(p,a.k)).length-ppl.filter(p=>hasDop(p,b.k)).length);
+  order.forEach(z=>{
+    const cand=ppl.filter(p=>!used.has(p.id)&&hasDop(p,z.k)).map(p=>({p,s:counts(grp,z.id,d,sh)*0+zoneCount(grp,sh,z.id,p.id,d)*10+lastSame(grp,sh,z.id,d,p.id)*100}));
+    cand.sort((a,b)=>a.s-b.s);
+    if(cand.length){A[z.id]=cand[0].p.id;used.add(cand[0].p.id)}
+  });
+  M.nar[d][key]=A;
+  if(grp!=='san'){const sk=grp==='mc'?'st_'+sh:'st_'+grp+'_'+sh;const st=ppl.filter(p=>used.has(p.id)&&hasDop(p,'st'));const pick=st.sort((a,b)=>stCount(sk,a.id,d)-stCount(sk,b.id,d))[0];M.nar[d][sk]=pick?pick.id:(ppl.find(p=>used.has(p.id))||{}).id||null}
+}
+function zoneCount(grp,sh,zid,id,d){let n=0;for(let k=1;k<d;k++){if((nar(k)[grp+'_'+sh]||{})[zid]===id)n++}return n}
+function stCount(sk,id,d){let n=0;for(let k=1;k<d;k++){if(nar(k)[sk]===id)n++}return n}
+function assigned(d,sh,grp){return nar(d)[grp+'_'+sh]||{}}
+function shortage(d){let s=0;['day','night'].forEach(sh=>GRPS().forEach(g=>{s+=Math.max(0,activeZones(g,sh,d).length-onShift(g,sh,d).length)}));return s}
+function canCall(p,L,d,sh){const c=code(p,L,d);if(c!=='В'&&c!=='')return false;if(sh==='day'&&d>1&&code(p,L,d-1)==='Н')return false;if(sh==='night'&&d<days()&&['Д','8'].includes(code(p,L,d+1)))return false;return true}
+
+function grpBlock(d,sh,grp){
+  const ppl=onShift(grp,sh,d), zs=zones(grp,sh), A=assigned(d,sh,grp), byId=Object.fromEntries(people(grp).map(p=>[p.id,p]));
+  const act=zs.filter(z=>isOpen(d,z)), used=new Set(Object.values(A));
+  let h=`<div class="grp"><div class="gt">${GN[grp]} · ${ppl.length} в смене</div>`;
+  act.forEach(z=>{
+    const cur=A[z.id]||'', p=byId[cur], nod=p&&!hasDop(p,z.k);
+    const reason=z.sit?((nar(d).open||{})[z.id]||''):'';
+    h+=`<div class="zone"><div class="zn">${esc(z.n)}${z.sit?`<span class="sit">ситуативно</span>`:''}${reason?`<small>${esc(reason)}</small>`:''}</div><div class="zs"><select id="z-${d}-${sh}-${grp}-${z.id}" data-zone="${sh}|${grp}|${z.id}" class="${!cur?'empty':nod?'nodop':''}" aria-label="${esc(z.n)}"><option value="">— никого —</option>${ppl.map(q=>`<option value="${q.id}"${q.id===cur?' selected':''}>${esc(short(q.n))}${!hasDop(q,z.k)?' · нет допуска':''}${used.has(q.id)&&q.id!==cur?' · занята':''}</option>`).join('')}</select>${z.sit?`<button type="button" class="x" data-close="${sh}|${z.id}" aria-label="Закрыть ${esc(z.n)}">✕</button>`:''}</div></div>`;
+  });
+  if(grp!=='san'){
+    const sk=grp==='mc'?'st_'+sh:'st_'+grp+'_'+sh, st=nar(d)[sk]||'';
+    h+=`<div class="zone st"><div class="zn">Старшая по смене<small>одна из сестёр наряда, с доплатой</small></div><div class="zs"><select id="st-${d}-${sh}-${grp}" data-st="${sk}" class="${!st?'empty':''}" aria-label="Старшая по смене"><option value="">— не назначена —</option>${ppl.map(q=>`<option value="${q.id}"${q.id===st?' selected':''}>${esc(short(q.n))}${!hasDop(q,'st')?' · нет допуска':''}</option>`).join('')}</select></div></div>`;
+  }
+  const free=ppl.filter(p=>!used.has(p.id));
+  if(free.length) h+=`<div class="free">Без зоны, резерв на смену: <b>${free.map(p=>esc(short(p.n))).join(', ')}</b></div>`;
+  const miss=act.length-ppl.length;
+  if(miss>0){
+    const L=people(grp), cands=L.filter(p=>!p.ik&&canCall(p,L,d,sh)).slice(0,8);
+    h+=`<div class="warn">Не хватает ${miss} ${GNG[grp]} на открытые зоны.</div>${cands.length?`<div class="free">Можно вызвать из выходного:</div><div class="chips">${cands.map(p=>{const after=phrs(p,L)+(hrs(sh==='day'?'Д':'Н',cfg())),df=after-bal(p,L);return `<button type="button" class="chip call${df>0?' hot':''}" data-call="${sh}|${grp}|${p.id}" title="${df>0?'После вызова будет +'+fm(df)+' ч сверх баланса':'В пределах баланса'}">+ ${esc(short(p.n))}${df>0?' · +'+fm(df)+' ч':''}</button>`}).join('')}</div>`:''}`;
+  }
+  const closed=zs.filter(z=>z.sit&&!isOpen(d,z));
+  if(closed.length) h+=`<div class="chips" style="margin-top:8px">${closed.map(z=>`<button type="button" class="chip" data-open="${sh}|${z.id}">+ Открыть: ${esc(z.n)}</button>`).join('')}</div>`;
+  if(S.p3&&S.p3.d===d&&S.p3.sh===sh&&zs.some(z=>z.id===S.p3.z)){
+    const z=zs.find(z=>z.id===S.p3.z);
+    h+=`<div class="p3form"><b>${esc(z.n)}:</b> причина ${REASONS.map(r=>`<button type="button" class="chip" data-reason="${esc(r)}">${esc(r)}</button>`).join('')}<button type="button" class="x" data-p3cancel="1" aria-label="Отмена">✕</button></div>`;
+  }
+  return h+'</div>';
+}
+function naryadView(){
+  const D=days(); if(S.d>D)S.d=D;
+  const d=S.d, c=cfg(), ik=(STAFF[S.br]||{}).ik||[];
+  let h=`<div class="strip" id="strip" role="group" aria-label="Дата">`;
+  for(let k=1;k<=D;k++){const sh=shortage(k),p3=Object.keys(nar(k).open||{}).length;h+=`<button type="button" data-day="${k}" class="${isWE(k)?'we':''}" aria-pressed="${k===d}"><b>${k}</b><small>${WD[wday(k)]}</small>${sh?'<i class="bad"></i>':p3?'<i class="p3"></i>':''}</button>`}
+  h+=`</div><div class="dayhead"><h2>${d} ${MON_G[S.m]}, ${WDF[wday(d)]}</h2>${ik.length?`<span class="ik">Инфекционный контроль: ${esc(short(ik[0].n))}, ${isWE(d)?'выходной':'08:00–17:00, 8 ч'}</span>`:''}
+   <div class="acts"><button type="button" class="btn pri" data-auto="1">Расставить автоматически</button><button type="button" class="btn" data-copy="1">Скопировать наряд</button><button type="button" class="btn terra" data-clear="1">Очистить день</button></div></div>`;
+  const board=(sh,t,tm)=>{const G=GRPS(), need=G.reduce((a,g)=>a+activeZones(g,sh,d).length,0), have=G.reduce((a,g)=>a+onShift(g,sh,d).length,0), filled=G.reduce((a,g)=>{const A=assigned(d,sh,g);return a+activeZones(g,sh,d).filter(z=>A[z.id]).length},0);
+    return `<section class="board ${sh}"><div class="bh"><span class="ico" aria-hidden="true">${sh==='day'?'☀':'☾'}</span><div><h3>${t}</h3><div class="tm">${tm}</div></div><span class="cnt ${have<need||filled<need?'bad':'ok'}">зон ${filled}/${need} · людей ${have}</span></div>${G.map(g=>grpBlock(d,sh,g)).join('')}</section>`};
+  h+=`<div class="boards">${board('day','Дневная смена',c.ds+'–'+c.de)}${board('night','Ночная смена',c.ns+'–'+c.ne)}</div>`;
+  h+=`<p class="legend">В выпадающем списке только те, кто по графику работает в эту смену. Пост 3 и другие ситуативные зоны открываются кнопкой «Открыть», когда пациент затяжелел или есть агранулоцитоз. Правило: не больше 2–3 смен подряд в одном кабинете — автоматическая расстановка это учитывает.</p>`;
+  return h;
+}
+function copyText(){
+  const d=S.d, byId={};GRPS().forEach(g=>people(g).forEach(p=>byId[p.id]=p));
+  let t=`Наряд ${S.br} на ${d} ${MON_G[S.m]}\n`;
+  [['day','День '+cfg().ds+'–'+cfg().de],['night','Ночь '+cfg().ns+'–'+cfg().ne]].forEach(([sh,tt])=>{
+    t+=`\n${tt}\n`;const st=nar(d)['st_'+sh];if(st&&byId[st])t+=`Старшая по смене: ${short(byId[st].n)}\n`;
+    GRPS().forEach(g=>activeZones(g,sh,d).forEach(z=>{const p=byId[assigned(d,sh,g)[z.id]];t+=`${g==='san'?'Санитарка — ':''}${z.n}: ${p?short(p.n):'—'}\n`}));
+  });
+  return t;
+}
+
+/* ---- grid ---- */
+function gridView(){
+  if(!GRPS().includes(S.grp))S.grp='mc';
+  const c=cfg(), L=people(S.grp), D=days(), M=mon(), norm=M.norm!=null?M.norm:normDef(), sh=hrs('Д',c)||11;
+  const rows=L.map(p=>{const cs=[];let h=0;for(let d=1;d<=D;d++){const x=code(p,L,d);cs.push(x);h+=hrs(x,c)}const rest=[];for(let d=1;d<D;d++)if(cs[d-1]==='Н'&&['Д','8'].includes(cs[d]))rest.push(d+1);return {p,cs,h,rest,b:brigade(p,L),ov:(M.p[p.id]||{}).x||{},bl:bal(p,L)}});
+  const cov=[];for(let d=1;d<=D;d++){let a=0,b=0;rows.forEach(r=>{if(r.p.ik)return;if(['Д','8'].includes(r.cs[d-1]))a++;if(r.cs[d-1]==='Н')b++});cov.push([a,b,activeZones(S.grp,'day',d).length,activeZones(S.grp,'night',d).length])}
+  const sd=cov.filter(x=>x[0]<x[2]).length, sn=cov.filter(x=>x[1]<x[3]).length, over=rows.filter(r=>!r.p.ik&&r.h-r.bl>0).length, restN=rows.reduce((a,r)=>a+r.rest.length,0);
+  const Dz=zones(S.grp,'day').filter(z=>!z.sit).length, Nz=zones(S.grp,'night').filter(z=>!z.sit).length, need=Math.ceil((Dz+Nz)*D/(norm/sh)*1.1);
+  let h=`<div class="gbar"><div class="seg2" role="group" aria-label="Персонал">${GRPS().map(g=>`<button type="button" data-grp="${g}" aria-pressed="${S.grp===g}">${{mc:'Медсёстры',pit:'ПИТ',san:'Санитарки'}[g]}</button>`).join('')}</div><span class="legend" style="margin:0">${esc(SCH[c.scheme].name)} · норма ${norm} ч</span></div>
+  <div class="kpis"><div class="kpi ${rows.filter(r=>!r.p.ik).length<need?'bad':'good'}"><b>${rows.filter(r=>!r.p.ik).length} / ${need}</b><span>в графике / нужно на постоянные зоны с резервом 10%</span></div>
+  <div class="kpi ${sd+sn?'bad':'good'}"><b>${sd} / ${sn}</b><span>дней с нехваткой: днём / ночью</span></div>
+  <div class="kpi ${over?'bad':'good'}"><b>${over}</b><span>выше баланса рабочего времени</span></div>
+  <div class="kpi ${restN?'bad':'good'}"><b>${restN}</b><span>отдых между сменами меньше 12 ч</span></div></div>
+  ${hintsHtml(rows)}
+  <div class="gwrap"><table class="g"><thead><tr><th class="nm">Сотрудник</th><th>Бригада</th>`;
+  for(let d=1;d<=D;d++)h+=`<th class="dh${isWE(d)?' we':''}${S.d===d?' sel':''}" data-gday="${d}" title="Открыть наряд на ${d} ${MON_G[S.m]}">${d}<small>${WD[wday(d)]}</small></th>`;
+  h+=`<th class="hh">Часы<br>из баланса</th></tr></thead><tbody>`;
+  const opts=b=>[...Object.keys(SCH[c.scheme].br),'5/2','—'].map(k=>`<option${k===b?' selected':''}>${k}</option>`).join('');
+  rows.forEach(r=>{
+    h+=`<tr class="${r.p.ik?'fixed':''}"><td class="nm" title="${esc(r.p.n)}">${esc(short(r.p.n))}${r.p.ik?' · ИК':''}</td><td class="bg">${r.p.ik?'5/2':`<select id="b-${r.p.id}" data-b="${r.p.id}" aria-label="Бригада">${opts(r.b)}</select>`}</td>`;
+    r.cs.forEach((x,k)=>{const d=k+1;h+=`<td class="c ${CLS[x]||''}${isWE(d)?' we':''}${r.ov[d]!=null?' ov':''}${r.rest.includes(d)?' rest':''}${S.d===d?' selc':''}" data-cell="${r.p.id}|${d}">${x==='В'?'·':esc(x)}</td>`});
+    const df=r.h-r.bl, st=bstate(df,sh), m=balMsg(r.p,L);
+    h+=`<td class="h ${st}" title="${esc(m?m.t:'В пределах баланса рабочего времени')}"><b>${fm(r.h)} / ${fm(r.bl)}</b><small>${df>0?'+':''}${fm(df)} ч</small></td></tr>`;
+  });
+  h+=`</tbody><tfoot><tr class="f1"><td class="nm">Днём / нужно</td><td class="bgf"></td>${cov.map(x=>`<td class="${x[0]<x[2]?'short':'okc'}">${x[0]}/${x[2]}</td>`).join('')}<td class="hf"></td></tr><tr class="f2"><td class="nm">Ночью / нужно</td><td></td>${cov.map(x=>`<td class="${x[1]<x[3]?'short':'okc'}">${x[1]}/${x[3]}</td>`).join('')}<td class="hf"></td></tr></tfoot></table></div>
+  <div class="legend"><span><i class="c D">Д</i>день ${c.ds}–${c.de}, ${hrs('Д',c)} ч</span><span><i class="c N">Н</i>ночь ${c.ns}–${c.ne}, ${hrs('Н',c)} ч</span><span><i>·</i>выходной</span><span><i class="c O">О</i>отпуск</span><span><i class="c B">Б</i>больничный</span><span><i class="c E">8</i>8 часов</span><span>Нажмите на клетку, чтобы поменять смену; на число — откроется наряд этого дня.</span><span>Баланс = ставка × норма месяца минус рабочие дни отпуска и больничного по 8 ч.</span></div>`;
+  return h;
+}
+function hintsHtml(rows){
+  const L=rows.map(r=>r.p), ms=rows.filter(r=>!r.p.ik).map(r=>balMsg(r.p,L)).filter(Boolean);
+  if(!ms.length)return `<div class="hints"><span class="okm">Все в пределах баланса рабочего времени.</span> Меняйте смены — часы и баланс пересчитываются сразу.</div>`;
+  const nr=ms.filter(m=>m.k==='r').length, ny=ms.length-nr;
+  const red=ms.filter(m=>m.k==='r'), y=ms.filter(m=>m.k==='y');
+  return `<details class="hints" id="hints"${S.hintsOpen?' open':''}><summary>${nr?`<span class="r">Выше баланса: ${nr}</span>`:'<span class="okm">Никто не выше баланса</span>'}${ny?` · недобор: ${ny}`:''} — подсказки</summary><div style="margin-top:6px">${red.length?`<h4>Выше баланса рабочего времени: ${red.length}</h4><ul>${red.map(m=>`<li class="r">${esc(m.t)}</li>`).join('')}</ul>`:'<span class="okm">Никто не выше баланса рабочего времени.</span>'}${y.length?`<details style="margin-top:6px"><summary class="y" style="cursor:pointer;color:var(--warn)">Недобор больше двух смен: ${y.length}</summary><ul style="margin-top:4px">${y.map(m=>`<li class="y">${esc(m.t)}</li>`).join('')}</ul></details>`:''}</div></details>`;
+}
+
+/* ---- staff ---- */
+function staffView(){
+  const c=cfg(), B=STAFF[S.br]||{};
+  const tbl=grp=>{
+    const all=(B[grp]||[]).map(x=>Object.assign({},x,{grp,id:pid(x.n)})).concat((c.extra[grp]||[]).map(n=>({n,r:1,o:'добавлена вручную',grp,id:pid(n),added:1})));
+    return `<div class="tw"><table class="s"><thead><tr><th>Сотрудник</th><th>Ставка</th>${DOP[grp].map(([k,t])=>`<th class="ck">${t}</th>`).join('')}<th class="ck">В графике</th></tr></thead><tbody>${all.map(p=>{const off=!!c.gone[p.id];return `<tr class="${off?'off':''}"><td>${esc(p.n)}<span class="was">${esc(p.o||'')}${p.note?' · '+esc(p.note):''}</span></td><td>${String(p.r).replace('.',',')}</td>${DOP[grp].map(([k])=>`<td class="ck"><input type="checkbox" id="d-${p.id}-${k}" data-dop="${p.id}|${k}"${hasDop(p,k)?' checked':''} aria-label="${k}"></td>`).join('')}<td class="ck"><input type="checkbox" id="g-${p.id}" data-gone="${p.id}"${off?'':' checked'} aria-label="В графике"></td></tr>`}).join('')}</tbody></table></div>
+    <div class="add"><input id="add-${grp}" type="text" placeholder="ФИО нового сотрудника"><button type="button" class="btn" data-add="${grp}">Добавить</button></div>`;
+  };
+  const ik=(B.ik||[]);
+  return `${(B.head||[]).length?`<div class="card"><h3>Руководитель сестринской службы</h3><p class="sub" style="margin:0">${esc(B.head.join(', '))} — составляет наряд и график филиала.</p></div>`:''}<div class="card"><h3>Медицинские сёстры-универсалы</h3><p class="sub">Из оргструктуры ноября 2026: бывшие медсёстры КС, ДС и трансфузионного кабинета. Отметьте, к каким зонам у сестры есть допуск: в наряде на зону без допуска её можно поставить, но список подсветит это жёлтым.</p>${tbl('mc')}</div>
+  ${(B.pit||[]).length?`<div class="card"><h3>Медсёстры ПИТ</h3><p class="sub">Отдельная группа со своим графиком и постами ПИТ. В наряд универсалов не входят.</p>${tbl('pit')}</div>`:''}
+  <div class="card"><h3>Санитарки</h3><p class="sub">Уход и клининг объединены в одну должность. Допуск показывает, куда санитарку ставить в наряде.</p>${tbl('san')}</div>
+  <div class="card"><h3>Не входят в наряд</h3><p class="sub">${ik.length?`Медсестра инфекционного контроля ${esc(ik[0].n)} — 8 часов по будням, в графике показана отдельной строкой. `:''}Медсёстры кабинета разведения в этом модуле не планируются: они в фармблоке.</p></div>`;
+}
+
+/* ---- settings ---- */
+function settingsView(){
+  const c=cfg(), M=mon(), norm=M.norm!=null?M.norm:normDef();
+  const zl=(grp,sh)=>`<div class="zl"><h4>${GN[grp]} · ${sh==='day'?'день':'ночь'}</h4>${(zones(grp,sh)).map((z,i)=>`<div class="zr"><input type="text" id="zn-${grp}-${sh}-${i}" data-zn="${grp}|${sh}|${i}" value="${esc(z.n)}" aria-label="Название зоны"><select id="zk-${grp}-${sh}-${i}" data-zk="${grp}|${sh}|${i}" aria-label="Допуск">${DOP[grp].filter(x=>x[0]!=='st').map(([k,t])=>`<option value="${k}"${z.k===k?' selected':''}>${t}</option>`).join('')}</select><label><input type="checkbox" id="zs-${grp}-${sh}-${i}" data-zsit="${grp}|${sh}|${i}"${z.sit?' checked':''}>ситуативно</label><button type="button" class="x" data-zdel="${grp}|${sh}|${i}" aria-label="Удалить зону">✕</button></div>`).join('')}<button type="button" class="btn sm" data-zadd="${grp}|${sh}">+ зона</button></div>`;
+  return `<div class="card"><h3>Смены и схема · ${esc(S.br)}</h3><div class="frow">
+    <label>Схема графика<select id="s-scheme" data-cfg="scheme">${Object.entries(SCH).map(([k,v])=>`<option value="${k}"${c.scheme===k?' selected':''}>${esc(v.name)}</option>`).join('')}</select></label>
+    <label>День с<input type="time" id="s-ds" data-cfg="ds" value="${c.ds}"></label><label>до<input type="time" id="s-de" data-cfg="de" value="${c.de}"></label>
+    <label>Ночь с<input type="time" id="s-ns" data-cfg="ns" value="${c.ns}"></label><label>до<input type="time" id="s-ne" data-cfg="ne" value="${c.ne}"></label>
+    <label>Перерыв, ч<input type="number" step="0.5" min="0" max="3" id="s-brk" data-cfg="brk" value="${c.brk}"></label>
+    <label>Норма месяца, ч<input type="number" min="0" max="250" id="s-norm" data-norm="1" value="${norm}"></label></div></div>
+  <div class="card"><h3>Зоны наряда</h3><p class="sub">Постоянные зоны есть в каждой смене. Ситуативные (например, пост 3) открываются в наряде на конкретный день.</p><div class="zed">${GRPS().map(g=>zl(g,'day')+zl(g,'night')).join('')}</div>
+    <div style="margin-top:10px"><button type="button" class="btn terra" data-reset="1">Вернуть зоны по умолчанию</button></div></div>
+  <div class="card law"><h3>Трудовой кодекс РК</h3><ul>
+    <li>Смены по 12 часов — при суммированном учёте рабочего времени (ст. 75), учётный период закрепить в приказе.</li>
+    <li>Перерыв при смене длиннее 8 часов — не меньше 1 часа и в рабочее время не входит. Если сестра не может уйти с поста, час считается рабочим.</li>
+    <li>Отдых между сменами — не меньше 12 часов: после ночи на день не ставим. График это подсвечивает красной рамкой.</li>
+    <li>Сверхурочные — не больше 12 часов в месяц и 120 в год. Ночное время 22:00–06:00 оплачивается с повышением.</li>
+  </ul></div>`;
+}
+
+/* ---- render ---- */
+const TABS=[['naryad','Наряд на день'],['grafik','График месяца'],['fn-mc','Функционал'],['voprosy','Вопросы'],['itogi','Итоги'],['staff','Сотрудники и допуски'],['settings','Настройки']];
+function tab(){const h=location.hash.slice(1);if(h.startsWith('fn-')&&window.REV&&REV.owns(h))return h;return TABS.some(t=>t[0]===h)?h:'naryad'}
+function render(){
+  $('brs').innerHTML=BR.map(b=>`<button type="button" data-br="${b}" aria-pressed="${S.br===b}">${b}</button>`).join('');
+  $('mon').textContent=MON_N[S.m]+' '+S.y;
+  const t=tab(), rv=window.REV&&REV.owns(t);
+  $('brs').hidden=!!rv; $('mnav').hidden=!!rv;
+  $('tabs').innerHTML=TABS.map(([k,n])=>{const cur=k===t||(k==='fn-mc'&&t.startsWith('fn-'));return `<a href="#${k}"${cur?' aria-current="page"':''}>${n}${k==='fn-mc'&&window.REV?` <span style="font-weight:400;opacity:.8">${REV.answered()}/${REV.total()}</span>`:''}</a>`}).join('');
+  const sx=($('strip')||{}).scrollLeft, gw0=document.querySelector('.gwrap'), gs=gw0?[gw0.scrollLeft,gw0.scrollTop]:null, hz=$('hints');if(hz)S.hintsOpen=hz.open;
+  $('out').innerHTML=rv?REV.render(t):t==='grafik'?gridView():t==='staff'?staffView():t==='settings'?settingsView():naryadView();
+  if(rv)REV.after();
+  const gw=document.querySelector('.gwrap');if(gw){if(gs){gw.scrollLeft=gs[0];gw.scrollTop=gs[1]}else{const th=gw.querySelector('th.dh.sel');if(th)gw.scrollLeft=Math.max(0,th.offsetLeft-gw.clientWidth/2)}}
+  const st=$('strip');if(st){if(sx!=null)st.scrollLeft=sx;const b=st.querySelector('[aria-pressed="true"]');if(b&&sx==null)b.scrollIntoView({inline:'center',block:'nearest'})}
+  status();
+}
+function rerender(){const a=document.activeElement;if(a&&(a.tagName==='INPUT'&&a.type==='text'))return;render()}
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-gday],[data-cell],button');if(!t)return;const ds=t.dataset;
+  if(ds.br){S.br=ds.br;S.p3=null;try{localStorage.setItem('nar-br',S.br)}catch(_){}render();return}
+  if(ds.m){S.m+=+ds.m;if(S.m<0){S.m=11;S.y--}if(S.m>11){S.m=0;S.y++}S.d=1;S.p3=null;render();return}
+  if(ds.day){S.d=+ds.day;S.p3=null;render();return}
+  if(ds.gday){S.d=+ds.gday;location.hash='naryad';return}
+  if(ds.cell){const[id,d]=ds.cell.split('|');const L=people(S.grp),p=L.find(x=>x.id===id);if(!p)return;const cur=code(p,L,+d);let nx=CYC[(CYC.indexOf(cur)+1)%CYC.length];if(!CYC.includes(cur))nx='Д';setCode(p,+d,nx);saveMon();render();const m=balMsg(p,L);if(m&&m.k==='r')toast(m.t);return}
+  if(ds.grp){S.grp=ds.grp;render();return}
+  if(ds.auto){['day','night'].forEach(sh=>GRPS().forEach(g=>autoAssign(S.d,sh,g)));saveMon();render();toast('Наряд расставлен. Проверьте и поправьте вручную');return}
+  if(ds.clear){const M=touch();const o=(M.nar[S.d]||{}).open;M.nar[S.d]=o?{open:o}:{};saveMon();render();return}
+  if(ds.copy){const tx=copyText();navigator.clipboard&&navigator.clipboard.writeText(tx).then(()=>toast('Наряд скопирован — можно вставить в WhatsApp'),()=>toast('Не удалось скопировать'));return}
+  if(ds.open){const[sh,z]=ds.open.split('|');S.p3={d:S.d,sh,z};render();return}
+  if(ds.p3cancel){S.p3=null;render();return}
+  if(ds.reason&&S.p3){const M=touch();M.nar[S.p3.d]=M.nar[S.p3.d]||{};M.nar[S.p3.d].open=M.nar[S.p3.d].open||{};M.nar[S.p3.d].open[S.p3.z]=ds.reason;const{d,sh,z}=S.p3;S.p3=null;GRPS().forEach(g=>{const zz=zones(g,sh).find(x=>x.id===z);if(!zz)return;const k=g+'_'+sh,a=M.nar[d][k]=M.nar[d][k]||{},used=new Set(Object.values(a));const f=onShift(g,sh,d).find(q=>!used.has(q.id)&&hasDop(q,zz.k));if(f){a[z]=f.id;toast(zz.n+': поставлена '+short(f.n)+' из резерва смены')}else toast(zz.n+' открыт, свободных в смене нет — вызовите из выходного')});saveMon();render();return}
+  if(ds.close){const[sh,z]=ds.close.split('|');const M=touch();const n=M.nar[S.d]||{};if(n.open)delete n.open[z];GRPS().forEach(g=>{const a=n[g+'_'+sh];if(a)delete a[z]});saveMon();render();return}
+  if(ds.call){const[sh,g,id]=ds.call.split('|');const p=people(g).find(x=>x.id===id);if(p){setCode(p,S.d,sh==='day'?'Д':'Н');saveMon();render();const m=balMsg(p,people(g));toast(m&&m.k==='r'?m.t:short(p.n)+' вызвана на смену, в графике это отмечено')}return}
+  if(ds.add){const inp=$('add-'+ds.add),n=(inp.value||'').trim();if(!n)return;const c=cfg();c.extra[ds.add]=c.extra[ds.add]||[];if(!c.extra[ds.add].includes(n))c.extra[ds.add].push(n);BDEF={};saveCfg();render();return}
+  if(ds.zadd){const[g,sh]=ds.zadd.split('|');const c=cfg();c.zones[g]=c.zones[g]||{day:[],night:[]};c.zones[g][sh].push({id:'z'+Date.now().toString(36),n:'Новая зона',k:g==='mc'?'post':g==='pit'?'pit':'care',sit:1});saveCfg();render();return}
+  if(ds.zdel){const[g,sh,i]=ds.zdel.split('|');cfg().zones[g][sh].splice(+i,1);saveCfg();render();return}
+  if(ds.reset){cfg().zones=defZones(S.br);saveCfg();render();toast('Зоны возвращены по умолчанию');return}
+});
+document.addEventListener('change',e=>{
+  const t=e.target,ds=t.dataset;
+  if(ds.zone){const[sh,g,z]=ds.zone.split('|');const M=touch();M.nar[S.d]=M.nar[S.d]||{};const k=g+'_'+sh;const a=M.nar[S.d][k]=M.nar[S.d][k]||{};
+    if(t.value){Object.keys(a).forEach(x=>{if(a[x]===t.value)delete a[x]});a[z]=t.value}else delete a[z];saveMon();render();return}
+  if(ds.st){const M=touch();M.nar[S.d]=M.nar[S.d]||{};M.nar[S.d][ds.st]=t.value||null;saveMon();render();return}
+  if(ds.b){const M=touch();M.p[ds.b]=Object.assign(M.p[ds.b]||{},{b:t.value});saveMon();render();return}
+  if(ds.dop){const[id,k]=ds.dop.split('|');const c=cfg();c.dop[id]=c.dop[id]||{};c.dop[id][k]=t.checked;saveCfg();render();return}
+  if(ds.gone){const c=cfg();if(t.checked)delete c.gone[ds.gone];else c.gone[ds.gone]=1;BDEF={};saveCfg();render();return}
+  if(ds.cfg){const c=cfg(),k=ds.cfg;c[k]=k==='brk'?(+t.value||0):t.value;if(k==='scheme'){BDEF={}}saveCfg();render();return}
+  if(ds.norm){const M=touch();M.norm=+t.value||0;saveMon();render();return}
+  if(ds.zn||ds.zk||ds.zsit){const[g,sh,i]=(ds.zn||ds.zk||ds.zsit).split('|');const z=cfg().zones[g][sh][+i];if(ds.zn)z.n=t.value.trim()||z.n;else if(ds.zk)z.k=t.value;else z.sit=t.checked?1:0;saveCfg();render();return}
+});
+window.NB_render=render;
+addEventListener('hashchange',()=>{render();window.scrollTo(0,0)});
+render();
+
+(async function(){
+  const timer=setTimeout(()=>{if(dbState==='load'){dbState='off';render()}},10000);
+  try{
+    const d=await window.claude?.use('db');
+    clearTimeout(timer);
+    if(!d){dbState='off';render();return}
+    db=d;dbState='on';render();
+    db.collection('cfg').onSnapshot(sn=>{sn.docs.forEach(x=>{if(dirty['c_'+x.id])return;const v=x.data()||{},b=defCfg(x.id);CFG[x.id]=Object.assign(b,v,{zones:Object.assign({},b.zones,v.zones||{}),dop:v.dop||{},extra:Object.assign({mc:[],pit:[],san:[]},v.extra||{}),gone:v.gone||{}})});BDEF={};rerender()},()=>{});
+    db.collection('mon').onSnapshot(sn=>{sn.docs.forEach(x=>{if(dirty[x.id])return;const v=x.data()||{};MON[x.id]={p:v.p||{},nar:v.nar||{},norm:v.norm}});rerender()},()=>{});
+  }catch(_){clearTimeout(timer);dbState='off';render()}
+})();
+})();
+</script>
+</body></html>
