@@ -1,0 +1,316 @@
+<!doctype html><html lang="ru"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Оргструктура по факту — люди, ноябрь 2026</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Sans+Narrow:wght@700&display=swap">
+<style>
+/* Layout: tabs per unit → org chart (head → deputy columns → departments → positions → people); download pinned at bottom */
+:root{box-sizing:border-box;
+  --bg:#f3f6f3; --card:#ffffff; --ink:#15261c; --muted:#56685c; --line:#c4d1c7;
+  --navy:#1e4d33; --navy-ink:#ffffff; --navy-soft:#e3eee6;
+  --terra:#d9661a; --terra-soft:#fdeadb; --amber:#a35a00; --amber-soft:#fdf0dc; --ok:#2e7a4a;
+  --f-body:"PT Sans",system-ui,sans-serif; --f-head:"PT Sans Narrow","PT Sans",system-ui,sans-serif; color-scheme:light}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0d1a12; --card:#14261b; --ink:#e4efe7; --muted:#99b0a1; --line:#2f4a39;
+  --navy:#2b6b47; --navy-ink:#ffffff; --navy-soft:#1b3325;
+  --terra:#f28c3c; --terra-soft:#3a2614; --amber:#f0b44d; --amber-soft:#3a2e15; --ok:#7fcf9c; color-scheme:dark}}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.4}
+[hidden]{display:none!important}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--card)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--card);border-bottom:1px solid var(--line)}
+.top-in{max-width:1400px;margin:0 auto;padding-block:12px 0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-family:var(--f-head);font-size:22px;margin:0 0 4px;text-wrap:balance}
+nav{display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin}
+nav a{flex:none;padding:8px 12px;color:var(--muted);text-decoration:none;font-weight:700;font-size:13.5px;border-bottom:3px solid transparent}
+nav a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--terra)}
+nav a:focus-visible,button:focus-visible{outline:2px solid var(--terra);outline-offset:2px}
+main{max-width:1900px;margin:0 auto;padding-block:16px 120px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;cursor:pointer;color:inherit}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:5px 10px;font-size:12.5px;color:var(--muted)}
+.stat b{color:var(--ink);font-size:15px;font-variant-numeric:tabular-nums;margin-right:4px}
+.stat.v b{color:var(--terra)}
+.sp{flex:1}
+.btn{border:1px solid var(--navy);background:var(--card);border-radius:6px;padding:6px 11px;font-size:13px}
+.btn.primary{background:var(--navy);color:var(--navy-ink)}
+.chart-scroll{overflow-x:auto;padding-bottom:8px}
+.chart{display:flex;flex-direction:column;align-items:center;min-width:max-content}
+.hbox{background:var(--navy);color:var(--navy-ink);border-radius:8px;padding:10px 16px;text-align:center;min-width:240px;max-width:360px}
+.hbox .t{font-family:var(--f-head);font-size:16px}
+.hbox .n{font-size:13px;opacity:.9;margin-top:2px}
+.vline{width:2px;height:20px;background:var(--line)}
+.cols{display:flex;align-items:flex-start}
+.col{position:relative;padding:20px 8px 0;width:260px;display:flex;flex-direction:column;gap:8px}
+.col::before{content:"";position:absolute;top:0;left:0;right:0;border-top:2px solid var(--line)}
+.col:first-child::before{left:50%} .col:last-child::before{right:50%} .col:only-child::before{display:none}
+.col::after{content:"";position:absolute;top:0;left:50%;height:20px;border-left:2px solid var(--line)}
+.mgr{background:var(--navy);color:var(--navy-ink);border-radius:8px;padding:9px 10px;text-align:center}
+.mgr .t{font-family:var(--f-head);font-size:14.5px;display:block}
+.mgr .n{font-size:12px;opacity:.9;display:block;margin-top:2px}
+.mgr.plain{background:var(--navy-soft);color:var(--ink)}
+.mgr.fn{background:var(--card);color:var(--ink);border:2px dashed var(--navy)}
+.row2{display:flex;align-items:flex-start;gap:28px}
+.col.solo::before,.col.solo::after{display:none}
+.left{margin-top:28px;border-top:3px solid var(--terra);padding-top:8px}
+.left h2{font-family:var(--f-head);font-size:19px;margin:6px 0;color:var(--terra)}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;align-items:start}
+.left .dept{border-color:var(--terra)}
+.dept{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.dept.sub{margin-left:14px;position:relative;overflow:visible}
+.dept.sub::before{content:"";position:absolute;left:-12px;top:-9px;height:26px;width:10px;border-left:2px solid var(--line);border-bottom:2px solid var(--line)}
+.dept.sub>.dbtn{border-radius:8px}
+.dbtn{width:100%;background:none;border:0;padding:8px 10px;text-align:left;display:flex;gap:6px;justify-content:space-between;align-items:flex-start}
+.dbtn .dn{font-weight:700;font-size:13px;min-width:0}
+.dbtn .dm,.dsum{flex:none;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dsum{text-align:right;padding:6px 10px 0}
+.dept.open .dbtn{border-bottom:1px solid var(--line)}
+.plist{list-style:none;margin:0;padding:4px 6px 6px;display:flex;flex-direction:column;gap:2px}
+.pbtn{width:100%;background:none;border:0;border-radius:5px;padding:6px;text-align:left;display:flex;justify-content:space-between;gap:6px;font-size:13px}
+.pbtn:hover{background:var(--bg)}
+.pbtn .pc{flex:none;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pbtn.vac .pc{color:var(--terra);font-weight:700}
+.names{list-style:none;margin:2px 0 6px 6px;padding:4px 8px;border-left:2px solid var(--terra);display:flex;flex-direction:column;gap:3px;font-size:12.5px}
+.names li{display:flex;justify-content:space-between;gap:8px}
+.names .nm{font-weight:700;min-width:0}
+.names .rt{flex:none;font-variant-numeric:tabular-nums;color:var(--muted)}
+.names .was{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
+.names .vac{color:var(--terra);font-style:italic}
+.hint{font-size:12.5px;color:var(--muted);margin:0 0 10px}
+.ed{background:none;border:0;color:var(--terra);padding:0 2px;font-size:13px}
+.names li.form{display:flex;flex-direction:column;gap:6px;background:var(--bg);border-radius:6px;padding:8px}
+.names li.form label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
+.names li.form select,.names li.form input,.names li.form textarea{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:5px;padding:4px 6px;max-width:100%}
+.fbtns{display:flex;flex-wrap:wrap;gap:6px}.fbtns .btn{padding:4px 9px;font-size:12px}
+.mvd{display:block;font-size:11px;color:var(--terra);font-weight:400}
+.dotm{color:var(--terra);font-size:10px}
+.link{background:none;border:0;color:var(--terra);font-size:12px;padding:0;text-decoration:underline;text-underline-offset:2px}
+.logp{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:12px;max-height:280px;overflow:auto;font-size:13px}
+.logp ul{margin:6px 0 0;padding-left:18px}.logp .lt{color:var(--muted);font-variant-numeric:tabular-nums}
+.foot{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.foot-in{max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.foot .note{font-size:12px;color:var(--muted);flex:1 1 220px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px;z-index:20;max-width:calc(100% - 32px)}
+.loading{padding:40px 0;text-align:center;color:var(--muted)}
+.sync{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);margin:0 0 6px}
+.sync .dot{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.sync.on .dot{background:var(--ok)} .sync.on{color:var(--ok)}
+.sync.prompt .dot,.sync.view .dot{background:var(--amber)} .sync.prompt,.sync.view{color:var(--amber)}
+.sync.err .dot,.sync.denied .dot{background:var(--terra)} .sync.err,.sync.denied{color:var(--terra)}
+.sync .btn{padding:2px 9px;font-size:12px}
+</style></head><body>
+
+<div class="top"><div class="top-in">
+  <a href="funkcii.html" style="color:var(--terra);text-decoration:none;font-size:14px;font-weight:700">‹ Функционал</a>
+  <h1>Оргструктура по факту — расстановка людей, ноябрь 2026</h1>
+  <div class="sync" id="sync" role="status"><span class="dot"></span><span>Подключаю совместную работу…</span></div>
+  <nav id="nav" aria-label="Разделы">
+    <a href="#ca">Центральный аппарат</a>
+    <a href="#krg">Караганда</a>
+    <a href="#uk">Усть-Каменогорск</a>
+    <a href="#ast">Астана</a>
+    <a href="#lab">Лаборатория</a>
+  </nav>
+</div></div>
+
+<main id="main"><div class="loading">Загружаю…</div></main>
+
+<div class="foot"><div class="foot-in">
+  <button class="btn primary" id="dl" type="button">Скачать расстановку по оргструктуре</button>
+  <span class="note">Excel: каждый филиал и ЦА на своём листе, с учётом всех переносов на странице</span>
+</div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+const ROUTES={ca:'ЦА',krg:'КРГ',uk:'УК',ast:'Астана',lab:'Лаборатория'};
+const NO='Нет в оргструктуре';
+const UN={'ЦА':'Центральный аппарат','КРГ':'Караганда','УК':'Усть-Каменогорск','Астана':'Астана','Лаборатория':'Лаборатория'};
+let DATA=null, SHR={}, open=new Set();
+const closed=new Set();
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=x=>String(Math.round((x||0)*100)/100).replace('.',',');
+const norm=t=>String(t||'').toLowerCase().replace(/ё/g,'е').replace(/[^а-яa-z]/g,'');
+function toast(t){const el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3500)}
+const dname=d=>d.replace('Кабинет разведения и подготовки ЛС','Кабинет разведения');
+function ppl(u,g,d,p){return DATA.rows.filter(r=>r.u===u&&r.g===g&&r.d===d&&r.p===p)}
+function sh(u,g,d,p){return SHR[[u,g,d,p].join('|')]||0}
+function namesOf(list){return [...new Set(list.filter(r=>r.n).map(r=>r.n))].join(', ')}
+
+let BASE=[], MOVES={}, NOTES={}, LOG=[], db=null, usr=null, canW=null, editId=null, editVal={}, noteKey=null, noteVal='', showLog=false, PROF={};
+const nkey=k=>'n'+Array.from(k).reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7).toString(36)+k.length;
+function applyMoves(){DATA.rows=BASE.map(r=>MOVES[r.id]?Object.assign({},r,{g:MOVES[r.id].g,d:MOVES[r.id].d,p:MOVES[r.id].p,r:MOVES[r.id].r,mv:MOVES[r.id]}):r)}
+function who(id){const p=PROF[id];return (p&&p.name)||'коллега'}
+function when(t){try{return new Date(t).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}catch(_){return ''}}
+const editable=()=>db&&canW!==false;
+function posOptions(u,cur){
+  const U=DATA.units.find(x=>x.id===u);let o='';
+  U.groups.forEach(g=>g.depts.forEach(d=>{o+=`<optgroup label="${esc(d.name==='Руководство'?g.name:dname(d.name))}">`+d.pos.map(p=>{const v=[g.name,d.name,p].join('|');return `<option value="${esc(v)}"${v===cur?' selected':''}>${esc(p)}</option>`}).join('')+'</optgroup>'}));
+  return o;
+}
+function personLi(r){
+  const info=`${r.o&&norm(r.o)!==norm(r.p)?`<span class="was">в расстановке: ${esc(r.o)}</span>`:''}${r.note?`<span class="was">${esc(r.note)}</span>`:''}${r.mv?`<span class="mvd">перенесено: ${esc(who(r.mv.by))}, ${when(r.mv.at)}</span>`:''}`;
+  let h=`<li><span class="nm">${r.n?esc(r.n):'<span class="vac">замещение / см. примечание</span>'}${info}</span><span class="rt">${fmt(r.r)}${editable()&&editId!==r.id?` <button class="ed" type="button" data-ed="${r.id}" aria-label="Перенести">✎</button>`:''}</span></li>`;
+  if(editId===r.id){
+    const cur=editVal.pos||[r.g,r.d,r.p].join('|');
+    h+=`<li class="form"><label>Должность<select id="ed-pos">${posOptions(r.u,cur)}</select></label><label>Ставка<input id="ed-rate" type="number" step="0.25" min="0" max="2" value="${esc(editVal.rate!=null?editVal.rate:r.r)}"></label><div class="fbtns"><button class="btn primary" type="button" data-save="${r.id}">Сохранить</button><button class="btn" type="button" data-cancel="1">Отмена</button>${MOVES[r.id]?`<button class="btn" type="button" data-revert="${r.id}">Вернуть как было</button>`:''}</div></li>`;
+  }
+  return h;
+}
+function posItem(u,g,d,p){
+  const pr=ppl(u,g,d,p), s=sh(u,g,d,p), occ=pr.reduce((a,r)=>a+r.r,0), key=[u,g,d,p].join('|'), isOpen=open.has('p|'+key);
+  const vac=s-occ>0.001, nk=nkey(key), note=NOTES[nk];
+  let names='';
+  if(isOpen){
+    names='<ul class="names">'+pr.map(personLi).join('')+
+      (vac?`<li><span class="vac">Вакансия</span><span class="rt">${fmt(s-occ)}</span></li>`:'')+
+      (note&&note.text&&noteKey!==nk?`<li><span>💬 ${esc(note.text)}<span class="was">${esc(who(note.by))}, ${when(note.at)}</span></span></li>`:'')+
+      (noteKey===nk?`<li class="form"><label>Заметка к должности<textarea id="note-text" rows="2">${esc(noteVal)}</textarea></label><div class="fbtns"><button class="btn primary" type="button" data-nsave="${esc(key)}">Сохранить</button><button class="btn" type="button" data-cancel="1">Отмена</button></div></li>`
+        :(editable()?`<li><button class="link" type="button" data-note="${esc(key)}">${note&&note.text?'изменить заметку':'добавить заметку'}</button></li>`:''))+'</ul>';
+  }
+  return `<li><button class="pbtn${vac?' vac':''}" type="button" data-o="${esc('p|'+key)}" aria-expanded="${isOpen}"><span>${esc(p)}${note&&note.text?' 💬':''}${pr.some(r=>r.mv)?' <span class="dotm" title="есть переносы">●</span>':''}</span><span class="pc">${fmt(occ)} / ${fmt(s)}</span></button>${names}</li>`;
+}
+function deptCard(u,g,d,flat){
+  const key=['d',u,g,d.name].join('|');
+  const isOpen=!closed.has(key);
+  const pr=DATA.rows.filter(r=>r.u===u&&r.g===g&&r.d===d.name);
+  const s=d.pos.reduce((a,p)=>a+sh(u,g,d.name,p),0), occ=pr.reduce((a,r)=>a+r.r,0);
+  const cnt=fmt(occ)+' / '+fmt(s);
+  const list=`<ul class="plist">${d.pos.map(p=>posItem(u,g,d.name,p)).join('')}</ul>`;
+  if(flat) return `<div class="dept open"><div class="dsum">${cnt}</div>${list}</div>`;
+  return `<div class="dept${isOpen?' open':''}${d.sub?' sub':''}"><button class="dbtn" type="button" data-o="${esc(key)}" aria-expanded="${isOpen}"><span class="dn">${esc(dname(d.name))}</span><span class="dm">${cnt}</span></button>${isOpen?list:''}</div>`;
+}
+function unitView(uid){
+  const u=DATA.units.find(x=>x.id===uid);
+  const rs=DATA.rows.filter(r=>r.u===uid);
+  const tot=Object.entries(SHR).filter(([k])=>k.startsWith(uid+'|')).reduce((a,[,v])=>a+v,0);
+  const occ=rs.reduce((a,r)=>a+r.r,0), people=new Set(rs.filter(r=>r.n).map(r=>r.n)).size;
+  let h=`<div class="stats"><div class="stat"><b>${fmt(tot)}</b>штатных единиц</div><div class="stat"><b>${fmt(occ)}</b>занято</div><div class="stat v"><b>${fmt(Math.max(0,tot-occ))}</b>вакантно</div><div class="stat"><b>${people}</b>сотрудников</div><span class="sp"></span>${db?`<button class="btn" type="button" data-log="1">История изменений · ${LOG.length}</button>`:''}<button class="btn" type="button" data-all="1">Развернуть</button><button class="btn" type="button" data-all="0">Свернуть</button></div>
+  <p class="hint">Нажмите на должность — увидите, кто на ней сидит. Цифры: занято / штатных единиц.${editable()?' Чтобы пересадить человека или поменять ставку, нажмите ✎ рядом с ним.':''}</p>`;
+  if(showLog) h+=`<div class="logp"><b>История изменений</b>${LOG.length?'<ul>'+LOG.map(l=>`<li><span class="lt">${when(l.at)}</span> ${esc(who(l.by))}: ${esc(l.text)}</li>`).join('')+'</ul>':'<p class="hint">Пока изменений нет.</p>'}</div>`;
+  const head=u.groups[0], headPos=head.depts[0].pos[0];
+  const headPpl=ppl(uid,head.name,head.depts[0].name,headPos);
+  h+=`<div class="chart-scroll"><div class="chart"><div class="hbox"><div class="t">${esc(headPos)}</div><div class="n">${esc(namesOf(headPpl))||'вакансия'}</div></div><div class="vline"></div><div class="row2"><div class="cols">`;
+  const fnl=uid!=='ЦА'&&uid!=='Лаборатория';
+  head.depts.slice(1).forEach(d=>{h+=`<div class="col"><div class="mgr plain${fnl?' fn':''}"><span class="t">${esc(dname(d.name))}</span>${fnl?'<span class="n">функционально — ЦА</span>':''}</div>${deptCard(uid,head.name,d,true)}</div>`});
+  u.groups.slice(1).filter(g=>g.name!==NO&&g.kind!=='lab').forEach(g=>{
+    if(g.kind==='fn'){h+=`<div class="col"><div class="mgr fn"><span class="t">Функционально подчинены ЦА</span></div>${g.depts.map(d=>deptCard(uid,g.name,d,false)).join('')}</div>`;return}
+    const lead=g.depts.find(d=>d.name==='Руководство');
+    let mgr;
+    if(lead){const pp=lead.pos.flatMap(p=>ppl(uid,g.name,'Руководство',p));mgr=`<div class="mgr"><span class="t">${esc(lead.pos.join(' / '))}</span><span class="n">${esc(namesOf(pp))||'вакансия'}</span></div>`}
+    else mgr=`<div class="mgr"><span class="t">${esc(g.name)}</span><span class="n">вакансия</span></div>`;
+    h+=`<div class="col">${mgr}${g.depts.filter(d=>d.name!=='Руководство').map(d=>deptCard(uid,g.name,d,false)).join('')}</div>`;
+  });
+  h+='</div>';
+  const lb=u.groups.find(g=>g.kind==='lab');
+  if(lb) h+=`<div class="col solo"><div class="mgr fn"><span class="t">Лабораторное подразделение</span><span class="n">функционально — директор лабораторного подразделения</span></div>${lb.depts.map(d=>deptCard(uid,lb.name,d,false)).join('')}</div>`;
+  h+='</div></div></div>';
+  const lg=u.groups.find(g=>g.name===NO);
+  if(lg){const n=DATA.rows.filter(r=>r.u===uid&&r.g===NO).length;
+    h+=`<section class="left"><h2>Нет в оргструктуре · ${n}</h2><p class="hint">Есть в штатной расстановке, но такой должности на схеме нет. Добавляем по одному: скажите в чате, куда поставить, или нажмите ✎ и выберите должность из схемы.</p><div class="lgrid">${lg.depts.map(d=>deptCard(uid,NO,d,false)).join('')}</div></section>`;}
+  return h;
+}
+function route(){return (location.hash||'#ca').slice(1)}
+function render(){
+  if(!DATA)return; const r=route();
+  document.querySelectorAll('#nav a').forEach(a=>a.setAttribute('aria-current',a.getAttribute('href')==='#'+r?'page':'false'));
+  $('main').innerHTML=unitView(ROUTES[r]||'ЦА');
+}
+function rer(){const y=window.scrollY; render(); window.scrollTo(0,y);}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-o],[data-all],[data-ed],[data-save],[data-cancel],[data-revert],[data-note],[data-nsave],[data-log]'); if(!t)return;
+  if(t.dataset.ed){editId=t.dataset.ed;editVal={};noteKey=null;return rer()}
+  if(t.dataset.cancel){editId=null;noteKey=null;return rer()}
+  if(t.dataset.log){showLog=!showLog;return rer()}
+  if(t.dataset.note){noteKey=nkey(t.dataset.note);noteVal=(NOTES[noteKey]&&NOTES[noteKey].text)||'';editId=null;return rer()}
+  if(t.dataset.save) return saveMove(t.dataset.save);
+  if(t.dataset.revert) return revertMove(t.dataset.revert);
+  if(t.dataset.nsave) return saveNote(t.dataset.nsave);
+  if(t.dataset.o){const k=t.dataset.o; if(k.startsWith('d|')){closed.has(k)?closed.delete(k):closed.add(k)} else {open.has(k)?open.delete(k):open.add(k)}}
+  else if(t.dataset.all){const u=ROUTES[route()]||'ЦА';const ks=[];DATA.units.find(x=>x.id===u).groups.forEach(g=>g.depts.forEach(d=>ks.push(['d',u,g.name,d.name].join('|'))));
+    if(t.dataset.all==='1') ks.forEach(k=>closed.delete(k)); else {ks.forEach(k=>closed.add(k)); open.clear();}}
+  rer();
+});
+document.addEventListener('input',e=>{if(e.target.id==='ed-pos')editVal.pos=e.target.value;if(e.target.id==='ed-rate')editVal.rate=e.target.value;if(e.target.id==='note-text')noteVal=e.target.value;});
+document.addEventListener('change',e=>{if(e.target.id==='ed-pos')editVal.pos=e.target.value;});
+window.addEventListener('hashchange',render);
+
+// ---- download: build .xlsx (SpreadsheetML 2003 XML, opens in Excel) from current state
+function xml(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function buildXls(){
+  const cell=(v,st)=>typeof v==='number'?`<Cell${st?` ss:StyleID="${st}"`:''}><Data ss:Type="Number">${v}</Data></Cell>`:`<Cell${st?` ss:StyleID="${st}"`:''}><Data ss:Type="String">${xml(v)}</Data></Cell>`;
+  let out=`<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="h"><Font ss:Bold="1"/><Interior ss:Color="#D7E8DC" ss:Pattern="Solid"/></Style><Style ss:ID="g"><Font ss:Bold="1"/><Interior ss:Color="#FDEADB" ss:Pattern="Solid"/></Style><Style ss:ID="t"><Font ss:Bold="1" ss:Size="13"/></Style></Styles>`;
+  DATA.units.forEach(U=>{
+    out+=`<Worksheet ss:Name="${xml(UN[U.id].slice(0,31))}"><Table><Column ss:Width="230"/><Column ss:Width="230"/><Column ss:Width="200"/><Column ss:Width="60"/><Column ss:Width="60"/><Column ss:Width="60"/><Column ss:Width="220"/>`;
+    out+=`<Row>${cell('Штатная расстановка по оргструктуре — '+UN[U.id],'t')}</Row><Row/>`;
+    out+=`<Row>${['Подразделение','Должность','Ф.И.О.','Штатных ед.','Занято','Вакансия','Примечание'].map(x=>cell(x,'h')).join('')}</Row>`;
+    let T=0,O=0;
+    U.groups.forEach(g=>{
+      out+=`<Row>${cell(g.name,'g')}</Row>`;
+      g.depts.forEach(d=>d.pos.forEach(p=>{
+        const pr=ppl(U.id,g.name,d.name,p), s=sh(U.id,g.name,d.name,p), o=pr.reduce((a,r)=>a+r.r,0); T+=s;O+=o;
+        const dn=d.name==='Руководство'?'Руководство':(d.sub?'   └ ':'')+dname(d.name);
+        if(!pr.length) out+=`<Row>${cell(dn)}${cell(p)}${cell('вакансия')}${cell(s)}${cell(0)}${cell(s)}</Row>`;
+        pr.forEach((r,i)=>{out+=`<Row>${cell(dn)}${cell(i?'':p)}${cell(r.n||'замещение')}${i?cell(''):cell(s)}${cell(r.r)}${i?cell(''):cell(Math.max(0,Math.round((s-o)*100)/100))}${cell([r.note,r.mv?'перенесено на странице':''].filter(Boolean).join('; '))}</Row>`});
+      }));
+    });
+    out+=`<Row>${cell('ИТОГО','g')}${cell('','g')}${cell('','g')}${cell(Math.round(T*100)/100,'g')}${cell(Math.round(O*100)/100,'g')}${cell(Math.round(Math.max(0,T-O)*100)/100,'g')}</Row></Table></Worksheet>`;
+  });
+  return out+'</Workbook>';
+}
+$('dl').onclick=async()=>{
+  const d=await window.claude?.use?.('downloads').catch(()=>null);
+  if(!d){toast('Скачивание доступно в приложении Claude; файл также есть в чате');return}
+  try{await d.save({filename:'Расстановка_по_оргструктуре_ноябрь_2026.xls',data:new Blob([buildXls()],{type:'application/vnd.ms-excel'})});toast('Файл сохранён')}
+  catch(err){if(err&&err.code!=='declined')toast('Не удалось скачать: '+(err.message||err.code||'ошибка'))}
+};
+
+// ---- shared edits
+async function profiles(ids){if(!usr||!ids.length)return;try{Object.assign(PROF,await usr.profiles([...new Set(ids)]))}catch(_){}}
+function denied(err){const c=err&&err.code;if(c==='not_granted'){setSync('prompt','Сохранение не разрешено: нажмите «Включить» и подтвердите.');toast('Не сохранилось: нужно разрешение — нажмите «Включить» вверху');}else if(c==='capability_disabled'||c==='revoked'){canW=false;setSync('view','Только просмотр.');toast('Не сохранилось: доступ только для просмотра');}else toast('Не сохранилось: '+((err&&(err.code||err.message))||'ошибка'));editId=null;noteKey=null;rer()}
+async function addLog(text){try{const me=await usr.id();await db.collection('fakt_log').add({at:Date.now(),by:me||'',text})}catch(_){}}
+async function saveMove(id){
+  const r=BASE.find(x=>x.id===id), sel=$('ed-pos').value.split('|'), rate=parseFloat(String($('ed-rate').value).replace(',','.'));
+  if(!(rate>=0)){toast('Укажите ставку числом, например 0,5');return}
+  const cur=DATA.rows.find(x=>x.id===id);
+  try{const me=await usr.id();
+    await db.collection('fakt_moves').doc(id).set({g:sel[0],d:sel[1],p:sel[2],r:rate,by:me||'',at:Date.now()});
+    await addLog(`${r.n||'замещение'} (${UN[r.u]}): ${cur.p} ${fmt(cur.r)} → ${sel[2]} ${fmt(rate)}`);
+    editId=null;toast('Сохранено');rer();
+  }catch(err){denied(err)}
+}
+async function revertMove(id){const r=BASE.find(x=>x.id===id);try{await db.collection('fakt_moves').doc(id).delete();await addLog(`${r.n||'замещение'} (${UN[r.u]}): возвращено как было — ${r.p} ${fmt(r.r)}`);editId=null;toast('Возвращено');rer()}catch(err){denied(err)}}
+async function saveNote(key){const nk=nkey(key), txt=$('note-text').value.trim();
+  try{const me=await usr.id(); if(txt) await db.collection('fakt_notes').doc(nk).set({key,text:txt,by:me||'',at:Date.now()}); else await db.collection('fakt_notes').doc(nk).delete();
+    await addLog(`заметка к «${key.split('|')[3]}» (${UN[key.split('|')[0]]}): ${txt||'удалена'}`); noteKey=null; toast('Заметка сохранена'); rer();
+  }catch(err){denied(err)}}
+let perm=null;
+function setSync(st,msg){const el=$('sync');el.className='sync '+st;el.innerHTML=`<span class="dot"></span><span>${esc(msg)}</span>`+(st==='prompt'?' <button class="btn" type="button" id="sync-on">Включить</button>':'')+(st==='denied'?' <button class="btn" type="button" id="sync-perm">Открыть разрешения</button>':'');}
+document.addEventListener('click',async e=>{
+  if(e.target.id==='sync-on'&&perm){await perm.request(['db','user']).catch(()=>{});initShared();}
+  if(e.target.id==='sync-perm'&&perm){try{await perm.manage()}catch(_){toast('Откройте меню страницы → «Разрешения»')}initShared();}
+});
+function subErr(e){const c=e&&e.code;if(c==='not_granted')setSync('prompt','Совместная работа не включена для этой страницы.');else setSync('err','Нет связи с общим хранилищем ('+(c||'ошибка')+'). Обновите страницу.');}
+let unsubs=[];
+async function initShared(){
+  if(!window.claude||!window.claude.use){setSync('off','Только просмотр: откройте страницу в Claude, чтобы пересаживать людей.');return}
+  perm=await window.claude.use('permissions').catch(()=>null);
+  db=await window.claude.use('db').catch(()=>null); usr=await window.claude.use('user').catch(()=>null);
+  if(!db){setSync('off','Только просмотр.');rer();return}
+  let st=null; try{st=perm?await perm.state('db'):null}catch(_){}
+  if(st==='denied')setSync('denied','Сохранение правок запрещено в разрешениях страницы.');
+  try{canW=usr?await usr.can('data.write'):null}catch(_){canW=null}
+  unsubs.forEach(f=>{try{f()}catch(_){}}); unsubs=[];
+  let first=true;
+  const ok=()=>{if(first){first=false; if(st==='prompt') setSync('prompt','Чтобы сохранять переносы, нажмите «Включить».'); else if(canW===false) setSync('view','Только просмотр.'); else if(st!=='denied') setSync('on','Правки сохраняются и видны всем, у кого есть доступ.');}};
+  unsubs.push(db.collection('fakt_moves').onSnapshot(sn=>{MOVES={};sn.docs.forEach(d=>MOVES[d.id]=d.data());applyMoves();ok();profiles(Object.values(MOVES).map(m=>m.by).filter(Boolean)).then(rer);rer();},subErr));
+  unsubs.push(db.collection('fakt_notes').onSnapshot(sn=>{NOTES={};sn.docs.forEach(d=>NOTES[d.id]=d.data());profiles(Object.values(NOTES).map(m=>m.by).filter(Boolean)).then(rer);rer();},subErr));
+  unsubs.push(db.collection('fakt_log').onSnapshot(sn=>{LOG=sn.docs.map(d=>d.data()).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,150);profiles(LOG.map(l=>l.by).filter(Boolean)).then(rer);rer();},subErr));
+  setTimeout(()=>{if(first) setSync('err','Общее хранилище не отвечает. Обновите страницу.')},10000);
+  rer();
+}
+fetch('fakt-data.json').then(r=>r.json()).then(d=>{DATA=d; BASE=d.rows; d.shr.forEach(([u,g,dd,p,v])=>SHR[[u,g,dd,p].join('|')]=v); applyMoves(); render(); initShared();})
+  .catch(()=>{$('main').innerHTML='<div class="loading">Не удалось загрузить данные. Обновите страницу.</div>'});
+})();
+</script>
+</body></html>
