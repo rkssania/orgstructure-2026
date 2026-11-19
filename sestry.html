@@ -489,21 +489,30 @@ const SCH={
   dnvv:{name:'День — ночь — отсыпной — выходной',br:{'А':['Д','Н','В','В',0],'Б':['Д','Н','В','В',3],'В':['Д','Н','В','В',2],'Г':['Д','Н','В','В',1]}}
 };
 const CYC=['Д','Н','В','О','Б','8'], CLS={'Д':'D','Н':'N','В':'V','О':'O','Б':'B','8':'E'};
-const DOP={mc:[['tr','Трансфузия'],['man','Манипуляционный'],['post','Пост'],['st','Старшая по смене']],pit:[['pit','Пост ПИТ'],['st','Старшая по смене']],san:[['cl','Клининг'],['care','Уход']]};
+const DOP={mc:[['tr','Трансфузия'],['man','Манипуляционный'],['post','Пост'],['ds','Дневной стационар'],['st','Старшая по смене']],pit:[['pit','Пост ПИТ'],['st','Старшая по смене']],san:[['cl','Клининг'],['care','Уход']]};
 const GN={mc:'Медсёстры-универсалы',pit:'Медсёстры ПИТ',san:'Санитарки'}, GNG={mc:'медсестёр',pit:'медсестёр ПИТ',san:'санитарок'};
 const GRPS=()=>['mc','pit','san'].filter(g=>((STAFF[S.br]||{})[g]||[]).length||((cfg().extra||{})[g]||[]).length);
-const DOPN={pit:'пост ПИТ',tr:'трансфузия',man:'манипуляционный',post:'пост',cl:'клининг',care:'уход'};
+const DOPN={ds:'дневной стационар',pit:'пост ПИТ',tr:'трансфузия',man:'манипуляционный',post:'пост',cl:'клининг',care:'уход'};
 const REASONS=['Пациент затяжелел','Агранулоцитоз','Поступление в ночь','Другое'];
 function defZones(br){
-  if(br==='Астана') return {mc:{day:[{id:'man',n:'Манипуляционный кабинет',k:'man'},{id:'p1',n:'Пост 1',k:'post'},{id:'tr',n:'Трансфузионный кабинет',k:'tr',sit:1}],night:[{id:'p1n',n:'Пост 1',k:'post',sit:1}]},
-    san:{day:[{id:'cl',n:'Клининг',k:'cl'},{id:'care',n:'Уход',k:'care',sit:1}],night:[{id:'caren',n:'Уход',k:'care',sit:1}]}};
-  return {pit:{day:[{id:'pit1',n:'ПИТ, пост 1',k:'pit'},{id:'pit2',n:'ПИТ, пост 2',k:'pit'},{id:'pit3',n:'ПИТ, пост 3',k:'pit',sit:1}],night:[{id:'pit1n',n:'ПИТ, пост 1',k:'pit'},{id:'pit2n',n:'ПИТ, пост 2',k:'pit'},{id:'pit3n',n:'ПИТ, пост 3',k:'pit',sit:1}]},
-          mc:{day:[{id:'tr',n:'Трансфузионный кабинет',k:'tr'},{id:'man',n:'Манипуляционный кабинет',k:'man'},{id:'p1',n:'Пост 1',k:'post'},{id:'p2',n:'Пост 2',k:'post'},{id:'p3',n:'Пост 3',k:'post',sit:1}],
-               night:[{id:'p1n',n:'Пост 1',k:'post'},{id:'p2n',n:'Пост 2',k:'post'},{id:'p3n',n:'Пост 3',k:'post',sit:1}]},
-          san:{day:[{id:'cl',n:'Клининг',k:'cl'},{id:'care',n:'Уход за пациентами',k:'care'},{id:'care2',n:'Уход, второй пост',k:'care',sit:1}],
-               night:[{id:'caren',n:'Уход за пациентами',k:'care'},{id:'cln',n:'Клининг ночью',k:'cl',sit:1}]}};
+  const Z=(id,n,k,st,h,o)=>Object.assign({id,n,k,s:st,h},o||{});
+  if(br==='Астана') return {
+    mc:{day:[Z('ds1','Дневной стационар · МС 1','ds','08:00',8,{wd:1}),Z('man','Манипуляционный кабинет','man','08:00',8,{wd:1}),Z('tr1','Трансфузионный кабинет · МС 1','tr','08:00',8,{wd:1,opt:1})],night:[Z('p1n','Пост 1','post','18:00',14,{opt:1})]},
+    san:{day:[Z('cl1','Клининг 1','cl','08:00',8,{wd:1}),Z('care1','Уход 1','care','08:00',10,{opt:1})],night:[Z('caren1','Уход 1','care','18:00',14,{opt:1})]}};
+  return {
+    pit:{day:[Z('pit1','ПИТ, пост 1','pit','08:00',10),Z('pit2','ПИТ, пост 2','pit','08:00',10),Z('pit3','ПИТ, пост 3','pit','08:00',10,{sit:1})],
+         night:[Z('pit1n','ПИТ, пост 1','pit','18:00',14),Z('pit2n','ПИТ, пост 2','pit','18:00',14),Z('pit3n','ПИТ, пост 3','pit','18:00',14,{sit:1})]},
+    mc:{day:[Z('tr1','Трансфузионный кабинет · МС 1','tr','08:00',8,{wd:1}),Z('tr2','Трансфузионный кабинет · МС 2','tr','08:00',12),
+             Z('p1','Пост 1','post','08:00',10),Z('p2','Пост 2','post','08:00',10),Z('p3','Пост 3','post','08:00',10,{sit:1}),
+             Z('ds1','Дневной стационар · МС 1','ds','08:00',8,{wd:1}),Z('ds2','Дневной стационар · МС 2','ds','08:00',8,{wd:1}),
+             Z('man','Манипуляционный кабинет','man','08:00',8,{wd:1})],
+        night:[Z('p1n','Пост 1','post','18:00',14),Z('p2n','Пост 2','post','18:00',14),Z('p3n','Пост 3','post','18:00',14,{sit:1})]},
+    san:{day:[Z('care1','Уход 1','care','08:00',10),Z('care2','Уход 2','care','08:00',10,{opt:1}),Z('care3','Уход 3','care','08:00',10,{opt:1}),
+              Z('cl1','Клининг 1','cl','08:00',10),Z('cl2','Клининг 2','cl','08:00',10,{opt:1}),Z('cl3','Клининг 3','cl','08:00',10,{opt:1})],
+         night:[Z('caren1','Уход 1','care','18:00',14),Z('caren2','Уход 2','care','18:00',14,{opt:1}),Z('caren3','Уход 3','care','18:00',14,{opt:1}),
+                Z('cln1','Клининг 1','cl','18:00',14,{opt:1}),Z('cln2','Клининг 2','cl','18:00',14,{opt:1}),Z('cln3','Клининг 3','cl','18:00',14,{opt:1})]}};
 }
-const defCfg=br=>({scheme:br==='Астана'?'sep':'sep',ds:'08:00',de:'20:00',ns:'20:00',ne:'08:00',brk:1,zones:defZones(br),dop:{},extra:{mc:[],pit:[],san:[]},gone:{}});
+const defCfg=br=>({zv:2,scheme:br==='Астана'?'sep':'sep',ds:'08:00',de:'18:00',ns:'18:00',ne:'08:00',brk:0,zones:defZones(br),dop:{},extra:{mc:[],pit:[],san:[]},gone:{}});
 const now=new Date();
 let S={br:'КРГ',y:now.getFullYear(),m:now.getMonth(),d:now.getDate(),grp:'mc',p3:null,calls:null};
 try{const b=localStorage.getItem('nar-br');if(BR.includes(b))S.br=b}catch(_){}
@@ -525,7 +534,7 @@ function hrs(c,s){if(c==='Д')return Math.max(0,dur(s.ds,s.de)-s.brk);if(c==='Н
 function normDef(){let n=0;for(let d=1;d<=days();d++){if(!isWE(d))n+=8}return n}
 const normM=()=>{const M=mon();return M.norm!=null?M.norm:normDef()};
 function bal(p,L){let ab=0;for(let d=1;d<=days();d++){const x=code(p,L,d);if((x==='О'||x==='Б')&&!isWE(d))ab++}return Math.round((+p.r||1)*(normM()-8*ab)*10)/10}
-function phrs(p,L){let h=0;const c=cfg();for(let d=1;d<=days();d++)h+=hrs(code(p,L,d),c);return h}
+function phrs(p,L){let h=0;const c=cfg();for(let d=1;d<=days();d++)h+=dayHrs(p,L,d,c);return h}
 const fm=x=>String(Math.round(x*10)/10).replace('.',',');
 function bstate(df,sh){return df>12?'over':df>0?'over1':df<=-2*sh?'under':'ok'}
 function balMsg(p,L){const h=phrs(p,L),b=bal(p,L),df=h-b,sh=hrs('Д',cfg())||11;
@@ -547,7 +556,12 @@ function hasDop(p,k){if(p.ik)return false;const d=cfg().dop[p.id];if(d&&d[k]!=nu
   if(k==='tr')return /трансфуз/i.test(p.o||'');return true}
 function zones(grp,sh){return ((cfg().zones[grp]||{})[sh])||[]}
 function nar(d){const M=mon();return (M.nar&&M.nar[d])||{}}
-function isOpen(d,z){return !z.sit||!!((nar(d).open||{})[z.id])}
+function wdOk(d,z){return !z.wd||!isWE(d)}
+function isOpen(d,z){return wdOk(d,z)&&(!(z.sit||z.opt)||!!((nar(d).open||{})[z.id]))}
+const zEnd=z=>{const m=(mins(z.s||'08:00')+Math.round((+z.h||0)*60))%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+const zTime=z=>z.h!=null?`${z.s||'08:00'}–${zEnd(z)} · ${String(z.h).replace('.',',')} ч${z.wd?' · будни':''}`:'';
+function zoneOf(p,d){const n=nar(d);for(const sh of ['day','night']){const A=n[p.grp+'_'+sh]||{};for(const z in A)if(A[z]===p.id){const zz=zones(p.grp,sh).find(x=>x.id===z);if(zz)return zz}}return null}
+function dayHrs(p,L,d,c){const x=code(p,L,d);if(x==='Д'||x==='Н'||x==='8'){const z=zoneOf(p,d);if(z&&z.h!=null)return +z.h}return hrs(x,c)}
 function activeZones(grp,sh,d){return zones(grp,sh).filter(z=>isOpen(d,z))}
 
 /* ---- brigades ---- */
@@ -601,23 +615,34 @@ function autoAssign(d,sh,grp){
     cand.sort((a,b)=>a.s-b.s);
     if(cand.length){A[z.id]=cand[0].p.id;used.add(cand[0].p.id)}
   });
+  const L=people(grp);
+  order.forEach(z=>{if(A[z.id])return;const c=L.filter(p=>!p.ik&&!used.has(p.id)&&hasDop(p,z.k)&&canCall(p,L,d,sh)).sort((a,b)=>(phrs(a,L)-bal(a,L))-(phrs(b,L)-bal(b,L)));if(c.length){A[z.id]=c[0].id;used.add(c[0].id);setCode(c[0],d,sh==='day'?'Д':'Н')}});
   M.nar[d][key]=A;
   if(grp!=='san'){const sk=grp==='mc'?'st_'+sh:'st_'+grp+'_'+sh;const st=ppl.filter(p=>used.has(p.id)&&hasDop(p,'st'));const pick=st.sort((a,b)=>stCount(sk,a.id,d)-stCount(sk,b.id,d))[0];M.nar[d][sk]=pick?pick.id:(ppl.find(p=>used.has(p.id))||{}).id||null}
 }
 function zoneCount(grp,sh,zid,id,d){let n=0;for(let k=1;k<d;k++){if((nar(k)[grp+'_'+sh]||{})[zid]===id)n++}return n}
 function stCount(sk,id,d){let n=0;for(let k=1;k<d;k++){if(nar(k)[sk]===id)n++}return n}
 function assigned(d,sh,grp){return nar(d)[grp+'_'+sh]||{}}
-function shortage(d){let s=0;['day','night'].forEach(sh=>GRPS().forEach(g=>{s+=Math.max(0,activeZones(g,sh,d).length-onShift(g,sh,d).length)}));return s}
+function shortage(d){const n=nar(d);if(!Object.keys(n).some(k=>/_(day|night)$/.test(k)))return 0;let s=0;['day','night'].forEach(sh=>GRPS().forEach(g=>{const A=assigned(d,sh,g);s+=activeZones(g,sh,d).filter(z=>!A[z.id]).length}));return s}
+function openZone(d,sh,z,reason){const M=touch();M.nar[d]=M.nar[d]||{};M.nar[d].open=M.nar[d].open||{};M.nar[d].open[z]=reason;
+  GRPS().forEach(g=>{const zz=zones(g,sh).find(x=>x.id===z);if(!zz)return;const k=g+'_'+sh,a=M.nar[d][k]=M.nar[d][k]||{},used=new Set(Object.values(a));
+    let f=onShift(g,sh,d).find(q=>!used.has(q.id)&&hasDop(q,zz.k));
+    if(f){a[z]=f.id;toast(zz.n+': поставлена '+short(f.n)+' из резерва смены')}else toast(zz.n+' добавлен — выберите сотрудника в списке')});
+  saveMon();render()}
 function canCall(p,L,d,sh){const c=code(p,L,d);if(c!=='В'&&c!=='')return false;if(sh==='day'&&d>1&&code(p,L,d-1)==='Н')return false;if(sh==='night'&&d<days()&&['Д','8'].includes(code(p,L,d+1)))return false;return true}
 
 function grpBlock(d,sh,grp){
   const ppl=onShift(grp,sh,d), zs=zones(grp,sh), A=assigned(d,sh,grp), byId=Object.fromEntries(people(grp).map(p=>[p.id,p]));
   const act=zs.filter(z=>isOpen(d,z)), used=new Set(Object.values(A));
   let h=`<div class="grp"><div class="gt">${GN[grp]} · ${ppl.length} в смене</div>`;
+  const inIds=new Set(ppl.map(q=>q.id)), ALL=people(grp).filter(q=>!q.ik), Lg=people(grp), other=assigned(d,sh==='day'?'night':'day',grp);
+  const why=q=>{const x=code(q,Lg,d);if(x==='О')return 'отпуск';if(x==='Б')return 'больничный';if(Object.values(other).includes(q.id))return sh==='day'?'стоит в ночь':'стоит днём';if(sh==='day'&&d>1&&code(q,Lg,d-1)==='Н')return 'после ночи';if(sh==='night'&&d<days()&&['Д','8'].includes(code(q,Lg,d+1)))return 'завтра день';return ''};
   act.forEach(z=>{
     const cur=A[z.id]||'', p=byId[cur], nod=p&&!hasDop(p,z.k);
     const reason=z.sit?((nar(d).open||{})[z.id]||''):'';
-    h+=`<div class="zone"><div class="zn">${esc(z.n)}${z.sit?`<span class="sit">ситуативно</span>`:''}${reason?`<small>${esc(reason)}</small>`:''}</div><div class="zs"><select id="z-${d}-${sh}-${grp}-${z.id}" data-zone="${sh}|${grp}|${z.id}" class="${!cur?'empty':nod?'nodop':''}" aria-label="${esc(z.n)}"><option value="">— никого —</option>${ppl.map(q=>`<option value="${q.id}"${q.id===cur?' selected':''}>${esc(short(q.n))}${!hasDop(q,z.k)?' · нет допуска':''}${used.has(q.id)&&q.id!==cur?' · занята':''}</option>`).join('')}</select>${z.sit?`<button type="button" class="x" data-close="${sh}|${z.id}" aria-label="Закрыть ${esc(z.n)}">✕</button>`:''}</div></div>`;
+    const inS=ALL.filter(q=>inIds.has(q.id)), fr=ALL.filter(q=>!inIds.has(q.id)&&!why(q)), no=ALL.filter(q=>!inIds.has(q.id)&&why(q));
+    const opt=q=>{const left=bal(q,Lg)-phrs(q,Lg);return `<option value="${q.id}"${q.id===cur?' selected':''}>${esc(short(q.n))}${!hasDop(q,z.k)?' · нет допуска':''}${used.has(q.id)&&q.id!==cur?' · занята':''}${!inIds.has(q.id)?' · осталось '+fm(left)+' ч':''}</option>`};
+    h+=`<div class="zone"><div class="zn">${esc(z.n)}${z.sit?`<span class="sit">ситуативно</span>`:''}<small>${esc(zTime(z))}${reason?' · '+esc(reason):''}</small></div><div class="zs"><select id="z-${d}-${sh}-${grp}-${z.id}" data-zone="${sh}|${grp}|${z.id}" class="${!cur?'empty':nod?'nodop':''}" aria-label="${esc(z.n)}"><option value="">— никого —</option>${inS.length?`<optgroup label="В смене по графику">${inS.map(opt).join('')}</optgroup>`:''}${fr.length?`<optgroup label="Свободны — поставить в наряд">${fr.map(opt).join('')}</optgroup>`:''}${no.length?`<optgroup label="Нельзя сегодня">${no.map(q=>`<option disabled>${esc(short(q.n))} · ${why(q)}</option>`).join('')}</optgroup>`:''}</select>${(z.sit||z.opt)?`<button type="button" class="x" data-close="${sh}|${z.id}" aria-label="Закрыть ${esc(z.n)}">✕</button>`:''}</div></div>`;
   });
   if(grp!=='san'){
     const sk=grp==='mc'?'st_'+sh:'st_'+grp+'_'+sh, st=nar(d)[sk]||'';
@@ -630,8 +655,8 @@ function grpBlock(d,sh,grp){
     const L=people(grp), cands=L.filter(p=>!p.ik&&canCall(p,L,d,sh)).slice(0,8);
     h+=`<div class="warn">Не хватает ${miss} ${GNG[grp]} на открытые зоны.</div>${cands.length?`<div class="free">Можно вызвать из выходного:</div><div class="chips">${cands.map(p=>{const after=phrs(p,L)+(hrs(sh==='day'?'Д':'Н',cfg())),df=after-bal(p,L);return `<button type="button" class="chip call${df>0?' hot':''}" data-call="${sh}|${grp}|${p.id}" title="${df>0?'После вызова будет +'+fm(df)+' ч сверх баланса':'В пределах баланса'}">+ ${esc(short(p.n))}${df>0?' · +'+fm(df)+' ч':''}</button>`}).join('')}</div>`:''}`;
   }
-  const closed=zs.filter(z=>z.sit&&!isOpen(d,z));
-  if(closed.length) h+=`<div class="chips" style="margin-top:8px">${closed.map(z=>`<button type="button" class="chip" data-open="${sh}|${z.id}">+ Открыть: ${esc(z.n)}</button>`).join('')}</div>`;
+  const closed=zs.filter(z=>(z.sit||z.opt)&&wdOk(d,z)&&!isOpen(d,z));
+  if(closed.length) h+=`<div class="chips" style="margin-top:8px">${closed.map(z=>`<button type="button" class="chip" data-open="${sh}|${z.id}">+ ${z.sit?'Открыть: ':''}${esc(z.n)}</button>`).join('')}</div>`;
   if(S.p3&&S.p3.d===d&&S.p3.sh===sh&&zs.some(z=>z.id===S.p3.z)){
     const z=zs.find(z=>z.id===S.p3.z);
     h+=`<div class="p3form"><b>${esc(z.n)}:</b> причина ${REASONS.map(r=>`<button type="button" class="chip" data-reason="${esc(r)}">${esc(r)}</button>`).join('')}<button type="button" class="x" data-p3cancel="1" aria-label="Отмена">✕</button></div>`;
@@ -644,19 +669,19 @@ function naryadView(){
   let h=`<div class="strip" id="strip" role="group" aria-label="Дата">`;
   for(let k=1;k<=D;k++){const sh=shortage(k),p3=Object.keys(nar(k).open||{}).length;h+=`<button type="button" data-day="${k}" class="${isWE(k)?'we':''}" aria-pressed="${k===d}"><b>${k}</b><small>${WD[wday(k)]}</small>${sh?'<i class="bad"></i>':p3?'<i class="p3"></i>':''}</button>`}
   h+=`</div><div class="dayhead"><h2>${d} ${MON_G[S.m]}, ${WDF[wday(d)]}</h2>${ik.length?`<span class="ik">Инфекционный контроль: ${esc(short(ik[0].n))}, ${isWE(d)?'выходной':'08:00–17:00, 8 ч'}</span>`:''}
-   <div class="acts"><button type="button" class="btn pri" data-auto="1">Расставить автоматически</button><button type="button" class="btn" data-copy="1">Скопировать наряд</button><button type="button" class="btn terra" data-clear="1">Очистить день</button></div></div>`;
+   <div class="acts">${(S.y!==now.getFullYear()||S.m!==now.getMonth()||d!==now.getDate())?'<button type="button" class="btn" data-today="1">Сегодня</button>':''}<button type="button" class="btn pri" data-auto="1">Сформировать наряд</button><button type="button" class="btn" data-copy="1">Скопировать наряд</button><button type="button" class="btn terra" data-clear="1">Очистить день</button></div></div>`;
   const board=(sh,t,tm)=>{const G=GRPS(), need=G.reduce((a,g)=>a+activeZones(g,sh,d).length,0), have=G.reduce((a,g)=>a+onShift(g,sh,d).length,0), filled=G.reduce((a,g)=>{const A=assigned(d,sh,g);return a+activeZones(g,sh,d).filter(z=>A[z.id]).length},0);
     return `<section class="board ${sh}"><div class="bh"><span class="ico" aria-hidden="true">${sh==='day'?'☀':'☾'}</span><div><h3>${t}</h3><div class="tm">${tm}</div></div><span class="cnt ${have<need||filled<need?'bad':'ok'}">зон ${filled}/${need} · людей ${have}</span></div>${G.map(g=>grpBlock(d,sh,g)).join('')}</section>`};
-  h+=`<div class="boards">${board('day','Дневная смена',c.ds+'–'+c.de)}${board('night','Ночная смена',c.ns+'–'+c.ne)}</div>`;
-  h+=`<p class="legend">В выпадающем списке только те, кто по графику работает в эту смену. Пост 3 и другие ситуативные зоны открываются кнопкой «Открыть», когда пациент затяжелел или есть агранулоцитоз. Правило: не больше 2–3 смен подряд в одном кабинете — автоматическая расстановка это учитывает.</p>`;
+  h+=`<div class="boards">${board('day','Дневная смена','с 08:00 · смены 8, 10 и 12 ч')}${board('night','Ночная смена','18:00–08:00 · 14 ч')}</div>`;
+  h+=`<p class="legend">Каждое утро руководитель нажимает «Сформировать наряд»: сначала встают те, кто по графику в смене, на пустые зоны — свободные сёстры, у кого больше часов осталось до баланса. В списке видно, кто в смене, кто свободен и кто не может (отпуск, после ночи). Часы в графике считаются по зоне: трансфузионный МС 1, ДС и манипуляционный — 8 ч, трансфузионный МС 2 — 12 ч, посты — 10 ч днём и 14 ч ночью. Уход и клининг — до 3 санитарок, вторая и третья добавляются кнопкой. Пост 3 открывается с причиной.</p>`;
   return h;
 }
 function copyText(){
   const d=S.d, byId={};GRPS().forEach(g=>people(g).forEach(p=>byId[p.id]=p));
   let t=`Наряд ${S.br} на ${d} ${MON_G[S.m]}\n`;
-  [['day','День '+cfg().ds+'–'+cfg().de],['night','Ночь '+cfg().ns+'–'+cfg().ne]].forEach(([sh,tt])=>{
+  [['day','День'],['night','Ночь 18:00–08:00']].forEach(([sh,tt])=>{
     t+=`\n${tt}\n`;const st=nar(d)['st_'+sh];if(st&&byId[st])t+=`Старшая по смене: ${short(byId[st].n)}\n`;
-    GRPS().forEach(g=>activeZones(g,sh,d).forEach(z=>{const p=byId[assigned(d,sh,g)[z.id]];t+=`${g==='san'?'Санитарка — ':''}${z.n}: ${p?short(p.n):'—'}\n`}));
+    GRPS().forEach(g=>activeZones(g,sh,d).forEach(z=>{const p=byId[assigned(d,sh,g)[z.id]];t+=`${g==='san'?'Санитарка — ':''}${z.n}${z.h!=null?' ('+z.h+' ч)':''}: ${p?short(p.n):'—'}\n`}));
   });
   return t;
 }
@@ -665,7 +690,7 @@ function copyText(){
 function gridView(){
   if(!GRPS().includes(S.grp))S.grp='mc';
   const c=cfg(), L=people(S.grp), D=days(), M=mon(), norm=M.norm!=null?M.norm:normDef(), sh=hrs('Д',c)||11;
-  const rows=L.map(p=>{const cs=[];let h=0;for(let d=1;d<=D;d++){const x=code(p,L,d);cs.push(x);h+=hrs(x,c)}const rest=[];for(let d=1;d<D;d++)if(cs[d-1]==='Н'&&['Д','8'].includes(cs[d]))rest.push(d+1);return {p,cs,h,rest,b:brigade(p,L),ov:(M.p[p.id]||{}).x||{},bl:bal(p,L)}});
+  const rows=L.map(p=>{const cs=[];let h=0;for(let d=1;d<=D;d++){const x=code(p,L,d);cs.push(x);h+=dayHrs(p,L,d,c)}const rest=[];for(let d=1;d<D;d++)if(cs[d-1]==='Н'&&['Д','8'].includes(cs[d]))rest.push(d+1);return {p,cs,h,rest,b:brigade(p,L),ov:(M.p[p.id]||{}).x||{},bl:bal(p,L)}});
   const cov=[];for(let d=1;d<=D;d++){let a=0,b=0;rows.forEach(r=>{if(r.p.ik)return;if(['Д','8'].includes(r.cs[d-1]))a++;if(r.cs[d-1]==='Н')b++});cov.push([a,b,activeZones(S.grp,'day',d).length,activeZones(S.grp,'night',d).length])}
   const sd=cov.filter(x=>x[0]<x[2]).length, sn=cov.filter(x=>x[1]<x[3]).length, over=rows.filter(r=>!r.p.ik&&r.h-r.bl>0).length, restN=rows.reduce((a,r)=>a+r.rest.length,0);
   const Dz=zones(S.grp,'day').filter(z=>!z.sit).length, Nz=zones(S.grp,'night').filter(z=>!z.sit).length, need=Math.ceil((Dz+Nz)*D/(norm/sh)*1.1);
@@ -681,7 +706,7 @@ function gridView(){
   const opts=b=>[...Object.keys(SCH[c.scheme].br),'5/2','—'].map(k=>`<option${k===b?' selected':''}>${k}</option>`).join('');
   rows.forEach(r=>{
     h+=`<tr class="${r.p.ik?'fixed':''}"><td class="nm" title="${esc(r.p.n)}">${esc(short(r.p.n))}${r.p.ik?' · ИК':''}</td><td class="bg">${r.p.ik?'5/2':`<select id="b-${r.p.id}" data-b="${r.p.id}" aria-label="Бригада">${opts(r.b)}</select>`}</td>`;
-    r.cs.forEach((x,k)=>{const d=k+1;h+=`<td class="c ${CLS[x]||''}${isWE(d)?' we':''}${r.ov[d]!=null?' ov':''}${r.rest.includes(d)?' rest':''}${S.d===d?' selc':''}" data-cell="${r.p.id}|${d}">${x==='В'?'·':esc(x)}</td>`});
+    r.cs.forEach((x,k)=>{const d=k+1;h+=`<td class="c ${CLS[x]||''}${isWE(d)?' we':''}${r.ov[d]!=null?' ov':''}${r.rest.includes(d)?' rest':''}${S.d===d?' selc':''}" data-cell="${r.p.id}|${d}" title="${(()=>{const z=['Д','Н','8'].includes(x)?zoneOf(r.p,d):null;return z?esc(z.n+', '+z.h+' ч'):''})()}">${(()=>{if(x==='В')return '·';const z=['Д','Н','8'].includes(x)?zoneOf(r.p,d):null;return z&&z.h!=null?esc(String(z.h)):esc(x)})()}</td>`});
     const df=r.h-r.bl, st=bstate(df,sh), m=balMsg(r.p,L);
     h+=`<td class="h ${st}" title="${esc(m?m.t:'В пределах баланса рабочего времени')}"><b>${fm(r.h)} / ${fm(r.bl)}</b><small>${df>0?'+':''}${fm(df)} ч</small></td></tr>`;
   });
@@ -715,12 +740,12 @@ function staffView(){
 /* ---- settings ---- */
 function settingsView(){
   const c=cfg(), M=mon(), norm=M.norm!=null?M.norm:normDef();
-  const zl=(grp,sh)=>`<div class="zl"><h4>${GN[grp]} · ${sh==='day'?'день':'ночь'}</h4>${(zones(grp,sh)).map((z,i)=>`<div class="zr"><input type="text" id="zn-${grp}-${sh}-${i}" data-zn="${grp}|${sh}|${i}" value="${esc(z.n)}" aria-label="Название зоны"><select id="zk-${grp}-${sh}-${i}" data-zk="${grp}|${sh}|${i}" aria-label="Допуск">${DOP[grp].filter(x=>x[0]!=='st').map(([k,t])=>`<option value="${k}"${z.k===k?' selected':''}>${t}</option>`).join('')}</select><label><input type="checkbox" id="zs-${grp}-${sh}-${i}" data-zsit="${grp}|${sh}|${i}"${z.sit?' checked':''}>ситуативно</label><button type="button" class="x" data-zdel="${grp}|${sh}|${i}" aria-label="Удалить зону">✕</button></div>`).join('')}<button type="button" class="btn sm" data-zadd="${grp}|${sh}">+ зона</button></div>`;
+  const zl=(grp,sh)=>`<div class="zl"><h4>${GN[grp]} · ${sh==='day'?'день':'ночь'}</h4>${(zones(grp,sh)).map((z,i)=>`<div class="zr"><input type="text" id="zn-${grp}-${sh}-${i}" data-zn="${grp}|${sh}|${i}" value="${esc(z.n)}" aria-label="Название зоны"><select id="zk-${grp}-${sh}-${i}" data-zk="${grp}|${sh}|${i}" aria-label="Допуск">${DOP[grp].filter(x=>x[0]!=='st').map(([k,t])=>`<option value="${k}"${z.k===k?' selected':''}>${t}</option>`).join('')}</select><label>с<input type="time" id="zst-${grp}-${sh}-${i}" data-zst="${grp}|${sh}|${i}" value="${z.s||'08:00'}" style="width:96px"></label><label>часов<input type="number" min="1" max="24" step="0.5" id="zh-${grp}-${sh}-${i}" data-zh="${grp}|${sh}|${i}" value="${z.h!=null?z.h:''}" style="width:60px"></label><label><input type="checkbox" id="zwd-${grp}-${sh}-${i}" data-zwd="${grp}|${sh}|${i}"${z.wd?' checked':''}>будни</label><select id="zm-${grp}-${sh}-${i}" data-zmode="${grp}|${sh}|${i}" aria-label="Когда работает"><option value=""${!z.sit&&!z.opt?' selected':''}>каждый день</option><option value="opt"${z.opt?' selected':''}>добавлять кнопкой</option><option value="sit"${z.sit?' selected':''}>по причине</option></select><button type="button" class="x" data-zdel="${grp}|${sh}|${i}" aria-label="Удалить зону">✕</button></div>`).join('')}<button type="button" class="btn sm" data-zadd="${grp}|${sh}">+ зона</button></div>`;
   return `<div class="card"><h3>Смены и схема · ${esc(S.br)}</h3><div class="frow">
     <label>Схема графика<select id="s-scheme" data-cfg="scheme">${Object.entries(SCH).map(([k,v])=>`<option value="${k}"${c.scheme===k?' selected':''}>${esc(v.name)}</option>`).join('')}</select></label>
     <label>День с<input type="time" id="s-ds" data-cfg="ds" value="${c.ds}"></label><label>до<input type="time" id="s-de" data-cfg="de" value="${c.de}"></label>
     <label>Ночь с<input type="time" id="s-ns" data-cfg="ns" value="${c.ns}"></label><label>до<input type="time" id="s-ne" data-cfg="ne" value="${c.ne}"></label>
-    <label>Перерыв, ч<input type="number" step="0.5" min="0" max="3" id="s-brk" data-cfg="brk" value="${c.brk}"></label>
+    <label>Перерыв, ч (если зона без часов)<input type="number" step="0.5" min="0" max="3" id="s-brk" data-cfg="brk" value="${c.brk}"></label>
     <label>Норма месяца, ч<input type="number" min="0" max="250" id="s-norm" data-norm="1" value="${norm}"></label></div></div>
   <div class="card"><h3>Зоны наряда</h3><p class="sub">Постоянные зоны есть в каждой смене. Ситуативные (например, пост 3) открываются в наряде на конкретный день.</p><div class="zed">${GRPS().map(g=>zl(g,'day')+zl(g,'night')).join('')}</div>
     <div style="margin-top:10px"><button type="button" class="btn terra" data-reset="1">Вернуть зоны по умолчанию</button></div></div>
@@ -761,27 +786,28 @@ document.addEventListener('click',e=>{
   if(ds.auto){['day','night'].forEach(sh=>GRPS().forEach(g=>autoAssign(S.d,sh,g)));saveMon();render();toast('Наряд расставлен. Проверьте и поправьте вручную');return}
   if(ds.clear){const M=touch();const o=(M.nar[S.d]||{}).open;M.nar[S.d]=o?{open:o}:{};saveMon();render();return}
   if(ds.copy){const tx=copyText();navigator.clipboard&&navigator.clipboard.writeText(tx).then(()=>toast('Наряд скопирован — можно вставить в WhatsApp'),()=>toast('Не удалось скопировать'));return}
-  if(ds.open){const[sh,z]=ds.open.split('|');S.p3={d:S.d,sh,z};render();return}
+  if(ds.today){S.y=now.getFullYear();S.m=now.getMonth();S.d=now.getDate();render();return}
+  if(ds.open){const[sh,z]=ds.open.split('|');const zz=GRPS().map(g=>zones(g,sh).find(x=>x.id===z)).find(Boolean);if(zz&&!zz.sit){openZone(S.d,sh,z,'+');return}S.p3={d:S.d,sh,z};render();return}
   if(ds.p3cancel){S.p3=null;render();return}
-  if(ds.reason&&S.p3){const M=touch();M.nar[S.p3.d]=M.nar[S.p3.d]||{};M.nar[S.p3.d].open=M.nar[S.p3.d].open||{};M.nar[S.p3.d].open[S.p3.z]=ds.reason;const{d,sh,z}=S.p3;S.p3=null;GRPS().forEach(g=>{const zz=zones(g,sh).find(x=>x.id===z);if(!zz)return;const k=g+'_'+sh,a=M.nar[d][k]=M.nar[d][k]||{},used=new Set(Object.values(a));const f=onShift(g,sh,d).find(q=>!used.has(q.id)&&hasDop(q,zz.k));if(f){a[z]=f.id;toast(zz.n+': поставлена '+short(f.n)+' из резерва смены')}else toast(zz.n+' открыт, свободных в смене нет — вызовите из выходного')});saveMon();render();return}
+  if(ds.reason&&S.p3){const{d,sh,z}=S.p3;S.p3=null;openZone(d,sh,z,ds.reason);return}
   if(ds.close){const[sh,z]=ds.close.split('|');const M=touch();const n=M.nar[S.d]||{};if(n.open)delete n.open[z];GRPS().forEach(g=>{const a=n[g+'_'+sh];if(a)delete a[z]});saveMon();render();return}
   if(ds.call){const[sh,g,id]=ds.call.split('|');const p=people(g).find(x=>x.id===id);if(p){setCode(p,S.d,sh==='day'?'Д':'Н');saveMon();render();const m=balMsg(p,people(g));toast(m&&m.k==='r'?m.t:short(p.n)+' вызвана на смену, в графике это отмечено')}return}
   if(ds.add){const inp=$('add-'+ds.add),n=(inp.value||'').trim();if(!n)return;const c=cfg();c.extra[ds.add]=c.extra[ds.add]||[];if(!c.extra[ds.add].includes(n))c.extra[ds.add].push(n);BDEF={};saveCfg();render();return}
-  if(ds.zadd){const[g,sh]=ds.zadd.split('|');const c=cfg();c.zones[g]=c.zones[g]||{day:[],night:[]};c.zones[g][sh].push({id:'z'+Date.now().toString(36),n:'Новая зона',k:g==='mc'?'post':g==='pit'?'pit':'care',sit:1});saveCfg();render();return}
+  if(ds.zadd){const[g,sh]=ds.zadd.split('|');const c=cfg();c.zones[g]=c.zones[g]||{day:[],night:[]};c.zones[g][sh].push({id:'z'+Date.now().toString(36),n:'Новая зона',k:g==='mc'?'post':g==='pit'?'pit':'care',s:sh==='day'?'08:00':'18:00',h:sh==='day'?10:14,opt:1});saveCfg();render();return}
   if(ds.zdel){const[g,sh,i]=ds.zdel.split('|');cfg().zones[g][sh].splice(+i,1);saveCfg();render();return}
   if(ds.reset){cfg().zones=defZones(S.br);saveCfg();render();toast('Зоны возвращены по умолчанию');return}
 });
 document.addEventListener('change',e=>{
   const t=e.target,ds=t.dataset;
   if(ds.zone){const[sh,g,z]=ds.zone.split('|');const M=touch();M.nar[S.d]=M.nar[S.d]||{};const k=g+'_'+sh;const a=M.nar[S.d][k]=M.nar[S.d][k]||{};
-    if(t.value){Object.keys(a).forEach(x=>{if(a[x]===t.value)delete a[x]});a[z]=t.value}else delete a[z];saveMon();render();return}
+    if(t.value){Object.keys(a).forEach(x=>{if(a[x]===t.value)delete a[x]});a[z]=t.value;const q=people(g).find(x=>x.id===t.value),Lg=people(g);if(q){const x=code(q,Lg,S.d),need=sh==='day'?['Д','8']:['Н'];if(!need.includes(x))setCode(q,S.d,sh==='day'?'Д':'Н');const m=balMsg(q,Lg);if(m&&m.k==='r')toast(m.t)}}else delete a[z];saveMon();render();return}
   if(ds.st){const M=touch();M.nar[S.d]=M.nar[S.d]||{};M.nar[S.d][ds.st]=t.value||null;saveMon();render();return}
   if(ds.b){const M=touch();M.p[ds.b]=Object.assign(M.p[ds.b]||{},{b:t.value});saveMon();render();return}
   if(ds.dop){const[id,k]=ds.dop.split('|');const c=cfg();c.dop[id]=c.dop[id]||{};c.dop[id][k]=t.checked;saveCfg();render();return}
   if(ds.gone){const c=cfg();if(t.checked)delete c.gone[ds.gone];else c.gone[ds.gone]=1;BDEF={};saveCfg();render();return}
   if(ds.cfg){const c=cfg(),k=ds.cfg;c[k]=k==='brk'?(+t.value||0):t.value;if(k==='scheme'){BDEF={}}saveCfg();render();return}
   if(ds.norm){const M=touch();M.norm=+t.value||0;saveMon();render();return}
-  if(ds.zn||ds.zk||ds.zsit){const[g,sh,i]=(ds.zn||ds.zk||ds.zsit).split('|');const z=cfg().zones[g][sh][+i];if(ds.zn)z.n=t.value.trim()||z.n;else if(ds.zk)z.k=t.value;else z.sit=t.checked?1:0;saveCfg();render();return}
+  if(ds.zn||ds.zk||ds.zsit||ds.zst||ds.zh||ds.zwd||ds.zmode){const[g,sh,i]=(ds.zn||ds.zk||ds.zsit||ds.zst||ds.zh||ds.zwd||ds.zmode).split('|');const z=cfg().zones[g][sh][+i];if(ds.zn)z.n=t.value.trim()||z.n;else if(ds.zk)z.k=t.value;else if(ds.zst)z.s=t.value||'08:00';else if(ds.zh)z.h=Math.max(1,Math.min(24,+t.value||8));else if(ds.zwd)z.wd=t.checked?1:0;else if(ds.zmode){z.sit=t.value==='sit'?1:0;z.opt=t.value==='opt'?1:0}else z.sit=t.checked?1:0;saveCfg();render();return}
 });
 window.NB_render=render;
 addEventListener('hashchange',()=>{render();window.scrollTo(0,0)});
@@ -794,7 +820,7 @@ render();
     clearTimeout(timer);
     if(!d){dbState='off';render();return}
     db=d;dbState='on';render();
-    db.collection('cfg').onSnapshot(sn=>{sn.docs.forEach(x=>{if(dirty['c_'+x.id])return;const v=x.data()||{},b=defCfg(x.id);CFG[x.id]=Object.assign(b,v,{zones:Object.assign({},b.zones,v.zones||{}),dop:v.dop||{},extra:Object.assign({mc:[],pit:[],san:[]},v.extra||{}),gone:v.gone||{}})});BDEF={};rerender()},()=>{});
+    db.collection('cfg').onSnapshot(sn=>{sn.docs.forEach(x=>{if(dirty['c_'+x.id])return;let v=x.data()||{};const b=defCfg(x.id);if(v.zv!==2)v=Object.assign({},v,{zones:null,ds:b.ds,de:b.de,ns:b.ns,ne:b.ne,brk:b.brk,zv:2});CFG[x.id]=Object.assign(b,v,{zones:Object.assign({},b.zones,v.zones||{}),dop:v.dop||{},extra:Object.assign({mc:[],pit:[],san:[]},v.extra||{}),gone:v.gone||{}})});BDEF={};rerender()},()=>{});
     db.collection('mon').onSnapshot(sn=>{sn.docs.forEach(x=>{if(dirty[x.id])return;const v=x.data()||{};MON[x.id]={p:v.p||{},nar:v.nar||{},norm:v.norm}});rerender()},()=>{});
   }catch(_){clearTimeout(timer);dbState='off';render()}
 })();
