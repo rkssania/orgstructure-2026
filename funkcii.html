@@ -187,12 +187,13 @@ function nav(back,title){document.querySelector('.nav').hidden=!back&&!title;$('
 const warn=()=>dbState==='off'?`<div class="warn">Изменения сейчас не сохраняются: нет связи с базой или доступ не выдан. Обновите страницу.</div>`:'';
 function render(){
   if(!D)return;
-  const {k,a}=parse(); const lv={'':0,u:1,d:2,p:3,f:4,a:4,m:5}[k]||0; const out=$('out');
+  const {k,a}=parse(); const lv={'':0,u:1,d:2,p:3,f:4,a:4,m:5,g:5}[k]||0; const out=$('out');
   out.classList.remove('anim'); if(lv>depth){void out.offsetWidth;out.classList.add('anim')} depth=lv;
   try{
-    if((k==='f'||k==='p'||k==='a')&&hidden(D.cards[posList(+a[0],+a[1],a[2])[+a[3]].c])){location.hash='';return}
+    if((k==='f'||k==='p'||k==='a'||k==='g')&&hidden(D.cards[posList(+a[0],+a[1],a[2])[+a[3]].c])){location.hash='';return}
     if(k==='f') return fScreen(+a[0],+a[1],a[2],+a[3],a[4]);
     if(k==='m') return mScreen(+a[0],+a[1],a[2],+a[3],a[4]||'all');
+    if(k==='g') return gScreen(+a[0],+a[1],a[2],+a[3]);
     if(k==='a') return aScreen(+a[0],+a[1],a[2],+a[3],a[4]||'main');
     if(k==='p') return pScreen(+a[0],+a[1],a[2],+a[3]);
     if(k==='d') return dScreen(+a[0],+a[1],a[2]);
@@ -278,13 +279,14 @@ function pScreen(ui,gi,di,pi){
   const ob=othEdits(e.c,U.id);
   {const nOth=ops.filter(([o,oi])=>othOf(oi,ALL[oid(ui,gi,e.c,oi)]||{}).length).length+ob.length; if(nOth) h+=`<div class="warn" style="background:color-mix(in srgb,var(--tint) 12%,transparent);color:var(--ink)"><b>В других филиалах изменили ${nOth} ${nOth===1?'функцию':nOth<5?'функции':'функций'}</b> этой должности. Проверьте ниже, так ли у вас.</div>`;}
   if(ob.length) h+=`<div class="sh">Изменения из других филиалов</div><div class="flist">`+ob.map(x=>`<div class="fr" style="grid-template-columns:minmax(0,1fr)"><div><b>${esc(UN[x.u])}</b> · ${x.del?'удалили':x.isNew?'добавили':'изменили'}: «${esc(x.proc||((c.ops[+x.oi]||{}).proc)||'')}»${!x.del&&!x.isNew&&x.desc?`<span class="who" style="color:var(--muted)">${esc(x.desc)}</span>`:''}</div><div class="ob" style="display:flex;gap:8px;flex-wrap:wrap"><button class="bt pr" type="button" data-take="${esc(x.id)}">Так же у нас</button><button class="bt" type="button" data-skip="${esc(x.id)}">У нас по-другому</button></div></div>`).join('')+`</div>`;
+  if(!ops.length&&dbState!=='off') h+=`<div class="warn" style="background:color-mix(in srgb,var(--tint) 12%,transparent);color:var(--ink)"><b>Новая должность — функций пока нет.</b> Заберите их из других должностей: выберите должность, отметьте функции и перенесите или скопируйте.<div style="margin-top:10px"><button class="bt pr" type="button" data-go="g-${ui}-${gi}-${di}-${pi}">Забрать функции</button></div></div>`;
   [['main','Основные обязанности'],['side','Сопутствующие обязанности']].forEach(([sec,n])=>{
     const l=ops.filter(([o])=>(o.sec||'main')===sec); if(!l.length&&sec==='side')return;
     h+=`<div class="sh">${n} · ${l.length}</div><div class="flist">`+l.map(([o,oi],i)=>{const id=oid(ui,gi,e.c,oi),a=ALL[id]||{};
       const tag=o.ed&&o.ed.movedFrom?`<span class="pill fx">из: ${esc(o.ed.movedFrom.t)}</span>`:o.added?'<span class="pill fx">добавлено</span>':o.ed?'<span class="pill fx">изменено</span>':o.chg?'<span class="pill fx">исправлено</span>':'';
       return `<div class="fr"><button class="fn" type="button" data-go="f-${ui}-${gi}-${di}-${pi}-${oi}"><span class="num">${i+1}.</span><span class="tt">${esc(o.proc||'')}${tag}<span class="s">${a.st==='diff'&&a.how?esc(a.how):'Подробнее ›'}</span>${o.ed?`<span class="who">${esc(nm(o.ed.by))}, ${when(o.ed.at)}</span>`:''}</span></button><div class="sc" role="group" aria-label="Ответ">${Object.entries(ST).map(([k,v])=>`<button type="button" class="${k}" data-st="${k}" data-id="${id}" aria-pressed="${a.st===k}">${v}</button>`).join('')}</div>${othBox(oi,a,id)}</div>`}).join('')+(dbState!=='off'?`<button class="addb" type="button" data-go="a-${ui}-${gi}-${di}-${pi}-${sec}">＋ Добавить функцию</button>`:'')+`</div>`;
   });
-  if(dbState!=='off'&&ops.length) h+=`<div class="links" style="margin-top:18px"><button type="button" data-go="m-${ui}-${gi}-${di}-${pi}-all">Должность упраздняется — перенести все функции</button></div>`;
+  if(dbState!=='off') h+=`<div class="links" style="margin-top:18px"><button type="button" data-go="g-${ui}-${gi}-${di}-${pi}">Забрать функции из другой должности</button>${ops.length?`<button type="button" data-go="m-${ui}-${gi}-${di}-${pi}-all">Должность упраздняется — перенести все функции</button>`:''}</div>`;
   const t=encodeURIComponent(`Комментарий по функциям\n${U.name} · ${c.t}\n\n`);
   h+=`<div class="sh">Общий комментарий</div><div class="ppl" style="color:var(--muted)">Кто на самом деле занимает должность, чего не хватает — напишите в WhatsApp.<a class="wa" href="https://wa.me/${WA}?text=${t}" target="_blank" rel="noopener">Написать в WhatsApp</a><div style="margin-top:6px;font-size:13px">Номер: +7 705 517 00 15</div></div>`;
   $('out').innerHTML=h;
@@ -340,6 +342,57 @@ function mvResults(){
   box.innerHTML=(T?`<div class="warn" style="background:color-mix(in srgb,var(--tint) 12%,transparent);color:var(--ink)">${MV.copy?'Скопировать':'Перенести'} в <b>${esc(disp(D.cards[T.e.c].t))}</b> · ${esc(T.d)} · ${esc(short(D.units[MV.u].name))}?<div class="btns" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="bt pr" type="button" data-mvgo="1">${MV.copy?'Скопировать':'Перенести'}</button><button class="bt" type="button" data-mvx="1">Выбрать другую</button></div></div>`:'')+
   `<div class="list">`+list.slice(0,60).map((x,i)=>`<button class="row" type="button" data-mvt="${x.gi}|${x.di}|${x.pi}"><span class="tx"><span class="t b">${esc(disp(D.cards[x.e.c].t))}</span><span class="s">${esc(x.d)}${x.e.p.length?' · '+esc(x.e.p.slice(0,2).join(', '))+(x.e.p.length>2?' и ещё '+(x.e.p.length-2):''):' · вакансия'}</span></span>${CHEV}</button>`).join('')+`</div>`+(list.length>60?`<p class="sub" style="margin-top:8px">Показаны первые 60 — уточните поиск.</p>`:'')+(!list.length?`<div class="msg">Ничего не нашли.</div>`:'');
 }
+/* Забрать функции: выбрать должность-источник, отметить функции, перенести или скопировать в текущую */
+let GV={};
+const nurseLike=t=>/сестр|брат|санитар|сестринск/i.test(t);
+function gScreen(ui,gi,di,pi){
+  const U=D.units[ui], e=posList(ui,gi,di)[pi], c=D.cards[e.c];
+  if(GV.key!==location.hash)GV={key:location.hash,src:null,sel:{},copy:false,q:''};
+  nav([`p-${ui}-${gi}-${di}-${pi}`,disp(c.t)],'');
+  let h=`<h1 style="font-size:24px">Забрать функции</h1><p class="sub">в должность «${esc(disp(c.t))}», ${esc(short(U.name))}</p>${warn()}
+  <div class="seg" role="group" aria-label="Как забирать"><button type="button" data-gvc="0" aria-pressed="${!GV.copy}">Перенести</button><button type="button" data-gvc="1" aria-pressed="${GV.copy}">Скопировать</button></div>
+  <p class="sub" style="margin-top:4px">${GV.copy?'Функция останется у прежней должности и появится здесь.':'Функция уберётся у прежней должности и появится здесь.'}</p>`;
+  if(!GV.src){
+    h+=`<div class="sh">Из какой должности</div><div class="search"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input id="gvq" type="search" placeholder="Найти должность или фамилию" autocomplete="off" aria-label="Поиск должности" value="${esc(GV.q)}"></div><div id="gvres"></div>`;
+    $('out').innerHTML=h; gvResults(); return;
+  }
+  const S=GV.src, se=posList(ui,S.gi,S.di)[S.pi], sc=D.cards[se.c], sops=opsOf(sc,U.id), nSel=Object.values(GV.sel).filter(Boolean).length;
+  h+=`<div class="ppl"><div class="lbl">Из должности</div><b>${esc(disp(sc.t))}</b> · ${esc(S.d)}${se.p.length?' · '+esc(se.p.slice(0,2).join(', ')):''}<div style="margin-top:6px"><button type="button" data-gvback="1" style="background:none;border:0;padding:0;color:var(--tint);cursor:pointer">Выбрать другую должность</button></div></div>
+  <div class="sh">Функции · ${sops.length}</div>`;
+  if(!sops.length) h+=`<div class="msg">У этой должности нет функций.</div>`;
+  else h+=`<div class="links" style="margin-top:0"><button type="button" data-gvall="1">${nSel===sops.length?'Снять все отметки':'Отметить все'}</button></div><div class="list" style="margin-top:8px">`+sops.map(([o,oi])=>`<label class="row" style="cursor:pointer"><input type="checkbox" data-gvo="${oi}"${GV.sel[oi]?' checked':''} style="width:20px;height:20px;flex:none;accent-color:var(--navy)"><span class="tx"><span class="t">${esc(o.proc||'')}</span>${o.desc?`<span class="s">${esc(o.desc)}</span>`:''}</span></label>`).join('')+`</div>`;
+  h+=`<div class="btns" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="bt pr" type="button" data-gvgo="1"${nSel?'':' disabled'}>${GV.copy?'Скопировать':'Перенести'} выбранные${nSel?' ('+nSel+')':''}</button></div>`;
+  $('out').innerHTML=h;
+}
+function gvResults(){
+  const box=$('gvres'); if(!box)return; const {a}=parse(); const ui=+a[0], tci=posList(ui,+a[1],a[2])[+a[3]].c, U=D.units[ui];
+  const q=norm(GV.q), w=q?q.split(/\s+/):[];
+  let list=allPos(ui).filter(x=>x.e.c!==tci&&!hidden(D.cards[x.e.c])&&opsOf(D.cards[x.e.c],U.id).length).filter(x=>{if(!w.length)return true;const k=norm(disp(D.cards[x.e.c].t)+' '+x.d+' '+x.e.p.join(' '));const ws=k.split(/\s+/);return w.every(t=>ws.some(y=>y.startsWith(t)))});
+  list.sort((x,y)=>(nurseLike(D.cards[y.e.c].t+' '+y.d)?1:0)-(nurseLike(D.cards[x.e.c].t+' '+x.d)?1:0));
+  box.innerHTML=`<div class="list">`+list.slice(0,60).map(x=>`<button class="row" type="button" data-gvs="${x.gi}|${x.di}|${x.pi}|${esc(x.d)}"><span class="tx"><span class="t b">${esc(disp(D.cards[x.e.c].t))}</span><span class="s">${esc(x.d)}${x.e.p.length?' · '+esc(x.e.p.slice(0,2).join(', '))+(x.e.p.length>2?' и ещё '+(x.e.p.length-2):''):' · вакансия'}</span></span><span class="r">${opsOf(D.cards[x.e.c],U.id).length}</span>${CHEV}</button>`).join('')+`</div>`+(list.length>60?`<p class="sub" style="margin-top:8px">Показаны первые 60 — уточните поиск.</p>`:'')+(!list.length?`<div class="msg">Ничего не нашли.</div>`:'');
+}
+async function gvDo(){
+  const {a}=parse(); const ui=+a[0],gi=+a[1],di=a[2],pi=+a[3], U=D.units[ui], tci=posList(ui,gi,di)[pi].c, tTitle=disp(D.cards[tci].t);
+  const S=GV.src, sci=posList(ui,S.gi,S.di)[S.pi].c, sTitle=disp(D.cards[sci].t);
+  const ops=opsOf(D.cards[sci],U.id).filter(([,x])=>GV.sel[x]); if(!ops.length)return;
+  const btn=document.querySelector('[data-gvgo]'); if(btn){btn.disabled=true;btn.textContent='Сохраняю…'}
+  let k=0;
+  for(const [o,x] of ops){
+    const nid='n'+(Date.now()+k++).toString(36);
+    if(!await putEdit(ekey(tci,nid,U.id),Object.assign(pick(o),{c:tci,oi:nid,u:U.id,isNew:true,sec:o.sec||'main',t0:Date.now()+k,movedFrom:{c:sci,oi:x,u:U.id,t:sTitle},copy:GV.copy})))return;
+    if(!GV.copy){const old=EDITS[ekey(sci,x,U.id)]||{}; if(!await putEdit(ekey(sci,x,U.id),Object.assign({},old,{c:sci,oi:x,u:U.id,del:true,proc:o.proc||'',movedTo:{c:tci,u:U.id,t:tTitle}})))return}
+  }
+  const n=ops.length, cp=GV.copy; GV={}; location.hash=`p-${ui}-${gi}-${di}-${pi}`; window.scrollTo(0,0); alertBar((cp?'Скопировано':'Перенесено')+' функций: '+n);
+}
+document.addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;const ds=b.dataset;
+  if(ds.gvc!=null){GV.copy=ds.gvc==='1';render();return}
+  if(ds.gvs){const[g,d,p,...rest]=ds.gvs.split('|');GV.src={gi:+g,di:d==='h'?'h':d,pi:+p,d:rest.join('|')};GV.sel={};render();window.scrollTo(0,0);return}
+  if(ds.gvback){GV.src=null;GV.sel={};render();return}
+  if(ds.gvall){const {a}=parse();const U=D.units[+a[0]],S=GV.src,sops=opsOf(D.cards[posList(+a[0],S.gi,S.di)[S.pi].c],U.id);const all=sops.every(([,x])=>GV.sel[x]);GV.sel={};if(!all)sops.forEach(([,x])=>GV.sel[x]=true);render();return}
+  if(ds.gvgo){gvDo();return}
+});
+document.addEventListener('change',ev=>{const t=ev.target;if(t.dataset&&t.dataset.gvo!=null){GV.sel[t.dataset.gvo]=t.checked;const n=Object.values(GV.sel).filter(Boolean).length,b=document.querySelector('[data-gvgo]');if(b){b.disabled=!n;b.textContent=(GV.copy?'Скопировать':'Перенести')+' выбранные'+(n?' ('+n+')':'')}const all=document.querySelector('[data-gvall]');if(all){const boxes=document.querySelectorAll('[data-gvo]');all.textContent=n===boxes.length?'Снять все отметки':'Отметить все'}}});
+document.addEventListener('input',ev=>{if(ev.target.id==='gvq'){GV.q=ev.target.value;gvResults()}});
 async function doMove(){
   const {a}=parse(); const ui=+a[0],gi=+a[1],di=a[2],pi=+a[3],oi=a[4], U=D.units[ui], ci=posList(ui,gi,di)[pi].c, c=D.cards[ci];
   const T=MV.tgt, TU=D.units[MV.u], tci=T.e.c, tTitle=disp(D.cards[tci].t), sTitle=disp(c.t);
@@ -361,7 +414,7 @@ function aScreen(ui,gi,di,pi,sec){
   const x=$('ef-proc'); if(x) x.focus();
 }
 /* ---------- данные ---------- */
-const busy=()=>{const x=document.activeElement;return x&&(x.tagName==='TEXTAREA'||x.id==='q'||x.id==='mvq')};
+const busy=()=>{const x=document.activeElement;return x&&(x.tagName==='TEXTAREA'||x.id==='q'||x.id==='mvq'||x.id==='gvq')};
 function rr(){if(!busy())render()}
 function sub(){}
 function subCard(ci,u){OTH={}; if(!BR.includes(u))return; Object.values(ALL).forEach(v=>{if(v.c===ci&&v.u&&v.u!==u&&(v.st==='no'||v.st==='diff'))(OTH[v.oi]=OTH[v.oi]||[]).push(v)})}
