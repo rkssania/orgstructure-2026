@@ -611,18 +611,20 @@ function autoAssign(d,sh,grp){
   const ppl=onShift(grp,sh,d), zs=activeZones(grp,sh,d), A={}, used=new Set();
   const order=[...zs].sort((a,b)=>ppl.filter(p=>hasDop(p,a.k)).length-ppl.filter(p=>hasDop(p,b.k)).length);
   order.forEach(z=>{
-    const cand=ppl.filter(p=>!used.has(p.id)&&hasDop(p,z.k)).map(p=>({p,s:counts(grp,z.id,d,sh)*0+zoneCount(grp,sh,z.id,p.id,d)*10+lastSame(grp,sh,z.id,d,p.id)*100}));
+    const cand=ppl.filter(p=>!used.has(p.id)&&hasDop(p,z.k)).map(p=>({p,s:counts(grp,z.id,d,sh)*0+zoneCount(grp,sh,z.id,p.id,d)*10+lastSame(grp,sh,z.id,d,p.id)*100+(z.id===firstPost(grp,sh)&&!hasDop(p,'st')?1000:0)}));
     cand.sort((a,b)=>a.s-b.s);
     if(cand.length){A[z.id]=cand[0].p.id;used.add(cand[0].p.id)}
   });
   const L=people(grp);
   order.forEach(z=>{if(A[z.id])return;const c=L.filter(p=>!p.ik&&!used.has(p.id)&&hasDop(p,z.k)&&canCall(p,L,d,sh)).sort((a,b)=>(phrs(a,L)-bal(a,L))-(phrs(b,L)-bal(b,L)));if(c.length){A[z.id]=c[0].id;used.add(c[0].id);setCode(c[0],d,sh==='day'?'Д':'Н')}});
   M.nar[d][key]=A;
-  if(grp!=='san'){const sk=grp==='mc'?'st_'+sh:'st_'+grp+'_'+sh;const st=ppl.filter(p=>used.has(p.id)&&hasDop(p,'st'));const pick=st.sort((a,b)=>stCount(sk,a.id,d)-stCount(sk,b.id,d))[0];M.nar[d][sk]=pick?pick.id:(ppl.find(p=>used.has(p.id))||{}).id||null}
+  if(grp!=='san'){const sk=grp==='mc'?'st_'+sh:'st_'+grp+'_'+sh;M.nar[d][sk]=A[firstPost(grp,sh)]||null}
 }
 function zoneCount(grp,sh,zid,id,d){let n=0;for(let k=1;k<d;k++){if((nar(k)[grp+'_'+sh]||{})[zid]===id)n++}return n}
 function stCount(sk,id,d){let n=0;for(let k=1;k<d;k++){if(nar(k)[sk]===id)n++}return n}
 function assigned(d,sh,grp){return nar(d)[grp+'_'+sh]||{}}
+function firstPost(grp,sh){return grp==='pit'?(sh==='day'?'pit1':'pit1n'):(sh==='day'?'p1':'p1n')}
+function stOf(d,sh,grp){return assigned(d,sh,grp)[firstPost(grp,sh)]||null}
 function shortage(d){const n=nar(d);if(!Object.keys(n).some(k=>/_(day|night)$/.test(k)))return 0;let s=0;['day','night'].forEach(sh=>GRPS().forEach(g=>{const A=assigned(d,sh,g);s+=activeZones(g,sh,d).filter(z=>!A[z.id]).length}));return s}
 function openZone(d,sh,z,reason){const M=touch();M.nar[d]=M.nar[d]||{};M.nar[d].open=M.nar[d].open||{};M.nar[d].open[z]=reason;
   GRPS().forEach(g=>{const zz=zones(g,sh).find(x=>x.id===z);if(!zz)return;const k=g+'_'+sh,a=M.nar[d][k]=M.nar[d][k]||{},used=new Set(Object.values(a));
@@ -645,8 +647,8 @@ function grpBlock(d,sh,grp){
     h+=`<div class="zone"><div class="zn">${esc(z.n)}${z.sit?`<span class="sit">ситуативно</span>`:''}<small>${esc(zTime(z))}${reason?' · '+esc(reason):''}</small></div><div class="zs"><select id="z-${d}-${sh}-${grp}-${z.id}" data-zone="${sh}|${grp}|${z.id}" class="${!cur?'empty':nod?'nodop':''}" aria-label="${esc(z.n)}"><option value="">— никого —</option>${inS.length?`<optgroup label="В смене по графику">${inS.map(opt).join('')}</optgroup>`:''}${fr.length?`<optgroup label="Свободны — поставить в наряд">${fr.map(opt).join('')}</optgroup>`:''}${no.length?`<optgroup label="Нельзя сегодня">${no.map(q=>`<option disabled>${esc(short(q.n))} · ${why(q)}</option>`).join('')}</optgroup>`:''}</select>${(z.sit||z.opt)?`<button type="button" class="x" data-close="${sh}|${z.id}" aria-label="Закрыть ${esc(z.n)}">✕</button>`:''}</div></div>`;
   });
   if(grp!=='san'){
-    const sk=grp==='mc'?'st_'+sh:'st_'+grp+'_'+sh, st=nar(d)[sk]||'';
-    h+=`<div class="zone st"><div class="zn">Старшая по смене<small>одна из сестёр наряда, с доплатой</small></div><div class="zs"><select id="st-${d}-${sh}-${grp}" data-st="${sk}" class="${!st?'empty':''}" aria-label="Старшая по смене"><option value="">— не назначена —</option>${ppl.map(q=>`<option value="${q.id}"${q.id===st?' selected':''}>${esc(short(q.n))}${!hasDop(q,'st')?' · нет допуска':''}</option>`).join('')}</select></div></div>`;
+    const fz=zones(grp,sh).find(z=>z.id===firstPost(grp,sh)), st=stOf(d,sh,grp), q=st&&byId[st];
+    h+=`<div class="zone st"><div class="zn">Старшая по смене<small>всегда тот, кто на посту 1${grp==='pit'?' ПИТ':''}</small></div><div class="zs" style="font-weight:700">${q?esc(short(q.n))+(!hasDop(q,'st')?' <span style="color:var(--warn);font-weight:400">· нет допуска</span>':''):'<span style="color:var(--muted);font-weight:400">появится, когда поставите сестру на пост 1</span>'}</div></div>`;
   }
   const free=ppl.filter(p=>!used.has(p.id));
   if(free.length) h+=`<div class="free">Без зоны, резерв на смену: <b>${free.map(p=>esc(short(p.n))).join(', ')}</b></div>`;
@@ -680,7 +682,7 @@ function copyText(){
   const d=S.d, byId={};GRPS().forEach(g=>people(g).forEach(p=>byId[p.id]=p));
   let t=`Наряд ${S.br} на ${d} ${MON_G[S.m]}\n`;
   [['day','День'],['night','Ночь 18:00–08:00']].forEach(([sh,tt])=>{
-    t+=`\n${tt}\n`;const st=nar(d)['st_'+sh];if(st&&byId[st])t+=`Старшая по смене: ${short(byId[st].n)}\n`;
+    t+=`\n${tt}\n`;GRPS().filter(g=>g!=='san').forEach(g=>{const st=stOf(d,sh,g);if(st&&byId[st])t+=`Старшая по смене${g==='pit'?' ПИТ':''} (пост 1): ${short(byId[st].n)}\n`});
     GRPS().forEach(g=>activeZones(g,sh,d).forEach(z=>{const p=byId[assigned(d,sh,g)[z.id]];t+=`${g==='san'?'Санитарка — ':''}${z.n}${z.h!=null?' ('+z.h+' ч)':''}: ${p?short(p.n):'—'}\n`}));
   });
   return t;
@@ -800,7 +802,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('change',e=>{
   const t=e.target,ds=t.dataset;
   if(ds.zone){const[sh,g,z]=ds.zone.split('|');const M=touch();M.nar[S.d]=M.nar[S.d]||{};const k=g+'_'+sh;const a=M.nar[S.d][k]=M.nar[S.d][k]||{};
-    if(t.value){Object.keys(a).forEach(x=>{if(a[x]===t.value)delete a[x]});a[z]=t.value;const q=people(g).find(x=>x.id===t.value),Lg=people(g);if(q){const x=code(q,Lg,S.d),need=sh==='day'?['Д','8']:['Н'];if(!need.includes(x))setCode(q,S.d,sh==='day'?'Д':'Н');const m=balMsg(q,Lg);if(m&&m.k==='r')toast(m.t)}}else delete a[z];saveMon();render();return}
+    if(t.value){Object.keys(a).forEach(x=>{if(a[x]===t.value)delete a[x]});a[z]=t.value;if(g!=='san')M.nar[S.d][g==='mc'?'st_'+sh:'st_'+g+'_'+sh]=a[firstPost(g,sh)]||null;const q=people(g).find(x=>x.id===t.value),Lg=people(g);if(q){const x=code(q,Lg,S.d),need=sh==='day'?['Д','8']:['Н'];if(!need.includes(x))setCode(q,S.d,sh==='day'?'Д':'Н');const m=balMsg(q,Lg);if(m&&m.k==='r')toast(m.t)}}else delete a[z];saveMon();render();return}
   if(ds.st){const M=touch();M.nar[S.d]=M.nar[S.d]||{};M.nar[S.d][ds.st]=t.value||null;saveMon();render();return}
   if(ds.b){const M=touch();M.p[ds.b]=Object.assign(M.p[ds.b]||{},{b:t.value});saveMon();render();return}
   if(ds.dop){const[id,k]=ds.dop.split('|');const c=cfg();c.dop[id]=c.dop[id]||{};c.dop[id][k]=t.checked;saveCfg();render();return}
