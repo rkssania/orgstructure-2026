@@ -472,6 +472,7 @@ async function start(){
       const km=[];D.units.forEach(U=>U.groups.forEach(g=>{g.head.forEach(e=>km.push(...e.p));g.depts.forEach(dp=>dp.pos.forEach(e=>km.push(...e.p)))}));
       const nd=await decryptSeed(km.join('|'),'f-up-'+cur+'.enc'); await seed(nd); D={units:nd.units,auto:nd.auto,cards:nd.cards};
     }catch(e){console.warn('patch',e);UPFAIL=String(e&&e.message||e)} }
+  addNewPositions();
   index();
   $('out').innerHTML='<div class="msg">Загружаю отметки коллег…</div>';
   try{ALL=await loadColl('fa'); const e=await loadColl('fe'); EDITS={}; Object.entries(e).forEach(([id,v])=>{v.id=id;EDITS[id]=v})}catch(_){}
@@ -484,6 +485,19 @@ async function start(){
   }).subscribe(st=>{if(st==='SUBSCRIBED'){LIVE=true}else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'||st==='CLOSED'){LIVE=false}});
   // если живое обновление не работает (сеть блокирует), подтягиваем изменения раз в 20 секунд
   setInterval(async()=>{if(LIVE||document.hidden||busy())return;try{const fa=await loadColl('fa'),fe=await loadColl('fe');ALL=fa;EDITS={};Object.entries(fe).forEach(([id,v])=>{v.id=id;EDITS[id]=v});rr()}catch(_){}},20000);
+}
+// Новые должности, которых ещё нет в загруженной структуре: добавляются на странице, чтобы в них можно было переносить функции.
+// Номер карточки постоянный (9001), поэтому перенесённые функции не теряются при обновлении страницы.
+const NEW_POS=[{ci:9001,t:'Старшая медицинская сестра стационара',dept:/стационар/i,alt:/сестринск/i}];
+function addNewPositions(){
+  NEW_POS.forEach(np=>{
+    if(D.cards.some(c=>c&&c.t===np.t))return;
+    D.cards[np.ci]={t:np.t,ops:[],st:'draft'};
+    D.units.forEach(U=>{if(!BR.includes(U.id))return;let done=false;
+      const put=re=>U.groups.forEach(g=>g.depts.forEach(dp=>{if(!done&&re.test(dp.name)){dp.pos.push({c:np.ci,p:[]});done=true}}));
+      put(np.dept); if(!done)put(np.alt);
+    });
+  });
 }
 let LIVE=false, UPFAIL='';
 let SIGNUP=false;
