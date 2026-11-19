@@ -337,14 +337,16 @@ function mScreen(ui,gi,di,pi,oi){
 function mvResults(){
   const box=$('mvres'); if(!box)return; const {a}=parse(); const sci=posList(+a[0],+a[1],a[2])[+a[3]].c, sU=D.units[+a[0]];
   const q=norm(MV.q), w=q?q.split(/\s+/):[];
-  const list=allPos(MV.u).filter(x=>!(MV.u===+a[0]&&x.e.c===sci)&&!hidden(D.cards[x.e.c])).filter(x=>{if(!w.length)return true;const k=norm(disp(D.cards[x.e.c].t)+' '+x.d+' '+x.e.p.join(' '));const ws=k.split(/\s+/);return w.every(t=>ws.some(y=>y.startsWith(t)))});
+  const fromN=nurseLike(D.cards[sci].t);
+  let list=allPos(MV.u).filter(x=>!(MV.u===+a[0]&&x.e.c===sci)&&!hidden(D.cards[x.e.c])).filter(x=>{if(!w.length)return true;const k=norm(disp(D.cards[x.e.c].t)+' '+x.d+' '+x.e.p.join(' '));const ws=k.split(/\s+/);return w.every(t=>ws.some(y=>y.startsWith(t)))});
+  const allN=list.length; if(fromN&&!MV.all) list=list.filter(x=>nurseLike(D.cards[x.e.c].t));
   const T=MV.tgt;
   box.innerHTML=(T?`<div class="warn" style="background:color-mix(in srgb,var(--tint) 12%,transparent);color:var(--ink)">${MV.copy?'Скопировать':'Перенести'} в <b>${esc(disp(D.cards[T.e.c].t))}</b> · ${esc(T.d)} · ${esc(short(D.units[MV.u].name))}?<div class="btns" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="bt pr" type="button" data-mvgo="1">${MV.copy?'Скопировать':'Перенести'}</button><button class="bt" type="button" data-mvx="1">Выбрать другую</button></div></div>`:'')+
-  `<div class="list">`+list.slice(0,60).map((x,i)=>`<button class="row" type="button" data-mvt="${x.gi}|${x.di}|${x.pi}"><span class="tx"><span class="t b">${esc(disp(D.cards[x.e.c].t))}</span><span class="s">${esc(x.d)}${x.e.p.length?' · '+esc(x.e.p.slice(0,2).join(', '))+(x.e.p.length>2?' и ещё '+(x.e.p.length-2):''):' · вакансия'}</span></span>${CHEV}</button>`).join('')+`</div>`+(list.length>60?`<p class="sub" style="margin-top:8px">Показаны первые 60 — уточните поиск.</p>`:'')+(!list.length?`<div class="msg">Ничего не нашли.</div>`:'');
+  `<div class="list">`+list.slice(0,60).map((x,i)=>`<button class="row" type="button" data-mvt="${x.gi}|${x.di}|${x.pi}"><span class="tx"><span class="t b">${esc(disp(D.cards[x.e.c].t))}</span><span class="s">${esc(x.d)}${x.e.p.length?' · '+esc(x.e.p.slice(0,2).join(', '))+(x.e.p.length>2?' и ещё '+(x.e.p.length-2):''):' · вакансия'}</span></span>${CHEV}</button>`).join('')+`</div>`+(list.length>60?`<p class="sub" style="margin-top:8px">Показаны первые 60 — уточните поиск.</p>`:'')+(!list.length?`<div class="msg">Ничего не нашли.</div>`:'')+(fromN&&(allN>list.length||MV.all)?`<div class="links"><button type="button" data-mvall="1">${MV.all?'Показать только медсестёр':'Показать все должности ('+allN+')'}</button></div>`:'');
 }
 /* Забрать функции: выбрать должность-источник, отметить функции, перенести или скопировать в текущую */
 let GV={};
-const nurseLike=t=>/сестр|брат|санитар|сестринск/i.test(t);
+const nurseLike=t=>/сестр|брат/i.test(t);
 function gScreen(ui,gi,di,pi){
   const U=D.units[ui], e=posList(ui,gi,di)[pi], c=D.cards[e.c];
   if(GV.key!==location.hash)GV={key:location.hash,src:null,sel:{},copy:false,q:''};
@@ -353,7 +355,7 @@ function gScreen(ui,gi,di,pi){
   <div class="seg" role="group" aria-label="Как забирать"><button type="button" data-gvc="0" aria-pressed="${!GV.copy}">Перенести</button><button type="button" data-gvc="1" aria-pressed="${GV.copy}">Скопировать</button></div>
   <p class="sub" style="margin-top:4px">${GV.copy?'Функция останется у прежней должности и появится здесь.':'Функция уберётся у прежней должности и появится здесь.'}</p>`;
   if(!GV.src){
-    h+=`<div class="sh">Из какой должности</div><div class="search"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input id="gvq" type="search" placeholder="Найти должность или фамилию" autocomplete="off" aria-label="Поиск должности" value="${esc(GV.q)}"></div><div id="gvres"></div>`;
+    h+=`<div class="sh">Из какой должности${GV.all?'':' · медсёстры'}</div><div class="search"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input id="gvq" type="search" placeholder="Найти должность или фамилию" autocomplete="off" aria-label="Поиск должности" value="${esc(GV.q)}"></div><div id="gvres"></div>`;
     $('out').innerHTML=h; gvResults(); return;
   }
   const S=GV.src, se=posList(ui,S.gi,S.di)[S.pi], sc=D.cards[se.c], sops=opsOf(sc,U.id), nSel=Object.values(GV.sel).filter(Boolean).length;
@@ -368,8 +370,8 @@ function gvResults(){
   const box=$('gvres'); if(!box)return; const {a}=parse(); const ui=+a[0], tci=posList(ui,+a[1],a[2])[+a[3]].c, U=D.units[ui];
   const q=norm(GV.q), w=q?q.split(/\s+/):[];
   let list=allPos(ui).filter(x=>x.e.c!==tci&&!hidden(D.cards[x.e.c])&&opsOf(D.cards[x.e.c],U.id).length).filter(x=>{if(!w.length)return true;const k=norm(disp(D.cards[x.e.c].t)+' '+x.d+' '+x.e.p.join(' '));const ws=k.split(/\s+/);return w.every(t=>ws.some(y=>y.startsWith(t)))});
-  list.sort((x,y)=>(nurseLike(D.cards[y.e.c].t+' '+y.d)?1:0)-(nurseLike(D.cards[x.e.c].t+' '+x.d)?1:0));
-  box.innerHTML=`<div class="list">`+list.slice(0,60).map(x=>`<button class="row" type="button" data-gvs="${x.gi}|${x.di}|${x.pi}|${esc(x.d)}"><span class="tx"><span class="t b">${esc(disp(D.cards[x.e.c].t))}</span><span class="s">${esc(x.d)}${x.e.p.length?' · '+esc(x.e.p.slice(0,2).join(', '))+(x.e.p.length>2?' и ещё '+(x.e.p.length-2):''):' · вакансия'}</span></span><span class="r">${opsOf(D.cards[x.e.c],U.id).length}</span>${CHEV}</button>`).join('')+`</div>`+(list.length>60?`<p class="sub" style="margin-top:8px">Показаны первые 60 — уточните поиск.</p>`:'')+(!list.length?`<div class="msg">Ничего не нашли.</div>`:'');
+  const allN=list.length; if(!GV.all) list=list.filter(x=>nurseLike(D.cards[x.e.c].t));
+  box.innerHTML=`<div class="list">`+list.slice(0,60).map(x=>`<button class="row" type="button" data-gvs="${x.gi}|${x.di}|${x.pi}|${esc(x.d)}"><span class="tx"><span class="t b">${esc(disp(D.cards[x.e.c].t))}</span><span class="s">${esc(x.d)}${x.e.p.length?' · '+esc(x.e.p.slice(0,2).join(', '))+(x.e.p.length>2?' и ещё '+(x.e.p.length-2):''):' · вакансия'}</span></span><span class="r">${opsOf(D.cards[x.e.c],U.id).length}</span>${CHEV}</button>`).join('')+`</div>`+(list.length>60?`<p class="sub" style="margin-top:8px">Показаны первые 60 — уточните поиск.</p>`:'')+(!list.length?`<div class="msg">Ничего не нашли.</div>`:'')+(allN>list.length||GV.all?`<div class="links"><button type="button" data-gvshow="1">${GV.all?'Показать только медсестёр':'Показать все должности ('+allN+')'}</button></div>`:'');
 }
 async function gvDo(){
   const {a}=parse(); const ui=+a[0],gi=+a[1],di=a[2],pi=+a[3], U=D.units[ui], tci=posList(ui,gi,di)[pi].c, tTitle=disp(D.cards[tci].t);
@@ -388,6 +390,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b
   if(ds.gvc!=null){GV.copy=ds.gvc==='1';render();return}
   if(ds.gvs){const[g,d,p,...rest]=ds.gvs.split('|');GV.src={gi:+g,di:d==='h'?'h':d,pi:+p,d:rest.join('|')};GV.sel={};render();window.scrollTo(0,0);return}
   if(ds.gvback){GV.src=null;GV.sel={};render();return}
+  if(ds.gvshow){GV.all=!GV.all;gvResults();return}
   if(ds.gvall){const {a}=parse();const U=D.units[+a[0]],S=GV.src,sops=opsOf(D.cards[posList(+a[0],S.gi,S.di)[S.pi].c],U.id);const all=sops.every(([,x])=>GV.sel[x]);GV.sel={};if(!all)sops.forEach(([,x])=>GV.sel[x]=true);render();return}
   if(ds.gvgo){gvDo();return}
 });
@@ -459,6 +462,7 @@ document.addEventListener('click',async ev=>{const b=ev.target.closest('button')
   if(b.dataset.reseed){seedScreen('Введите код загрузки данных — структура обновится до последней версии. Отметки и правки коллег сохранятся.');return}
   if(b.dataset.edit){panel={edit:1};render();window.scrollTo(0,0);return}
   if(b.dataset.mvc!=null){MV.copy=b.dataset.mvc==='1';render();return}
+  if(b.dataset.mvall){MV.all=!MV.all;MV.tgt=null;mvResults();return}
   if(b.dataset.mvu!=null){MV.u=+b.dataset.mvu;MV.tgt=null;render();return}
   if(b.dataset.mvt){const [g,d,p]=b.dataset.mvt.split('|');const x=allPos(MV.u).find(y=>String(y.gi)===g&&String(y.di)===d&&String(y.pi)===p);MV.tgt=x;mvResults();$('mvres').scrollIntoView({block:'start',behavior:'smooth'});return}
   if(b.dataset.mvx){MV.tgt=null;mvResults();return}
