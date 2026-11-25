@@ -341,6 +341,32 @@ async function loadVotes(){
   setInterval(loadVotes,30000);
 })();
 $("br").addEventListener("change",()=>{if(mine.branch)$("msg").innerHTML=""});
+
+/* Скачать результаты голосования (CSV для Excel) */
+function exportCsv(){
+  const BR=["Караганда","Усть-Каменогорск","Астана"];
+  const ST={chg:"изменено",del:"предлагается убрать",add:"новая функция"};
+  const rows=[["Должность","№","Раздел","Функция","Пометка","Что изменено","Предложение",...BR.flatMap(b=>[b,"Комментарий "+b]),"Итог: за","Итог: против","Итог: воздержусь"]];
+  for(const p of P){let i=0,sec="";
+    for(const x of p.f){
+      if(x[0]==="§"){sec=x[1];continue}
+      i++;const [id,t,s,note,prop]=x;const c={za:0,pr:0,vz:0};
+      const per=BR.flatMap(b=>{const v=all[KEY[b]];const a=v&&v.a&&v.a[id];if(a)c[a]++;return [a?LBL[a]:"",(v&&v.c&&v.c[id])||""]});
+      rows.push([p.name,i,sec,t,ST[s]||"",note||"",prop||"",...per,c.za,c.pr,c.vz]);
+    }}
+  const csv="﻿"+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(";")).join("\r\n");
+  const d=new Date(),dd=String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")+"."+d.getFullYear();
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download="Голосование_функции_СС_"+dd+".csv";
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+const xb=document.createElement("div");
+xb.style.cssText="position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:10px max(4vw,14px);display:flex;justify-content:flex-end;z-index:5";
+xb.innerHTML='<button class="vb" id="xcsv" type="button" style="background:var(--navy);border-color:var(--navy);color:var(--bg)">⬇ Скачать результаты</button>';
+document.body.appendChild(xb);
+$("xcsv").addEventListener("click",async()=>{const b=$("xcsv");b.textContent="Обновляю…";if(db){clearTimeout(saving);if(mine.branch)await save();await loadVotes()}exportCsv();b.textContent="Готово ✓";setTimeout(()=>b.textContent="⬇ Скачать результаты",2500)});
 }
 </script>
 </body>
