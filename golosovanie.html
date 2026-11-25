@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Согласование функций медсестёр</title>
+<meta name="robots" content="noindex">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: clinical, calm, an approval sheet — every function one line to decide on
+   IDEA: a printed approval protocol (лист согласования) with columns За / Против / Воздержусь
+   PICTURE: the protocol itself — tabs by position, rows with the three vote buttons
+   COLOUR and TYPE: white, deep navy ink, terracotta accent; red only for changes, amber for duplicates; Manrope
+   LAYOUT: sticky header with voter + branch, position tabs, function list, tally per branch */
+:root{color-scheme:light dark;
+--bg:light-dark(#ffffff,#0e1622);--ink:light-dark(#0f1e33,#e7edf5);--mute:light-dark(#5b6878,#9aa8b8);
+--line:light-dark(#e3e8ee,#223146);--soft:light-dark(#f4f6f9,#152132);--navy:light-dark(#173a63,#8fb4e2);
+--terra:light-dark(#c4673f,#e3895f);--red:light-dark(#c62828,#ff6b6b);--redbg:light-dark(#fdecec,#3a1717);
+--amber:light-dark(#9a5b00,#ffc35c);--amberbg:light-dark(#fff4dc,#382a10);
+--yes:light-dark(#1d7a46,#5fd394);--no:light-dark(#c62828,#ff6b6b);--abs:light-dark(#6b7480,#a7b1bd)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Manrope,system-ui,sans-serif;overflow-x:clip}
+.wrap{max-width:1100px;margin:0 auto;padding:0 max(4vw,14px)}
+header{padding:28px 0 12px}
+h1{font-size:clamp(26px,4vw,38px);line-height:1.08;margin:0 0 8px;text-wrap:balance;color:var(--navy)}
+.lead{color:var(--mute);margin:0 0 14px;max-width:760px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px;color:var(--mute);margin-bottom:6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 0}
+.bar .wrap{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.me{font-weight:700}
+select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+select:focus,textarea:focus,button:focus-visible{outline:3px solid var(--terra);outline-offset:2px}
+.status{font-size:13px;color:var(--mute);margin-left:auto}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:14px 0 4px}
+.tab{flex:none;border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:999px;padding:10px 16px;font:600 15px Manrope,sans-serif;cursor:pointer;min-height:44px}
+.tab[aria-selected=true]{background:var(--navy);color:var(--bg);border-color:var(--navy)}
+.tab small{opacity:.75;font-weight:600;margin-left:6px}
+.pos-head{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:baseline;margin:18px 0 8px}
+.pos-head h2{margin:0;font-size:24px}
+.pos-head p{margin:0;color:var(--mute);font-size:14px}
+.prog{font-size:14px;color:var(--mute)}
+ol.fl{list-style:none;margin:0 0 60px;padding:0;border-top:1px solid var(--line)}
+.fi{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:6px 14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.fi.chg{box-shadow:inset 4px 0 0 var(--red);padding-left:10px}
+.num{color:var(--mute);font-weight:700;padding-top:2px}
+.tt{font-weight:600}
+.fi.del .tt{text-decoration:line-through;color:var(--red)}
+.note{color:var(--red);font-size:14px;margin-top:4px}
+.note b{font-weight:700}
+.prop{font-size:14px;margin-top:4px}
+.prop b{color:var(--navy)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{font-size:12px;font-weight:700;border-radius:6px;padding:2px 8px}
+.t-red{background:var(--redbg);color:var(--red)}
+.t-dup{background:var(--amberbg);color:var(--amber)}
+.t-br{background:var(--soft);color:var(--mute)}
+.vote{display:flex;gap:6px;align-items:flex-start}
+.vb{min-height:44px;min-width:44px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:600 14px Manrope,sans-serif;cursor:pointer}
+.vb[aria-pressed=true].y{background:var(--yes);border-color:var(--yes);color:#fff}
+.vb[aria-pressed=true].n{background:var(--no);border-color:var(--no);color:#fff}
+.vb[aria-pressed=true].a{background:var(--abs);border-color:var(--abs);color:#fff}
+.vb:disabled{opacity:.45;cursor:not-allowed}
+.tally{grid-column:2/4;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--mute)}
+.tally .v-y{color:var(--yes);font-weight:700}.tally .v-n{color:var(--no);font-weight:700}.tally .v-a{color:var(--abs);font-weight:700}
+.cm{grid-column:2/4}
+.cm textarea{width:100%;min-height:44px;resize:vertical}
+.cmt{font-size:13px;color:var(--ink);background:var(--soft);border-radius:8px;padding:6px 10px;margin-top:4px}
+.cmt i{color:var(--mute);font-style:normal;font-weight:700}
+.sec{grid-column:1/-1;font-weight:800;color:var(--terra);padding:18px 0 4px;border-bottom:0}
+.msg{background:var(--amberbg);color:var(--amber);border-radius:10px;padding:10px 14px;font-size:14px;margin:10px 0}
+@media(max-width:700px){.fi{grid-template-columns:28px minmax(0,1fr)}.vote{grid-column:2}.tally,.cm{grid-column:2}.status{margin-left:0;width:100%}}
+@media(prefers-reduced-motion:no-preference){.vb{transition:background .15s}}
+</style>
+</head>
+<body>
+<header class="wrap">
+<h1>Согласование функций сестринской службы</h1>
+<p class="lead">Согласуют руководители сестринских служб: Турмуратова Дана Алмазовна (Караганда), Егимбаева Жанерке Саулетбековна (Усть-Каменогорск), Сабитова Гульнар Каиржановна (Астана). Проект собран из правок филиалов в модуле «Функционал» (данные на 24.11.2026). По каждой функции отметьте «За», «Против» или «Воздержусь»; при «Против» напишите, как должно быть.</p>
+<div class="legend">
+<span><i class="sw" style="background:var(--red)"></i>красным — изменено филиалами или предложено к изменению</span>
+<span><i class="sw" style="background:var(--amber)"></i>дубль: руководитель СС ↔ старшая медсестра</span>
+</div>
+</header>
+<div class="bar"><div class="wrap">
+<a href="funkcii.html" style="color:var(--navy);font-weight:700;text-decoration:none">‹ Функционал</a>
+<span class="me" id="me" hidden></span>
+<label for="br">Я —</label>
+<select id="br"><option value="">— выберите себя —</option><option value="Караганда">Турмуратова Дана Алмазовна · Караганда</option><option value="Усть-Каменогорск">Егимбаева Жанерке Саулетбековна · Усть-Каменогорск</option><option value="Астана">Сабитова Гульнар Каиржановна · Астана</option></select>
+<span class="status" id="st">Подключаюсь…</span>
+</div></div>
+<main class="wrap">
+<div id="msg"></div>
+<form id="lf" hidden style="max-width:380px;margin:20px 0;padding:18px;border:1px solid var(--line);border-radius:12px"><h2 style="margin:0 0 8px;font-size:20px">Вход</h2><p style="margin:0 0 10px;color:var(--mute);font-size:14px">Те же логин и пароль, что в «Функционале».</p><input id="lf-email" type="email" autocomplete="username" placeholder="Логин (email)" style="width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--soft);color:var(--ink)"><input id="lf-pass" type="password" autocomplete="current-password" placeholder="Пароль" style="width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;background:var(--soft);color:var(--ink)"><button class="vb" type="submit" style="background:var(--navy);color:#fff;border-color:var(--navy)">Войти</button><div id="lf-err" style="color:var(--red);margin-top:8px;font-size:14px"></div></form>
+<nav class="tabs" id="tabs" role="tablist"></nav>
+<section id="pos"></section>
+</main>
+<script>
+{
+const P=[
+{id:"rss",name:"Руководитель сестринской службы",sub:"Турмуратова Дана Алмазовна (КРГ) · Егимбаева Жанерке Саулетбековна (УК) · Астана — вакансия",f:[
+["§","Планерки, обходы, питание"],
+["r1","Участие в ежедневных пятиминутках / планерке"],
+["r2","Участие в ежедневных сестринских планерках","chg","Караганда продублировала эту функцию (перенесла из «Медицинской сестры»).","Оставить одну; у медсестёр вернуть."],
+["r3","Организация ежедневной сестринской планерки"],
+["r4","Участие в общем еженедельном обходе"],
+["r5","Проведение бракеражной пробы","chg","Астана: не делаю.","Оставить; Астане уточнить, кто делает."],
+["r6","Составление меню лечебного питания","chg","Астана: не делаю.","Оставить; Астане уточнить."],
+["§","Персонал и графики"],
+["r7","Участие в закрытии вакансий СМР и ММП"],
+["r8","Сопровождение адаптации нового сотрудника","chg","Исправлено: согласует наставника, а не адаптирует сам. УК: наставники — старшие медсёстры и МС ИК.","РСС — план адаптации и итоги испытательного срока; наставничество — у старшей.","Адаптация"],
+["r9","Формирование единого графика дежурств филиала","chg","Изменено: графики подают старшие медсёстры, РСС сводит и закрывает часы.","Принять в редакции УК."],
+["r10","Согласование графика отпусков подчинённых","chg","Исправлена формулировка (все филиалы)."],
+["r18","Формирование графика работы подчинённых","chg","УК: график составляет старшая медсестра, РСС согласует.","Передать старшей; у РСС — согласование.","График работы"],
+["r11","Заявка на обучение / повышение квалификации СМР"],
+["r12","Организация выдачи молока сотрудникам, работающим с цитостатиками"],
+["r40","Контроль качества сестринских манипуляций","chg","Все филиалы: совместно со старшей медсестрой.","Старшая — ежедневный контроль; РСС — выборочный и анализ.","Контроль манипуляций"],
+["r41","Разбор сестринских ошибок и инцидентов","chg","Добавлено Карагандой.","РСС — анализ по филиалу и меры; старшая — выявление и первичный разбор.","Инциденты"],
+["§","Оборудование и проверки"],
+["r13","Контроль исправности медицинского инструментария"],
+["r14","Подготовка к проверке СЭС","chg","КРГ и УК: совместно с медсестрой ИК.","Вписать «совместно с МС ИК»."],
+["r15","Организация поверки измерительного оборудования","chg","КРГ: совместно с АХС — РСС заявка и проверка, АХС отправка и документы.","Разделить так для всех."],
+["r16","Участие в проектной деятельности","chg","Караганда: не делаю.","Оставить."],
+["r20","Соблюдение инфекционного контроля","chg","Караганда перенесла в «Медицинскую сестру».","Оставить у всех должностей."],
+["§","Лекарства и изделия — из исполнения в контроль"],
+["r23","Хранение, учёт и списание ЛС и МИ","chg","УК, Астана: только контроль условий хранения на местах.","Переименовать: «Контроль условий хранения ЛС и МИ в подразделениях»."],
+["r35","Приём и сдача кабинета разведения","chg","УК, Астана: выборочные проверки кабинета.","Объединить с r36 и r33 в «Выборочный контроль кабинета разведения»."],
+["r36","Подготовка и разведение ЛС","chg","УК, Астана: выборочные проверки соблюдения СОП.","Объединить (см. выше)."],
+["r30","Формирование кучной выдачи ЛС","chg","УК, Астана: только контроль; КРГ: выдаёт фармацевтическая медсестра.","Контроль; выполнение — ОГФ."],
+["r34","Обращение с личными препаратами пациента","chg","Получают помощники врача, хранит ОГФ; РСС — контроль.","Контроль."],
+["r38","Разработка СОП по обращению ЛС и МИ","chg","Частично — СОПами занимается ОГФ.","Оставить «участвует»."],
+["§","Предлагается убрать из РСС"],
+["r19","Обеспечение блока ЛС и МИ","del","Все филиалы: не делаю / контроль.","Передать старшей (заявки на МИ, заявка ЛС для ПИТ).","Заявки ЛС/МИ"],
+["r21","Контроль выполнения назначений врачей","del","УК, КРГ: проверяют старшие медсёстры.","Передать старшей.","Назначения"],
+["r29","Подтверждение статталона в МИС","del","Закрывают старшая ОГФ (ЛС) и старшая стационара (МИ).","Передать старшим."],
+["r37","Участие в инвентаризации ЛС и МИ","del","УК: проводят старшие медсёстры.","Передать старшей.","Инвентаризация"],
+["r17","Информационно-разъяснительная работа с пациентами","del","КРГ перенесла старшей; УК: совместно с помощниками врача.","Передать старшей.","Разъяснительная работа"],
+["r22","Выполнение установки инфузий","del","Выполняют медсёстры; РСС анализирует проверки старших.","Перенести в «Медицинскую сестру»."],
+["r24","Ассистирование при трепанобиопсии","del","КРГ, УК: не делаю. Астана: делаю.","Перенести в «Медицинскую сестру»; Астане уточнить."],
+["r25","Ассистирование при пункции костного мозга","del","КРГ, УК: не делаю. Астана: делаю.","Перенести в «Медицинскую сестру»."],
+["r26","Ассистирование при постановке ЦВК","del","Все: не делаю.","Перенести в «Медицинскую сестру»."],
+["r27","Манипуляции с ЦВК","del","Все: не делаю.","Перенести в «Медицинскую сестру»."],
+["r28","Измерение ЦВД","del","Все: не делаю.","Перенести в «Медицинскую сестру»."],
+["r31","Сверка остатков ЛС общего пользования","del","Все: не делаю.","Перенести в «Медицинскую сестру»."],
+["r32","Подготовка и раздача ЛС","del","КРГ: медсестра кабинета разведения.","Кабинет разведения (ОГФ)."],
+["r33","Учёт цитостатических препаратов","del","Только хранение в кабинете разведения.","Кабинет разведения (ОГФ)."],
+["r39","Обеспечение блока централизованного разведения","del","Старшая медсестра ОГФ.","Передать ОГФ."]
+]},
+{id:"senior",name:"Старшая медсестра стационара",sub:"Новая должность во всех филиалах. Проект руководителей СС Караганды и Усть-Каменогорска; Астана не вносила.",f:[
+["§","Персонал"],
+["s1","Составление графика работы среднего и младшего персонала отделения","chg","Предложила только УК; в Караганде график остаётся у РСС.","Решить единообразно.","График работы"],
+["s2","Организует наставничество и адаптацию новых сотрудников","chg","УК: при необходимости сама наставник по манипуляциям.","","Адаптация"],
+["s3","План внутреннего обучения и практические тренинги по СОП (в т.ч. ANTT, уход за ЦВК, ПВК, порт-системами)","chg","Объединены две функции обоих филиалов."],
+["s5","Выявление нарушений в работе персонала, корректирующие меры и контроль"],
+["§","Качество и безопасность"],
+["s6","Контроль качества сестринских манипуляций по СОП","chg","Перенесена из РСС.","","Контроль манипуляций"],
+["s7","Разбор сестринских ошибок, инцидентов, нежелательных событий","chg","Объединены две функции Караганды (была дублирующая).","","Инциденты"],
+["s9","Контроль асептики, гигиены рук, барьерного ухода и изоляции","chg","Пересекается с медсестрой ИК.","Старшая — ежедневно на постах; МС ИК — аудит и отчёт КИК."],
+["s10","Контроль ухода за ЦВК, PICC и порт-системами","chg","Пересекается с медсестрой ИК.","Как выше."],
+["s11","Контроль ведения медицинской и сестринской документации на постах"],
+["s12","Контроль выполнения назначений врачей в МИС","chg","Перенесена из РСС.","","Назначения"],
+["s13","Контроль внесения результатов исследований в МИС","chg","Перенесена из «Медицинской сестры»."],
+["s14","Закрытие статкарты: контроль использованных МИ","chg","Предложила только УК; в Караганде делает старшая ОГФ.","ЛС — ОГФ, МИ — старшая стационара."],
+["§","Лекарства и изделия"],
+["s15","Заявки на МИ: планирование с провизором, получение, учёт, списание","chg","Объединены две функции; убрать упоминание блока ТГСК.","","Заявки ЛС/МИ"],
+["s17","Ежемесячная заявка на ЛС для ПИТ (с заведующим и провизором)","chg","Зависит от решения по медсестре ПИТ."],
+["s18","Участие в инвентаризации ЛС и МИ (в т.ч. техническое списание)","chg","Перенесена из РСС.","","Инвентаризация"],
+["s19","Учёт, хранение и контроль оборота НС, ПВ, сильнодействующих препаратов и прекурсоров"],
+["s20","Контроль укладок экстренной и неотложной помощи"],
+["§","Пациенты"],
+["s21","Информационно-разъяснительная работа с пациентами и родственниками","chg","Перенесена из РСС.","","Разъяснительная работа"],
+["§","Не хватает в проекте"],
+["s22","Распределение ежедневного наряда (старшая по смене, посты, трансфузионный, манипуляционный, санитарки)","add","Нет ни у РСС, ни у старшей.","Предлагаю закрепить за старшей."]
+]},
+{id:"ms",name:"Медицинская сестра (универсал)",sub:"Одна карточка на все филиалы; трансфузионная и медсестра КС/ДС — внутри. Кабинет разведения не входит.",f:[
+["§","Общие"],
+["m1","Участие в ежедневных сестринских планерках","chg","Караганда перенесла в РСС.","Вернуть медсёстрам."],
+["m2","Соблюдение инфекционного контроля"],
+["m19","Приём и передача смены по системе СПОР","chg","Астана: не делаю.","Оставить с пометкой «при наличии КС»."],
+["m30","Информационно-разъяснительная работа с пациентами"],
+["§","Манипуляции"],
+["m3","Забор крови"],
+["m4","Установка инфузий","chg","Перенесена из РСС (Караганда — дважды, удалить дубль)."],
+["m6","Ассистирование при постановке ЦВК","chg","Астана: не делаю; КРГ — дубль.","Пометка «при наличии КС»."],
+["m7","Манипуляции с ЦВК","chg","Астана: не делаю; КРГ — дубль.","Пометка «при наличии КС»."],
+["m12","Измерение ЦВД","chg","Астана: не делаю; КРГ — дубль.","Пометка «при наличии КС»."],
+["m9","Ассистирование при трепанобиопсии","chg","КРГ — дубль."],
+["m10","Ассистирование при пункции костного мозга","chg","КРГ — дубль."],
+["m11","Дезинфекция многоразового инструментария"],
+["m20","Постановка мочевого катетера","chg","Астана: не делаю.","Пометка «при наличии КС»."],
+["m21","Клизмы","chg","Астана: не делаю.","Пометка «при наличии КС»."],
+["m24","Неинвазивные манипуляции (оксигенация, ЭКГ, ингаляции)"],
+["§","Наблюдение и уход"],
+["m27","Постоянный мониторинг состояния пациента"],
+["m31","Измерение показателей при госпитализации"],
+["m33","Внесение показателей жизнедеятельности в МИС","add","Добавлено Карагандой.","Принять для всех."],
+["m29","Оценка риска падения по шкалам"],
+["m22","Гигиенические мероприятия с пациентом","chg","Астана: не делаю.","Пометка «при наличии КС»."],
+["m23","Обработка и профилактика пролежней","chg","Астана: не делаю.","Пометка «при наличии КС»."],
+["m25","Подготовка к инструментальным исследованиям"],
+["m26","Укомплектование процедурного столика в палатах"],
+["m32","Триаж в приёмном покое","chg","Астана: не делаю.","Пометка «при наличии приёмного покоя»."],
+["§","Биоматериал и анализы"],
+["m28","Сбор биоматериала неинвазивным методом"],
+["m8","Подготовка биоматериала к отправке","chg","Астана: только отправка."],
+["m13","Общий анализ крови на анализаторе в выходные","chg","Астана: только забор крови.","Решить, работает ли медсестра на анализаторе."],
+["m18","Внесение результатов ВИЧ пациентов и сотрудников","chg","Астана: не делаю."],
+["§","Трансфузия"],
+["m15","Подготовка трансфузионного кабинета","chg","","Допуск к трансфузионному наряду — после обучения."],
+["m16","Проведение трансфузии"],
+["m17","Списание компонентов крови","chg","КРГ — дубль."],
+["§","Журналы и лекарства"],
+["m34","Журнал установки и удаления ЦВК","add","Караганда забрала у медсестры ИК.","Принять для всех; МС ИК — контроль."],
+["m35","Журнал бактериальных посевов пациентов","add","Караганда забрала у медсестры ИК.","Принять для всех."],
+["m5","Сверка остатков ЛС общего пользования от предыдущей смены","chg","В Караганде пропала из карточки.","Вернуть."],
+["m14","Контроль внесения результатов исследований в МИС","del","Перенесена старшей (КРГ); Астана: не делаю.","Убрать у медсестры."]
+]},
+{id:"ik",name:"Медсестра инфекционного контроля",sub:"Субота Наталья Владимировна (КРГ) · Григорьева Светлана Николаевна (УК) · Астана — вакансия",f:[
+["§","Планерки и проверки"],
+["k1","Участие в ежедневных пятиминутках / планерке"],
+["k2","Участие в ежедневных сестринских планерках"],
+["k4","Подготовка к проверке СЭС","chg","Совместно с РСС."],
+["k10","Ежемесячный отчёт на комиссию по ИК"],
+["k11","Организация производственного контроля"],
+["§","Обучение и контроль"],
+["k6","Обучение и инструктажи по инфекционной безопасности"],
+["k23","Инструктаж по технике безопасности с дезсредствами"],
+["k21","Контроль инфекционного контроля в отделении","chg","Пересекается со старшей медсестрой.","МС ИК — аудит, обучение, отчёт; старшая — ежедневный контроль."],
+["k5","Контроль санитарно-гигиенического состояния помещений"],
+["k13","Контроль качества уборки"],
+["k16","Организация заключительной уборки"],
+["k14","График генеральных уборок","chg","КРГ: составляет сестра-хозяйка, МС ИК утверждает.","Принять схему Караганды."],
+["k15","Проверка пригодности уборочного инвентаря","chg","КРГ: проверяет сестра-хозяйка, МС ИК контролирует.","Принять схему Караганды."],
+["k17","Контроль бельевого режима в КС","chg","Пропала из карточки Караганды.","Уточнить, кто контролирует."],
+["k12","Контроль очистки вентиляции и кондиционеров","chg","Караганда: не делаю.","Уточнить у Караганды (АХС?)."],
+["k20","Учёт рабочего времени кварцевых ламп, HEPA-фильтров, рециркуляторов"],
+["§","Медосмотры и персонал"],
+["k18","Учёт медицинских книжек персонала","chg","Астана: с 2025 года книжки электронные — ведётся реестр сроков допуска.","Переписать по тексту Астаны для всех."],
+["k19","Организация обязательных медосмотров"],
+["k9","Журнал бактериальных посевов сотрудников","chg","Астана: не делаю.","Оставить; уточнить у Астаны."],
+["§","Предлагается убрать"],
+["k7","Журнал установки и удаления ЦВК","del","КРГ: ведут медсёстры; Астана: не делаю.","Передать медсестре, у МС ИК — контроль журнала."],
+["k8","Журнал бакпосевов пациентов","del","КРГ: ведут медсёстры; Астана: не делаю.","Передать медсестре."],
+["k3","Бракеражная проба","del","КРГ, Астана: не делаю.","Убрать."],
+["k22","Участие в комиссии по утилизации ЛС","del","КРГ, Астана: не делаю.","Убрать."]
+]}];
+
+const OPTS=[["za","За","y"],["pr","Против","n"],["vz","Воздержусь","a"]];
+const LBL={za:"за",pr:"против",vz:"воздержусь"};
+const WHO={"Караганда":"Турмуратова Д. А. (Караганда)","Усть-Каменогорск":"Егимбаева Ж. С. (Усть-Каменогорск)","Астана":"Сабитова Г. К. (Астана)"};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $=id=>document.getElementById(id);
+let cur=(()=>{try{return localStorage.getItem("nv-tab")}catch(e){return null}})()||"rss";
+if(location.hash&&P.some(p=>p.id===location.hash.slice(1)))cur=location.hash.slice(1);
+let db=null,user=null,myId=null,mine={branch:"",a:{},c:{}},all={},names={},canWrite=true;
+
+const fcount=p=>p.f.filter(x=>x[0]!=="§").length;
+function renderTabs(){
+  $("tabs").innerHTML=P.map(p=>{const n=fcount(p),d=p.f.filter(x=>x[0]!=="§"&&mine.a[x[0]]).length;
+    return `<button class="tab" role="tab" data-t="${p.id}" aria-selected="${p.id===cur}">${esc(p.name)}<small>${d}/${n}</small></button>`}).join("");
+}
+function tallyHtml(fid){
+  const rows=Object.entries(all).filter(([,v])=>v&&v.a&&v.a[fid]);
+  if(!rows.length)return `<span>Голосов пока нет</span>`;
+  const cnt={za:0,pr:0,vz:0};rows.forEach(([,v])=>cnt[v.a[fid]]=(cnt[v.a[fid]]||0)+1);
+  const per=rows.map(([id,v])=>`<span>${esc(WHO[v.branch]||"участник")}: <b class="v-${v.a[fid]==="za"?"y":v.a[fid]==="pr"?"n":"a"}">${LBL[v.a[fid]]}</b></span>`).join("");
+  const cm=rows.filter(([,v])=>v.c&&v.c[fid]).map(([id,v])=>`<div class="cmt"><i>${esc(WHO[v.branch]||"")}:</i> ${esc(v.c[fid])}</div>`).join("");
+  return `<span><b class="v-y">${cnt.za} за</b> · <b class="v-n">${cnt.pr} против</b> · <b class="v-a">${cnt.vz} возд.</b></span>${per}${cm?`<div style="width:100%">${cm}</div>`:""}`;
+}
+function renderPos(){
+  const p=P.find(x=>x.id===cur);let i=0;
+  const dis="";
+  const items=p.f.map(x=>{
+    if(x[0]==="§")return `<li class="sec">${esc(x[1])}</li>`;
+    i++;const [id,t,s,note,prop,dup]=x;const ch=s==="chg"||s==="del"||s==="add";
+    const tags=[s==="del"?'<span class="tag t-red">предлагается убрать</span>':"",s==="add"?'<span class="tag t-red">новая функция</span>':"",dup?`<span class="tag t-dup">дубль РСС ↔ старшая: ${esc(dup)}</span>`:""].join("");
+    const v=mine.a[id];
+    return `<li class="fi ${ch?"chg":""} ${s==="del"?"del":""}" id="f-${id}">
+      <div class="num">${i}</div>
+      <div><div class="tt">${esc(t)}</div>
+        ${note?`<div class="note">${esc(note)}</div>`:""}
+        ${prop?`<div class="prop"><b>Предложение:</b> ${esc(prop)}</div>`:""}
+        ${tags?`<div class="tags">${tags}</div>`:""}</div>
+      <div class="vote">${OPTS.map(o=>`<button class="vb ${o[2]}" data-f="${id}" data-v="${o[0]}" aria-pressed="${v===o[0]}" ${dis}>${o[1]}</button>`).join("")}</div>
+      ${v==="pr"||(mine.c[id])?`<div class="cm"><textarea data-c="${id}" placeholder="Как должно быть?" ${dis}>${esc(mine.c[id]||"")}</textarea></div>`:""}
+      <div class="tally">${tallyHtml(id)}</div></li>`}).join("");
+  const done=p.f.filter(x=>x[0]!=="§"&&mine.a[x[0]]).length;
+  $("pos").innerHTML=`<div class="pos-head"><h2>${esc(p.name)}</h2><span class="prog">Вы отметили ${done} из ${fcount(p)}</span></div><p class="lead" style="margin:0 0 10px">${esc(p.sub)}</p><ol class="fl">${items}</ol>`;
+}
+function render(){renderTabs();renderPos()}
+
+let saving=null,SB=null,ME=null;
+const KEY={"Караганда":"krg","Усть-Каменогорск":"uk","Астана":"ast"};
+async function save(){
+  if(!db||!mine.branch)return;
+  $("st").textContent="Сохраняю…";
+  const id=KEY[mine.branch];
+  const {error}=await SB.from("items").upsert({coll:"vote_ss",id,data:{branch:mine.branch,a:mine.a,c:mine.c,by:ME,at:Date.now()},by_email:ME,at:new Date().toISOString()});
+  if(error){$("st").textContent="Не сохранилось — проверьте интернет";return}
+  $("st").textContent="Сохранено";
+}
+function queueSave(){clearTimeout(saving);saving=setTimeout(save,500)}
+
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;cur=b.dataset.t;try{localStorage.setItem("nv-tab",cur)}catch(_){};history.replaceState(null,"","#"+cur);render();window.scrollTo({top:0})});
+$("pos").addEventListener("click",e=>{const b=e.target.closest(".vb");if(!b)return;const f=b.dataset.f,v=b.dataset.v;
+  if(!db){$("msg").innerHTML='<div class="msg">Сначала войдите — форма входа ниже.</div>';window.scrollTo({top:0});return}
+  if(!mine.branch){$("msg").innerHTML='<div class="msg">Сначала выберите себя в списке «Я —» вверху.</div>';$("br").focus();window.scrollTo({top:0});return}
+  if(!canWrite)return;
+  if(mine.a[f]===v)delete mine.a[f];else mine.a[f]=v;all[KEY[mine.branch]]={...mine};render();queueSave()});
+$("pos").addEventListener("input",e=>{const t=e.target.closest("[data-c]");if(!t)return;const f=t.dataset.c;
+  if(t.value.trim())mine.c[f]=t.value;else delete mine.c[f];all[KEY[mine.branch]]={...mine};queueSave()});
+$("pos").addEventListener("change",e=>{if(e.target.closest("[data-c]"))renderPos()});
+$("br").addEventListener("change",e=>{const b=e.target.value;const prev=all[KEY[b]];mine={branch:b,a:(prev&&prev.a)||{},c:(prev&&prev.c)||{}};try{localStorage.setItem("nv-who",b)}catch(_){};render()});
+
+render();
+async function loadVotes(){
+  const {data,error}=await SB.from("items").select("id,data").eq("coll","vote_ss");
+  if(error){$("st").textContent="Не удалось загрузить голоса";return}
+  all={};data.forEach(x=>all[x.id]=x.data);
+  if(mine.branch){const m=all[KEY[mine.branch]];if(m&&!Object.keys(mine.a).length){mine.a=m.a||{};mine.c=m.c||{}}}
+  $("st").textContent="Отметили: "+["Караганда","Усть-Каменогорск","Астана"].map(b=>{const v=all[KEY[b]];return b+" "+(v?Object.keys(v.a||{}).length:0)}).join(" · ")+" из "+P.reduce((s,p)=>s+fcount(p),0);
+  render();
+}
+(async()=>{
+  if(!window.supabase||!window.SUPABASE_URL){$("st").textContent="Нет связи с базой. Обновите страницу.";return}
+  SB=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+  const {data:{session}}=await SB.auth.getSession();
+  if(!session){$("lf").hidden=false;$("st").textContent="Войдите, чтобы голосовать";
+    $("lf").addEventListener("submit",async e=>{e.preventDefault();const {error}=await SB.auth.signInWithPassword({email:$("lf-email").value.trim(),password:$("lf-pass").value});if(error){$("lf-err").textContent="Не получилось войти. Проверьте логин и пароль.";return}location.reload()});
+    return}
+  ME=session.user.email;db=true;
+  let who=null;try{who=localStorage.getItem("nv-who")}catch(_){}
+  if(who&&KEY[who]){mine.branch=who;$("br").value=who}
+  else $("msg").innerHTML='<div class="msg">Выберите себя в списке «Я —» вверху — и голосуйте.</div>';
+  await loadVotes();
+  setInterval(loadVotes,30000);
+})();
+$("br").addEventListener("change",()=>{if(mine.branch)$("msg").innerHTML=""});
+}
+</script>
+</body>
+</html>
