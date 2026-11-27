@@ -535,6 +535,7 @@ async function start(){
   $('out').innerHTML='<div class="msg">Загружаю отметки коллег…</div>';
   try{ALL=await loadColl('fa'); const e=await loadColl('fe'); EDITS={}; Object.entries(e).forEach(([id,v])=>{v.id=id;EDITS[id]=v})}catch(_){}
   clearTimeout(slow); db=true; dbState='on'; feedOn=true; render();
+  if(OWNER) fixKlod().catch(e=>alertBar('Перенос функций Клодзинский → Болянская не выполнен: '+(e.message||e)));
   SB.channel('funkcii').on('postgres_changes',{event:'*',schema:'public',table:'items',filter:'coll=in.(fa,fe)'},p=>{
     const n=p.new&&p.new.coll?p.new:null, o=p.old||{}, coll=(n&&n.coll)||o.coll, id=(n&&n.id)||o.id; if(!id)return;
     const M=coll==='fe'?EDITS:coll==='fa'?ALL:null; if(!M)return;
@@ -543,6 +544,25 @@ async function start(){
   }).subscribe(st=>{if(st==='SUBSCRIBED'){LIVE=true}else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'||st==='CLOSED'){LIVE=false}});
   // если живое обновление не работает (сеть блокирует), подтягиваем изменения раз в 20 секунд
   setInterval(async()=>{if(LIVE||document.hidden||busy())return;try{const fa=await loadColl('fa'),fe=await loadColl('fe');ALL=fa;EDITS={};Object.entries(fe).forEach(([id,v])=>{v.id=id;EDITS[id]=v});rr()}catch(_){}},20000);
+}
+// Разовое исправление (27.11.2026): всё, что ошибочно оказалось у Клодзинского, переносится руководителю отдела клинических исследований (Болянская); у Клодзинского — пусто.
+async function fixKlod(){
+  const FLAG='fix-klod-bolyansk-1'; if(EDITS[FLAG])return;
+  const find=re=>{const r=[];D.units.forEach((U,ui)=>U.groups.forEach((g,gi)=>{g.head.forEach((e,pi)=>{if(e.p.some(n=>re.test(n)))r.push({U,ui,gi,di:'h',pi,e})});g.depts.forEach((d,di)=>d.pos.forEach((e,pi)=>{if(e.p.some(n=>re.test(n)))r.push({U,ui,gi,di,pi,e})}))}));return r};
+  const K=find(/Кл[ао]дз?инск/i)[0], B=find(/Бол[яа]нск/i)[0];
+  if(!K||!B) throw new Error(!K?'не найден Клодзинский':'не найдена Болянская');
+  if(K.e.c===B.e.c) throw new Error('у них одна и та же карточка должности');
+  const kc=D.cards[K.e.c], bt=disp(D.cards[B.e.c].t), kt=disp(kc.t);
+  const ops=opsOf(kc,K.U.id); let k=0;
+  for(const [o,x] of ops){
+    const nid='n'+(Date.now()+k++).toString(36);
+    if(!await putEdit(ekey(B.e.c,nid,B.U.id),Object.assign(pick(o),{c:B.e.c,oi:nid,u:B.U.id,isNew:true,sec:o.sec||'main',t0:Date.now()+k,movedFrom:{c:K.e.c,oi:x,u:K.U.id,t:kt}})))throw new Error('нет связи с базой');
+    const old=EDITS[ekey(K.e.c,x,K.U.id)]||{};
+    if(!await putEdit(ekey(K.e.c,x,K.U.id),Object.assign({},old,{c:K.e.c,oi:x,u:K.U.id,del:true,proc:o.proc||'',movedTo:{c:B.e.c,u:B.U.id,t:bt}})))throw new Error('нет связи с базой');
+  }
+  await putEdit(FLAG,{kind:'ack',c:-1,u:'',seen:{},n:ops.length});
+  try{await SB.from('log').insert({by_email:ME,text:'Функционал: '+ops.length+' функций перенесено от Клодзинского к Болянской'})}catch(_){}
+  render(); alertBar('Готово: '+ops.length+' функций перенесено от Клодзинского к Болянской ('+bt+').');
 }
 // Новые должности, которых ещё нет в загруженной структуре: добавляются на странице, чтобы в них можно было переносить функции.
 // Номер карточки постоянный (9001), поэтому перенесённые функции не теряются при обновлении страницы.
