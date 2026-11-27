@@ -535,6 +535,7 @@ async function start(){
   $('out').innerHTML='<div class="msg">Загружаю отметки коллег…</div>';
   try{ALL=await loadColl('fa'); const e=await loadColl('fe'); EDITS={}; Object.entries(e).forEach(([id,v])=>{v.id=id;EDITS[id]=v})}catch(_){}
   clearTimeout(slow); db=true; dbState='on'; feedOn=true; render();
+  if(OWNER) clearKlodMarks().catch(e=>console.warn('clearKlodMarks',e));
   if(OWNER) fixKlod().catch(e=>alertBar('Перенос функций Клодзинский → Волянская не выполнен: '+(e.message||e)));
   SB.channel('funkcii').on('postgres_changes',{event:'*',schema:'public',table:'items',filter:'coll=in.(fa,fe)'},p=>{
     const n=p.new&&p.new.coll?p.new:null, o=p.old||{}, coll=(n&&n.coll)||o.coll, id=(n&&n.id)||o.id; if(!id)return;
@@ -544,6 +545,16 @@ async function start(){
   }).subscribe(st=>{if(st==='SUBSCRIBED'){LIVE=true}else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'||st==='CLOSED'){LIVE=false}});
   // если живое обновление не работает (сеть блокирует), подтягиваем изменения раз в 20 секунд
   setInterval(async()=>{if(LIVE||document.hidden||busy())return;try{const fa=await loadColl('fa'),fe=await loadColl('fe');ALL=fa;EDITS={};Object.entries(fe).forEach(([id,v])=>{v.id=id;EDITS[id]=v});rr()}catch(_){}},20000);
+}
+// Разовая чистка (27.11.2026): функции изначально ошибочно сидели у Клодзинского — убираем пометки «из: …» у Волянской и «перенесено → …» у Клодзинского.
+async function clearKlodMarks(){
+  const FLAG='fix-klod-clear-1'; if(EDITS[FLAG])return;
+  const find=re=>{let r=null;D.units.forEach(U=>U.groups.forEach(g=>{g.head.concat(...g.depts.map(d=>d.pos)).forEach(e=>{if(!r&&e.p.some(n=>re.test(n)))r=e})}));return r};
+  const K=find(/Кл[ао]дз?инск/i), B=find(/[ВБ]ол[яа]нск/i); if(!K||!B)return;
+  const list=Object.values(EDITS).filter(x=>x.kind!=='ack'&&((x.c===B.c&&x.movedFrom&&x.movedFrom.c===K.c)||(x.c===K.c&&x.movedTo&&x.movedTo.c===B.c)));
+  for(const x of list){const d=Object.assign({},x); delete d.movedFrom; delete d.movedTo; delete d.id; const at=x.at, by=x.by;
+    EDITS[x.id]=Object.assign(d,{id:x.id}); try{await up('fe',x.id,Object.assign({},d,{at,by}))}catch(e){EDITS[x.id]=x;throw e}}
+  await putEdit(FLAG,{kind:'ack',c:-1,u:'',seen:{},n:list.length}); render();
 }
 // Разовое исправление (27.11.2026): всё, что ошибочно оказалось у Клодзинского, переносится руководителю отдела клинических исследований (Волянская): пункты 3–27 раздела «Основные обязанности».
 async function fixKlod(){
